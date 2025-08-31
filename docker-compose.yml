@@ -1,0 +1,30 @@
+services:
+  backend:
+    build: ./backend
+    # Nombre descriptivo para el contenedor
+    container_name: validador_qm_backend
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend:/app
+    env_file:
+      - .env
+    restart: always
+
+  frontend:
+    build: ./frontend
+    # Nombre descriptivo para el contenedor
+    container_name: validador_qm_frontend
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./frontend:/app
+      # Usamos un volumen nombrado para aislar node_modules
+      - validador_frontend_modules:/app/node_modules
+    depends_on:
+      - backend
+    restart: always
+
+# Definición de volúmenes nombrados
+volumes:
+  validador_frontend_modules:

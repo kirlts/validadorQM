@@ -1,0 +1,18 @@
+# Entorno y Secretos
+.env
+__pycache__/
+*.pyc
+
+# Dependencias de Python
+venv/
+*.egg-info/
+dist/
+build/
+
+# Dependencias de Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# VSC
+.vscode/
