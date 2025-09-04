@@ -26,3 +26,26 @@ export function getInstructionalDesignById(id) {
     }, 300);
   });
 }
+
+// Simula la respuesta del LLM a una propuesta de modificación
+export function getModificationSuggestion(requestText) {
+  console.log(`Mock API: Generating suggestion for request: "${requestText}"`);
+  
+  // Usamos <br> para saltos de línea en HTML
+  const mockResponse = `
+    <p><strong>Análisis de Viabilidad:</strong> La petición es viable y se alinea con el estándar QM 5.1, ya que promueve el logro de los objetivos de aprendizaje.</p>
+    <p><strong>Plan de Implementación:</strong></p>
+    <ol>
+      <li>Crear una nueva entidad <strong>ActividadAprendizaje</strong> con <code>@id: "act:Act_S3_2"</code>.</li>
+      <li>Asociarla a la semana 3 a través de la propiedad <code>ocurreEn: { "@id": "sem:S3" }</code>.</li>
+      <li>Alinearla con el indicador de logro correspondiente usando <code>apoyaIndicador: [{ "@id": "il:IL2.1" }]</code>.</li>
+    </ol>
+    <p>Este cambio fortalecerá la secuencia pedagógica de la unidad.</p>
+  `;
+
+  return new Promise(resolve => {
+    setTimeout(() => {
+      resolve(mockResponse);
+    }, 1500); // Simula un tiempo de procesamiento del LLM
+  });
+}
