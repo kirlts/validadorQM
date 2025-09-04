@@ -1,12 +1,9 @@
 import { createApp } from 'vue'
-import { createPinia } from 'pinia'
-
 import App from './App.vue'
-import router from './router'
+import router from './router' // Importamos nuestro enrutador
 
 const app = createApp(App)
 
-app.use(createPinia())
-app.use(router)
+app.use(router) // Le decimos a la app que use el enrutador
 
 app.mount('#app')
