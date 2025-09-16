@@ -1,0 +1,150 @@
+{
+  "@context": {
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "diqa": "http://example.org/di-qa#",
+
+    "Curso": "diqa:Course",
+    "UnidadDidactica": "diqa:DidacticUnit",
+    "Semana": "diqa:Week",
+    "AprendizajeEsperado": "diqa:ExpectedLearning",
+    "IndicadorLogro": "diqa:AchievementIndicator",
+    "ActividadAprendizaje": "diqa:LearningActivity",
+    "Evaluacion": "diqa:Assessment",
+    "RecursoAprendizaje": "diqa:LearningResource",
+    "EstandarCalidad": "diqa:QualityStandard",
+    "EstandarGeneralCalidad": "diqa:GeneralQualityStandard",
+
+    "codigo": "diqa:code",
+    "creditos": "diqa:credits",
+    "numeroSemanas": "diqa:numberOfWeeks",
+    "fechaInicio": {
+      "@id": "diqa:startDate",
+      "@type": "xsd:date"
+    },
+    "modalidad": "diqa:modality",
+    "horasDirectasTotal": "diqa:totalDirectHours",
+    "docenteExperto": "diqa:expertInstructor",
+    "disenadorInstruccional": "diqa:instructionalDesigner",
+    "gpo": "diqa:gpo",
+    "resultadoAprendizajeGeneral": "diqa:generalLearningOutcome",
+
+    "tieneUnidad": {
+      "@id": "diqa:hasUnit",
+      "@type": "@id"
+    },
+    "contieneSemana": {
+      "@id": "diqa:containsWeek",
+      "@type": "@id"
+    },
+    "tieneAE": {
+      "@id": "diqa:hasExpectedLearning",
+      "@type": "@id"
+    },
+    "perteneceAUnidad": {
+      "@id": "diqa:belongsToUnit",
+      "@type": "@id"
+    },
+    "tieneIndicador": {
+      "@id": "diqa:hasIndicator",
+      "@type": "@id"
+    },
+    "esIndicadorDe": {
+      "@id": "diqa:isIndicatorOf",
+      "@type": "@id"
+    },
+    "contieneActividad": {
+      "@id": "diqa:containsActivity",
+      "@type": "@id"
+    },
+    "contieneEvaluacion": {
+      "@id": "diqa:containsAssessment",
+      "@type": "@id"
+    },
+    "ocurreEn": {
+      "@id": "diqa:occursIn",
+      "@type": "@id"
+    },
+    "apoyaIndicador": {
+      "@id": "diqa:supportsIndicator",
+      "@type": "@id"
+    },
+    "evaluaIndicador": {
+      "@id": "diqa:evaluatesIndicator",
+      "@type": "@id"
+    },
+    "precede": {
+      "@id": "diqa:precedes",
+      "@type": "@id"
+    },
+    "utilizaRecurso": {
+      "@id": "diqa:usesResource",
+      "@type": "@id"
+    },
+    "utilizaInstrumento": {
+      "@id": "diqa:usesInstrument",
+      "@type": "@id"
+    },
+    "cumpleEstandarQA": {
+      "@id": "diqa:meetsQAStandard",
+      "@type": "@id"
+    },
+    "perteneceAEstandarGeneral": {
+      "@id": "diqa:belongsToGeneralStandard",
+      "@type": "@id"
+    },
+
+    "descripcion": "diqa:description",
+    "nombre": "diqa:name",
+    "verboAccion": "diqa:actionVerb",
+    "nivelTaxonomico": "diqa:taxonomicLevel",
+    "estrategiaDidactica": "diqa:didacticStrategy",
+    "tipoInteraccion": "diqa:interactionType",
+    "esColaborativa": {
+      "@id": "diqa:isCollaborative",
+      "@type": "xsd:boolean"
+    },
+    "requiereSincronia": {
+      "@id": "diqa:requiresSynchronicity",
+      "@type": "xsd:boolean"
+    },
+    "horasDedicacion": "diqa:dedicationHours",
+    "tipoEvaluacion": "diqa:assessmentType",
+    "metodoEvaluacion": "diqa:evaluationMethod",
+    "procedimientoEvaluacion": "diqa:evaluationProcedure",
+    "instrumentoEvaluacion": "diqa:evaluationInstrument",
+    "pesoCalificacion": "diqa:gradeWeight",
+    "retroalimentacion": "diqa:feedback",
+    "formatoRecurso": "diqa:resourceFormat",
+    "urlRecurso": {
+      "@id": "diqa:resourceURL",
+      "@type": "@id"
+    },
+    "fuente": "diqa:source",
+    "tieneSubtitulos": {
+      "@id": "diqa:hasCaptions",
+      "@type": "xsd:boolean"
+    },
+    "tieneTranscripcion": {
+      "@id": "diqa:hasTranscript",
+      "@type": "xsd:boolean"
+    },
+    "tieneAlternativaTextual": {
+      "@id": "diqa:hasTextAlternative",
+      "@type": "xsd:boolean"
+    },
+    "nivelWCAG": "diqa:wcagLevel",
+    "politicaCurso": "diqa:coursePolicy",
+    "politicaCalificacionTexto": "diqa:gradingPolicyText",
+    "politicaTrabajoTardio": "diqa:lateWorkPolicyText",
+    "politicaConductaAcademica": "diqa:academicConductPolicy",
+    "numeroSemanaOrdinal": {
+      "@id": "diqa:ordinalWeekNumber",
+      "@type": "xsd:integer"
+    },
+    "identificador": "diqa:identifier",
+    "puntos": {
+      "@id": "diqa:points",
+      "@type": "xsd:integer"
+    }
+  }
+}

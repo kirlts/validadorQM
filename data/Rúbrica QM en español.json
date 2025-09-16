@@ -1,0 +1,637 @@
+{
+  "@context": {
+    "qm": "http://qualitymatters.org/standards/hej/7th-ed/",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "EstandarCalidad": "http://example.org/di-qa#EstandarCalidad",
+    "EstandarGeneralCalidad": "http://example.org/di-qa#EstandarGeneralCalidad",
+    "identificador": "http://example.org/di-qa#identificador",
+    "nombre": "http://example.org/di-qa#nombre",
+    "descripcion": "http://example.org/di-qa#descripcion",
+    "puntos": {
+      "@id": "http://example.org/di-qa#puntos",
+      "@type": "xsd:integer"
+    },
+    "perteneceAEstandarGeneral": {
+      "@id": "http://example.org/di-qa#perteneceAEstandarGeneral",
+      "@type": "@id"
+    }
+  },
+  "@graph": [
+    {
+      "@id": "qm:standard/GS1/1.1",
+      "@type": "EstandarCalidad",
+      "identificador": "1.1",
+      "nombre": "Las instrucciones dejan claro cómo empezar y dónde encontrar los diversos componentes del curso.",
+      "descripcion": "La información publicada al principio del curso indica qué hacer primero, proporciona una visión general del curso e instrucciones detalladas de navegación, y anima al estudiante a explorar el sitio del curso. Los instructores pueden optar por incorporar parte de esta información en el sílabo del curso u otros documentos del curso. Una característica útil es un botón o icono de \"Léame Primero\" o \"Comience Aquí\" en la página de inicio del curso, que enlaza a los estudiantes con la información introductoria.",
+      "puntos": 3,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS1",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS1",
+        "nombre": "Descripción General e Introducción del Curso"
+      }
+    },
+    {
+      "@id": "qm:standard/GS1/1.2",
+      "@type": "EstandarCalidad",
+      "identificador": "1.2",
+      "nombre": "Se introduce a los estudiantes en el propósito y la estructura del curso.",
+      "descripcion": "Se proporciona información en el sitio del curso para ayudar a los estudiantes a comprender el propósito del curso y cómo se estructura y lleva a cabo el proceso de aprendizaje, incluyendo el calendario del curso, la explicación de la modalidad de entrega (por ejemplo, en línea o híbrida), los modos de comunicación y participación, los tipos de actividades de aprendizaje y cómo se evaluará el aprendizaje. La información también puede incluir explicaciones sobre el propósito de actividades específicas del curso, como construir una comunidad, ampliar perspectivas o fomentar la inclusión y el sentido de pertenencia.",
+      "puntos": 3,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS1",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS1",
+        "nombre": "Descripción General e Introducción del Curso"
+      }
+    },
+    {
+      "@id": "qm:standard/GS1/1.3",
+      "@type": "EstandarCalidad",
+      "identificador": "1.3",
+      "nombre": "Las pautas de comunicación para el curso están claramente establecidas.",
+      "descripcion": "Las pautas de comunicación (a veces denominadas \"pautas de la comunidad\") están claramente establecidas en el sílabo del curso u otros documentos del curso. Las formas de comunicación pueden incluir escrita, oral y/o visual. Los métodos de comunicación pueden incluir correo electrónico, foros de discusión, tareas, sesiones de curso sincrónicas y otras interacciones o colaboraciones. Como el comportamiento dentro de la comunidad de aprendizaje está influenciado cultural y contextualmente, es importante ser explícito sobre las expectativas de comunicación dentro del curso. Se puede invitar a los estudiantes a contribuir a la formación del contrato social o las pautas de la comunidad del curso.",
+      "puntos": 2,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS1",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS1",
+        "nombre": "Descripción General e Introducción del Curso"
+      }
+    },
+    {
+      "@id": "qm:standard/GS1/1.4",
+      "@type": "EstandarCalidad",
+      "identificador": "1.4",
+      "nombre": "Las políticas del curso e institucionales que el estudiante debe cumplir se indican claramente dentro del curso, o se proporciona un enlace a las políticas actuales.",
+      "descripcion": "Las políticas del curso e institucionales pueden abordar asuntos como la conducta del estudiante, la integridad académica, el establecimiento de la asistencia, la calificación de \"Incompleto\", el retiro sin penalización, la confidencialidad en el aula, las políticas o declaraciones de diversidad, equidad e inclusión (incluidas las adaptaciones religiosas), las disposiciones para los miembros del servicio militar y los veteranos, las quejas de los estudiantes, la comunicación electrónica, la supervisión de exámenes (proctoring), la accesibilidad y otros. Confirme que las políticas se explican claramente y que las declaraciones de las políticas en sí, o un enlace directo a ellas, se encuentran en un lugar destacado del curso.",
+      "puntos": 2,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS1",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS1",
+        "nombre": "Descripción General e Introducción del Curso"
+      }
+    },
+    {
+      "@id": "qm:standard/GS1/1.5",
+      "@type": "EstandarCalidad",
+      "identificador": "1.5",
+      "nombre": "Los requisitos tecnológicos mínimos para el curso se indican claramente y se proporciona información sobre cómo obtener las tecnologías.",
+      "descripcion": "La palabra \"tecnologías\" abarca una amplia gama, incluyendo hardware, software, periféricos (cámaras web, micrófonos, etc.), suscripciones, complementos (plug-ins) y aplicaciones móviles (apps). Las tecnologías requeridas para completar las actividades del curso están claramente listadas. La información del curso especifica qué actividades del curso requieren el uso de una computadora y cuáles pueden completarse con diferentes tipos de hardware (dispositivos móviles frente a computadoras) y/o software. Se proporciona a los estudiantes información detallada sobre dónde y cómo pueden obtener las tecnologías requeridas para el curso.",
+      "puntos": 2,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS1",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS1",
+        "nombre": "Descripción General e Introducción del Curso"
+      }
+    },
+    {
+      "@id": "qm:standard/GS1/1.6",
+      "@type": "EstandarCalidad",
+      "identificador": "1.6",
+      "nombre": "Las habilidades técnicas y de alfabetización digital informativa que se esperan del estudiante están claramente establecidas.",
+      "descripcion": "Se especifican las habilidades técnicas generales y específicas del curso que los estudiantes deben tener para tener éxito en el curso. La alfabetización digital informativa se refiere a la capacidad de localizar, evaluar, aplicar, crear y comunicar conocimiento utilizando la tecnología.",
+      "puntos": 1,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS1",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS1",
+        "nombre": "Descripción General e Introducción del Curso"
+      }
+    },
+    {
+      "@id": "qm:standard/GS1/1.7",
+      "@type": "EstandarCalidad",
+      "identificador": "1.7",
+      "nombre": "El conocimiento previo requerido en la disciplina y/o cualquier competencia específica se indica claramente en el sitio del curso.",
+      "descripcion": "El conocimiento y la experiencia previos requeridos ayudan a los estudiantes a conectar el nuevo material de estudio con su conocimiento existente. El conocimiento previo se conoce comúnmente como conocimiento prerrequisito. La información sobre el conocimiento y la experiencia previos para el éxito del estudiante en el curso se explica claramente y se encuentra en un lugar destacado dentro del curso, en documentos vinculados al curso o en material de apoyo proporcionado al estudiante por otros medios.",
+      "puntos": 1,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS1",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS1",
+        "nombre": "Descripción General e Introducción del Curso"
+      }
+    },
+    {
+      "@id": "qm:standard/GS1/1.8",
+      "@type": "EstandarCalidad",
+      "identificador": "1.8",
+      "nombre": "La auto-presentación del instructor es acogedora y está disponible en el sitio del curso.",
+      "descripcion": "La presentación del instructor establece un sentido de comunidad y conexión entre el instructor y los estudiantes. Presenta al instructor como una persona agradable y accesible e incluye información básica como el nombre del instructor, título, foto u otra representación visual, campo de especialización, dirección de correo electrónico, número de teléfono y horario de oficina (virtual o en el campus).",
+      "puntos": 1,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS1",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS1",
+        "nombre": "Descripción General e Introducción del Curso"
+      }
+    },
+    {
+      "@id": "qm:standard/GS1/1.9",
+      "@type": "EstandarCalidad",
+      "identificador": "1.9",
+      "nombre": "Los estudiantes tienen la oportunidad de presentarse a sí mismos.",
+      "descripcion": "Las presentaciones de los estudiantes al comienzo del curso ayudan a crear un ambiente de aprendizaje acogedor y un sentido de comunidad. Se les pide a los estudiantes que se presenten y se les da orientación sobre dónde y cómo hacerlo.",
+      "puntos": 1,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS1",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS1",
+        "nombre": "Descripción General e Introducción del Curso"
+      }
+    },
+    {
+      "@id": "qm:standard/GS2/2.1",
+      "@type": "EstandarCalidad",
+      "identificador": "2.1",
+      "nombre": "Los objetivos de aprendizaje a nivel de curso describen resultados que son medibles.",
+      "descripcion": "Los objetivos de aprendizaje medibles a nivel de curso describen de manera precisa y clara lo que los estudiantes podrán hacer si completan con éxito el curso. Los objetivos a nivel de curso describen el logro deseado del estudiante utilizando términos que son lo suficientemente específicos y observables como para ser medidos por el instructor. En algunas instituciones, los objetivos de aprendizaje pueden denominarse \"competencias\" o \"resultados de aprendizaje\".",
+      "puntos": 3,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS2",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS2",
+        "nombre": "Objetivos de Aprendizaje (Competencias)"
+      }
+    },
+    {
+      "@id": "qm:standard/GS2/2.2",
+      "@type": "EstandarCalidad",
+      "identificador": "2.2",
+      "nombre": "Los objetivos de aprendizaje a nivel de módulo/unidad describen resultados que son medibles y consistentes con los objetivos a nivel de curso.",
+      "descripcion": "Los objetivos de aprendizaje a nivel de módulo/unidad se alinean y son más específicos que los objetivos de aprendizaje a nivel de curso. Los objetivos de aprendizaje a nivel de módulo/unidad describen la competencia del estudiante en términos específicos y observables y en partes más pequeñas y discretas. Los objetivos describen las competencias, habilidades y conocimientos específicos que los estudiantes pueden demostrar a intervalos regulares a lo largo del curso. Los objetivos a nivel de módulo/unidad están alineados con los objetivos a nivel de curso.",
+      "puntos": 3,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS2",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS2",
+        "nombre": "Objetivos de Aprendizaje (Competencias)"
+      }
+    },
+    {
+      "@id": "qm:standard/GS2/2.3",
+      "@type": "EstandarCalidad",
+      "identificador": "2.3",
+      "nombre": "Los objetivos de aprendizaje están claramente establecidos, centrados en el estudiante y ubicados de forma destacada en el curso.",
+      "descripcion": "Los objetivos de aprendizaje a nivel de curso y de módulo/unidad están claramente establecidos. Se evita el uso de jerga educativa o disciplinaria, terminología no explicada y lenguaje innecesariamente complejo. Los objetivos de aprendizaje están centrados en el estudiante. Los objetivos de aprendizaje describen lo que los estudiantes podrán hacer en lugar de enumerar lo que se enseña en el curso. Están escritos de una manera que permite a los estudiantes, incluidos aquellos con diversos antecedentes lingüísticos, comprender fácilmente su significado y los resultados de aprendizaje esperados. Se encuentran en un lugar destacado en el sitio del curso.",
+      "puntos": 3,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS2",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS2",
+        "nombre": "Objetivos de Aprendizaje (Competencias)"
+      }
+    },
+    {
+      "@id": "qm:standard/GS2/2.4",
+      "@type": "EstandarCalidad",
+      "identificador": "2.4",
+      "nombre": "La relación entre los objetivos de aprendizaje, las actividades de aprendizaje y las evaluaciones se deja en claro.",
+      "descripcion": "Confirme que la conexión entre los objetivos de aprendizaje y las actividades y evaluaciones de aprendizaje asignadas se transmite claramente, ya sea a través de texto, un diagrama o algún otro medio. La relación entre los objetivos de aprendizaje, las actividades de aprendizaje y las evaluaciones es explícita. Esta explicitud permite a los estudiantes visualizar cómo las actividades de aprendizaje y las evaluaciones están directamente conectadas con los objetivos. El propósito de las actividades y evaluaciones se explica en términos de los objetivos de aprendizaje.",
+      "puntos": 3,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS2",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS2",
+        "nombre": "Objetivos de Aprendizaje (Competencias)"
+      }
+    },
+    {
+      "@id": "qm:standard/GS2/2.5",
+      "@type": "EstandarCalidad",
+      "identificador": "2.5",
+      "nombre": "Los objetivos de aprendizaje son adecuados y reflejan el nivel del curso.",
+      "descripcion": "El nivel de logro esperado, tal como se describe en los objetivos de aprendizaje, es apropiado para el tipo y nivel del curso. Las taxonomías que describen los niveles de aprendizaje pueden ser útiles para los revisores al determinar si los objetivos corresponden al nivel del curso.",
+      "puntos": 3,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS2",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS2",
+        "nombre": "Objetivos de Aprendizaje (Competencias)"
+      }
+    },
+    {
+      "@id": "qm:standard/GS3/3.1",
+      "@type": "EstandarCalidad",
+      "identificador": "3.1",
+      "nombre": "Las evaluaciones miden el logro de los objetivos de aprendizaje establecidos.",
+      "descripcion": "Las evaluaciones del curso (formas de confirmar el progreso y el logro del estudiante) son consistentes con los objetivos de aprendizaje a nivel de curso y de módulo/unidad (2.1 y 2.2) al medir el progreso o el logro del aprendizaje. Los materiales de instrucción (4.1), las actividades de aprendizaje (5.1) y las herramientas del curso (6.1) apoyan los objetivos de aprendizaje y permiten a los estudiantes tener éxito en las evaluaciones.",
+      "puntos": 3,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS3",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS3",
+        "nombre": "Evaluación y Medición"
+      }
+    },
+    {
+      "@id": "qm:standard/GS3/3.2",
+      "@type": "EstandarCalidad",
+      "identificador": "3.2",
+      "nombre": "La política de calificación del curso se establece claramente, está disponible al comienzo del curso y es consistente en todo el sitio del curso.",
+      "descripcion": "Una declaración escrita clara al comienzo del curso explica completamente al estudiante cómo se calculan las calificaciones del curso. Dependiendo del sistema de calificación utilizado, los puntos, porcentajes y ponderaciones para cada componente de la calificación del curso se establecen claramente, y se explica la(s) relación(es) entre puntos, porcentajes, ponderaciones y calificaciones con letras. Si se utiliza un enfoque de calificación alternativo, el enfoque se explica claramente, incluyendo cómo se evaluará el trabajo y por quién. El trabajo tardío se aborda en la política de calificación.",
+      "puntos": 3,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS3",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS3",
+        "nombre": "Evaluación y Medición"
+      }
+    },
+    {
+      "@id": "qm:standard/GS3/3.3",
+      "@type": "EstandarCalidad",
+      "identificador": "3.3",
+      "nombre": "Se proporcionan criterios específicos y descriptivos para la evaluación del trabajo de los estudiantes, y su conexión con la política de calificación del curso se explica claramente.",
+      "descripcion": "Se proporciona a los estudiantes una descripción clara y completa de los criterios que se utilizarán para evaluar su trabajo en el curso. Los criterios de evaluación se proporcionan a los estudiantes antes de comenzar una tarea o evaluación en particular. La descripción o declaración de criterios proporciona a los estudiantes una guía clara sobre las expectativas del instructor y sobre los componentes requeridos del trabajo de curso y la participación.",
+      "puntos": 3,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS3",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS3",
+        "nombre": "Evaluación y Medición"
+      }
+    },
+    {
+      "@id": "qm:standard/GS3/3.4",
+      "@type": "EstandarCalidad",
+      "identificador": "3.4",
+      "nombre": "El curso incluye múltiples tipos de evaluaciones que están secuenciadas y son adecuadas al nivel del curso.",
+      "descripcion": "Las evaluaciones proporcionan múltiples formas para que los estudiantes demuestren progreso y logros y están diseñadas para acomodar a estudiantes diversos. Los cursos pueden utilizar una combinación de tipos de evaluación. Las evaluaciones están secuenciadas de manera que permiten a los estudiantes construir sobre conocimientos y habilidades previas adquiridas en este curso y en cursos prerrequisito. Las evaluaciones están espaciadas para dar a los estudiantes tiempo adecuado para completar el trabajo de manera reflexiva y demostrar el logro del aprendizaje.",
+      "puntos": 2,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS3",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS3",
+        "nombre": "Evaluación y Medición"
+      }
+    },
+    {
+      "@id": "qm:standard/GS3/3.5",
+      "@type": "EstandarCalidad",
+      "identificador": "3.5",
+      "nombre": "Los tipos y la temporalidad de las evaluaciones brindan a los estudiantes múltiples oportunidades para seguir su progreso de aprendizaje con retroalimentación oportuna.",
+      "descripcion": "Las evaluaciones más pequeñas y de menor peso brindan a los estudiantes oportunidades para recibir retroalimentación oportuna que se puede utilizar para seguir el progreso del aprendizaje y mejorar el logro del aprendizaje. Además, el aprendizaje se mejora si los estudiantes reciben retroalimentación frecuente, sustantiva y oportuna. La retroalimentación puede provenir directamente del instructor, de evaluaciones que tienen retroalimentación incorporada o de otros estudiantes.",
+      "puntos": 2,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS3",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS3",
+        "nombre": "Evaluación y Medición"
+      }
+    },
+    {
+      "@id": "qm:standard/GS3/3.6",
+      "@type": "EstandarCalidad",
+      "identificador": "3.6",
+      "nombre": "Las evaluaciones brindan orientación al estudiante sobre cómo mantener la integridad académica.",
+      "descripcion": "La integridad en el trabajo educativo permite que las comunidades de estudiantes interactúen con un espíritu de confianza, honestidad y equidad. Los estudiantes, particularmente en los cursos en línea, se benefician de información específica y contextualizada sobre cómo cumplir con las políticas y estándares de integridad académica institucionales (ver Estándar de Revisión Específico 1.4) a medida que completan las evaluaciones en el curso. Esta guía permite a los estudiantes aplicar los principios abstractos de la integridad académica a situaciones reales dentro del curso (y la disciplina).",
+      "puntos": 1,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS3",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS3",
+        "nombre": "Evaluación y Medición"
+      }
+    },
+    {
+      "@id": "qm:standard/GS4/4.1",
+      "@type": "EstandarCalidad",
+      "identificador": "4.1",
+      "nombre": "Los materiales de instrucción contribuyen al logro de los objetivos de aprendizaje establecidos.",
+      "descripcion": "Los materiales de instrucción se alinean con los objetivos de aprendizaje para proporcionar la información y los recursos que los estudiantes necesitan para lograr los objetivos de aprendizaje establecidos. Pueden incluir, entre otros, libros de texto, materiales con licencia abierta (por ejemplo, de código abierto, recursos educativos abiertos), materiales creados por el editor o el instructor, presentaciones de diapositivas y contenido interactivo (como simulaciones), conferencias de expertos, videos, imágenes, diagramas y sitios web.",
+      "puntos": 3,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS4",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS4",
+        "nombre": "Materiales de Instrucción"
+      }
+    },
+    {
+      "@id": "qm:standard/GS4/4.2",
+      "@type": "EstandarCalidad",
+      "identificador": "4.2",
+      "nombre": "La relación entre el uso de los materiales de instrucción en el curso y la finalización de las actividades de aprendizaje y las evaluaciones se explica claramente.",
+      "descripcion": "Se proporciona a los estudiantes una explicación de cómo los materiales de instrucción los preparan para completar las actividades de aprendizaje y las evaluaciones. Si se proporcionan materiales de instrucción opcionales y se recomienda su uso en el curso, los materiales se etiquetan como opcionales. Se explica la relevancia de los materiales de instrucción requeridos y opcionales.",
+      "puntos": 3,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS4",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS4",
+        "nombre": "Materiales de Instrucción"
+      }
+    },
+    {
+      "@id": "qm:standard/GS4/4.3",
+      "@type": "EstandarCalidad",
+      "identificador": "4.3",
+      "nombre": "El curso modela la integridad académica que se espera de los estudiantes al proporcionar tanto referencias de fuentes como permisos para el uso de materiales de instrucción.",
+      "descripcion": "Los materiales de instrucción incluyen referencias de fuentes y se ha obtenido permiso para utilizar los materiales en el curso. Las fuentes de los materiales utilizados en el curso se identifican claramente con referencias. Esta expectativa se aplica a los materiales creados por el instructor, artículos de revistas, materiales de editores, libros de texto, imágenes, materiales gráficos, tablas, videos, grabaciones de audio, sitios web, diapositivas y todas las formas de multimedia.",
+      "puntos": 2,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS4",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS4",
+        "nombre": "Materiales de Instrucción"
+      }
+    },
+    {
+      "@id": "qm:standard/GS4/4.4",
+      "@type": "EstandarCalidad",
+      "identificador": "4.4",
+      "nombre": "Los materiales de instrucción representan la teoría y la práctica actualizadas en la disciplina.",
+      "descripcion": "Los materiales de instrucción representan el pensamiento, la práctica y la aplicación actuales en la disciplina.",
+      "puntos": 2,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS4",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS4",
+        "nombre": "Materiales de Instrucción"
+      }
+    },
+    {
+      "@id": "qm:standard/GS4/4.5",
+      "@type": "EstandarCalidad",
+      "identificador": "4.5",
+      "nombre": "Se utiliza una variedad de materiales de instrucción en el curso.",
+      "descripcion": "El curso presenta una variedad de materiales de instrucción relevantes que pueden incluir libros de texto y otras publicaciones, recursos creados por el instructor, sitios web y multimedia. La variedad puede tomar la forma de diferentes tipos de medios utilizados para entregar contenido. La variedad puede tomar la forma de diferentes perspectivas y diferentes representaciones de ideas. La variedad también puede aparecer en imágenes que representan diferentes tipos de personas.",
+      "puntos": 2,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS4",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS4",
+        "nombre": "Materiales de Instrucción"
+      }
+    },
+    {
+      "@id": "qm:standard/GS5/5.1",
+      "@type": "EstandarCalidad",
+      "identificador": "5.1",
+      "nombre": "Las actividades de aprendizaje ayudan a los estudiantes a lograr los objetivos establecidos.",
+      "descripcion": "Las actividades de aprendizaje proporcionan refuerzo y promueven el logro a través de la interacción con el contenido del curso y la comunidad de aprendizaje. Ejemplos de actividades incluyen participar en discusiones de clase, juegos de rol, excursiones virtuales, ejercicios de simulación, actividades basadas en escenarios y búsquedas del tesoro en la web; ver videos con preguntas de verificación incrustadas; crear esquemas, mapas conceptuales, organizadores gráficos y ejercicios de habilidades de laboratorio; y completar lecciones guiadas, cuestionarios de práctica y autoevaluaciones.",
+      "puntos": 3,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS5",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS5",
+        "nombre": "Actividades de Aprendizaje e Interacción del Estudiante"
+      }
+    },
+    {
+      "@id": "qm:standard/GS5/5.2",
+      "@type": "EstandarCalidad",
+      "identificador": "5.2",
+      "nombre": "Las actividades de aprendizaje brindan oportunidades para interacciones que apoyan el aprendizaje activo.",
+      "descripcion": "Las actividades de aprendizaje interactivas promueven el aprendizaje activo y el compromiso a través de tres tipos de interacción: estudiante-contenido, estudiante-instructor y estudiante-estudiante. Las interacciones significativas que promueven el desarrollo de habilidades de los estudiantes están diseñadas como actividades para apoyar los objetivos del curso y pueden variar con la materia, el propósito y el nivel del curso. El aprendizaje activo implica que los estudiantes se involucren \"haciendo\" algo, como analizar datos, evaluar posibles soluciones a un problema o aplicar conceptos e información.",
+      "puntos": 3,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS5",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS5",
+        "nombre": "Actividades de Aprendizaje e Interacción del Estudiante"
+      }
+    },
+    {
+      "@id": "qm:standard/GS5/5.3",
+      "@type": "EstandarCalidad",
+      "identificador": "5.3",
+      "nombre": "El plan del instructor para la interacción regular con los estudiantes de manera sustantiva durante el curso está claramente establecido.",
+      "descripcion": "Un plan claro para la interacción instructor-estudiante ayuda a promover una interacción sustantiva entre los instructores y los estudiantes durante el curso. El plan incluye detalles sobre cuándo los estudiantes pueden esperar las respuestas del instructor a las preguntas, a qué intervalos los estudiantes recibirán retroalimentación sustantiva del instructor sobre las tareas y cómo el instructor ha diseñado otras oportunidades regulares de retroalimentación y comunicación en el curso.",
+      "puntos": 3,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS5",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS5",
+        "nombre": "Actividades de Aprendizaje e Interacción del Estudiante"
+      }
+    },
+    {
+      "@id": "qm:standard/GS5/5.4",
+      "@type": "EstandarCalidad",
+      "identificador": "5.4",
+      "nombre": "Los requisitos para la interacción del estudiante están claramente establecidos.",
+      "descripcion": "Una explicación clara de los requisitos para la interacción del estudiante ayuda a los estudiantes a planificar y gestionar su participación en clase y es importante para promover la participación activa de los estudiantes en el curso. La declaración de requisitos también proporciona una base para que el instructor evalúe la participación del estudiante. Busque una declaración clara de las expectativas del instructor para la participación del estudiante en las interacciones requeridas del curso (frecuencia, duración, puntualidad, etc.), incluidas las interacciones entre estudiantes en evaluaciones y actividades, si es relevante.",
+      "puntos": 2,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS5",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS5",
+        "nombre": "Actividades de Aprendizaje e Interacción del Estudiante"
+      }
+    },
+    {
+      "@id": "qm:standard/GS6/6.1",
+      "@type": "EstandarCalidad",
+      "identificador": "6.1",
+      "nombre": "Las herramientas utilizadas en el curso apoyan los objetivos de aprendizaje.",
+      "descripcion": "Las herramientas son tipos de software y aplicaciones que permiten la interacción del estudiante y pueden utilizarse para la entrega de contenido o para proporcionar retroalimentación en el curso; pueden estar incluidas o ser externas al sistema de gestión del aprendizaje (LMS). Se proporciona información e instrucciones claras sobre cómo las herramientas apoyan los objetivos de aprendizaje. Por ejemplo, un curso que requiere publicar en un foro de discusión deja en claro cómo las herramientas utilizadas para las discusiones apoyan un objetivo de aprendizaje. Las herramientas no se utilizan simplemente por sí mismas.",
+      "puntos": 3,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS6",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS6",
+        "nombre": "Tecnología del Curso"
+      }
+    },
+    {
+      "@id": "qm:standard/GS6/6.2",
+      "@type": "EstandarCalidad",
+      "identificador": "6.2",
+      "nombre": "Las herramientas del curso promueven el compromiso del estudiante y el aprendizaje activo.",
+      "descripcion": "Las herramientas utilizadas en el curso ayudan a los estudiantes a participar activamente en el proceso de aprendizaje en lugar de absorber pasivamente la información. Las herramientas del curso seleccionadas apoyan el aprendizaje activo a través de la interacción estudiante-instructor, estudiante-contenido y estudiante-estudiante. Son evidentes las herramientas de aprendizaje activo que fomentan el aprendizaje mediante la interacción, la recuperación, la discusión, la investigación y la creación.",
+      "puntos": 2,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS6",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS6",
+        "nombre": "Tecnología del Curso"
+      }
+    },
+    {
+      "@id": "qm:standard/GS6/6.3",
+      "@type": "EstandarCalidad",
+      "identificador": "6.3",
+      "nombre": "Se utiliza una variedad de tecnología en el curso.",
+      "descripcion": "El curso utiliza una variedad de herramientas tecnológicas, como videos, foros de discusión, redes sociales, tecnologías móviles, juegos, simulaciones, blogs, podcasts y mundos virtuales. La variedad no se refiere a un número específico, sino que indica que se utilizan diferentes tipos de tecnología alineada en el curso. La tecnología incluye una amplia gama de diferentes hardware, software, suscripciones y complementos (plug-ins).",
+      "puntos": 1,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS6",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS6",
+        "nombre": "Tecnología del Curso"
+      }
+    },
+    {
+      "@id": "qm:standard/GS6/6.4",
+      "@type": "EstandarCalidad",
+      "identificador": "6.4",
+      "nombre": "El curso proporciona a los estudiantes información sobre la protección de sus datos y privacidad.",
+      "descripcion": "El diseño del curso, el uso de herramientas y la configuración pueden mejorar la privacidad del estudiante. Se proporcionan los pasos que los estudiantes pueden tomar para proteger su privacidad con las actividades del curso, el uso de herramientas y las interacciones con otros. Las herramientas utilizadas en el curso (tanto seleccionadas por el instructor como integradas institucionalmente) incluyen enlaces a las políticas de privacidad proporcionadas por los creadores de las herramientas.",
+      "puntos": 1,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS6",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS6",
+        "nombre": "Tecnología del Curso"
+      }
+    },
+    {
+      "@id": "qm:standard/GS7/7.1",
+      "@type": "EstandarCalidad",
+      "identificador": "7.1",
+      "nombre": "Las instrucciones del curso articulan o enlazan a una descripción clara del soporte técnico ofrecido y cómo obtenerlo.",
+      "descripcion": "El soporte técnico para los estudiantes difiere de una institución a otra e incluye información como cómo iniciar sesión, cómo usar las herramientas y características del sistema de gestión de aprendizaje; y cómo obtener soporte de la mesa de ayuda. El soporte técnico no incluye ayuda con el contenido del curso o las tareas o los servicios de apoyo académico o los servicios de apoyo al estudiante.",
+      "puntos": 3,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS7",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS7",
+        "nombre": "Apoyo al Estudiante"
+      }
+    },
+    {
+      "@id": "qm:standard/GS7/7.2",
+      "@type": "EstandarCalidad",
+      "identificador": "7.2",
+      "nombre": "Las instrucciones del curso articulan o enlazan a las políticas de accesibilidad y los servicios de acomodación de la institución.",
+      "descripcion": "Las políticas de accesibilidad o las declaraciones de acomodación establecen que los servicios y las acomodaciones están disponibles para los estudiantes con discapacidades e informan al estudiante sobre cómo se pueden obtener dichos servicios.",
+      "puntos": 3,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS7",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS7",
+        "nombre": "Apoyo al Estudiante"
+      }
+    },
+    {
+      "@id": "qm:standard/GS7/7.3",
+      "@type": "EstandarCalidad",
+      "identificador": "7.3",
+      "nombre": "Las instrucciones del curso articulan o enlazan a los servicios y recursos de apoyo académico de la institución que pueden ayudar a los estudiantes a tener éxito en el curso.",
+      "descripcion": "Los servicios y recursos de apoyo académico, y el alcance de lo que implican, difieren de una institución a otra. Para fines de revisión, los servicios y recursos de apoyo académico pueden incluir una orientación en línea, acceso a recursos de la biblioteca, una evaluación o encuesta de preparación, servicios de pruebas, tutoría, servicios de idiomas no nativos, centros de escritura y/o matemáticas, programas de instrucción suplementarios, asistentes de enseñanza y tutoriales u otras formas de orientación sobre actividades.",
+      "puntos": 3,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS7",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS7",
+        "nombre": "Apoyo al Estudiante"
+      }
+    },
+    {
+      "@id": "qm:standard/GS7/7.4",
+      "@type": "EstandarCalidad",
+      "identificador": "7.4",
+      "nombre": "Las instrucciones del curso articulan o enlazan a los servicios y recursos para estudiantes de la institución que pueden ayudar a los estudiantes a tener éxito.",
+      "descripcion": "Los servicios y recursos para estudiantes difieren de una institución a otra. Para los fines de esta revisión, los servicios y recursos de apoyo incluyen asesoramiento, inscripción, ayuda financiera, servicios para veteranos, vida estudiantil o en el campus, asesoramiento de salud mental, servicios de carrera, talleres en línea, organizaciones estudiantiles y servicios y recursos del departamento.",
+      "puntos": 1,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS7",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS7",
+        "nombre": "Apoyo al Estudiante"
+      }
+    },
+    {
+      "@id": "qm:standard/GS8/8.1",
+      "@type": "EstandarCalidad",
+      "identificador": "8.1",
+      "nombre": "La navegación del curso facilita la facilidad de uso.",
+      "descripcion": "La navegación se refiere al proceso de planificar, controlar y registrar el movimiento de un estudiante de un lugar a otro en el curso en línea. La navegación en todo el curso es consistente, lógica y eficiente. Confirme que las estrategias de navegación del curso facilitan la facilidad de movimiento a través del curso y las actividades del curso.",
+      "puntos": 3,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS8",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS8",
+        "nombre": "Accesibilidad y Usabilidad"
+      }
+    },
+    {
+      "@id": "qm:standard/GS8/8.2",
+      "@type": "EstandarCalidad",
+      "identificador": "8.2",
+      "nombre": "El diseño del curso facilita la legibilidad.",
+      "descripcion": "Los elementos de diseño del curso maximizan la usabilidad al facilitar la legibilidad y minimizar las distracciones. La legibilidad es una medida de lo fácil que es leer y seguir el contenido. La legibilidad incluye la presentación del contenido, así como la claridad y legibilidad del texto.",
+      "puntos": 3,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS8",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS8",
+        "nombre": "Accesibilidad y Usabilidad"
+      }
+    },
+    {
+      "@id": "qm:standard/GS8/8.3",
+      "@type": "EstandarCalidad",
+      "identificador": "8.3",
+      "nombre": "El texto en el curso es accesible.",
+      "descripcion": "El texto se puede encontrar en archivos, documentos, diapositivas, páginas del sistema de gestión de aprendizaje (LMS) y sitios web. Los revisores pueden usar herramientas de accesibilidad y verificadores para ayudar en la revisión de la accesibilidad del texto. Cuando el texto en un curso es accesible, los estudiantes se benefician. Por ejemplo, cualquier estudiante puede buscar en un PDF accesible por palabras clave. La mayoría de los estudiantes pueden acceder al contenido, completar actividades e interactuar con otros sin necesidad de adaptaciones.",
+      "puntos": 3,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS8",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS8",
+        "nombre": "Accesibilidad y Usabilidad"
+      }
+    },
+    {
+      "@id": "qm:standard/GS8/8.4",
+      "@type": "EstandarCalidad",
+      "identificador": "8.4",
+      "nombre": "Las imágenes en el curso son accesibles.",
+      "descripcion": "Las imágenes que son significativas para la experiencia de aprendizaje incluyen texto alternativo (alt-text), descripciones largas u otros medios de descripción. Las imágenes que son decorativas se marcan como tales. Las imágenes se pueden encontrar en presentaciones de diapositivas narradas, páginas web, documentos y dentro de las páginas del LMS. Las imágenes incluyen fotografías, cuadros, gráficos, infografías, mapas, etc.",
+      "puntos": 2,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS8",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS8",
+        "nombre": "Accesibilidad y Usabilidad"
+      }
+    },
+    {
+      "@id": "qm:standard/GS8/8.5",
+      "@type": "EstandarCalidad",
+      "identificador": "8.5",
+      "nombre": "El contenido de video y audio en el curso es accesible.",
+      "descripcion": "El contenido de video y audio se puede encontrar en videos, podcasts, presentaciones de diapositivas narradas, animaciones, simulaciones y otros multimedia. El contenido de video y audio incluye medios alternativos de acceso para los estudiantes a través de la adición de subtítulos o transcripciones con información equivalente. Cuando el video y el audio en un curso son accesibles, la mayoría de los estudiantes se benefician.",
+      "puntos": 2,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS8",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS8",
+        "nombre": "Accesibilidad y Usabilidad"
+      }
+    },
+    {
+      "@id": "qm:standard/GS8/8.6",
+      "@type": "EstandarCalidad",
+      "identificador": "8.6",
+      "nombre": "El multimedia en el curso es fácil de usar.",
+      "descripcion": "El multimedia incluye el uso o la integración de varios tipos de medios como imágenes, audio, video, animaciones y componentes interactivos. Los elementos interactivos integrales al contenido son multiplataforma (PC, Mac) y multi-navegador, o se proporciona una guía sobre el mejor navegador para usar. Se notifica a los estudiantes sobre cualquier limitación, como la necesidad de navegadores específicos o requisitos de alto ancho de banda.",
+      "puntos": 2,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS8",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS8",
+        "nombre": "Accesibilidad y Usabilidad"
+      }
+    },
+    {
+      "@id": "qm:standard/GS8/8.7",
+      "@type": "EstandarCalidad",
+      "identificador": "8.7",
+      "nombre": "Se proporcionan declaraciones de accesibilidad del proveedor para las tecnologías utilizadas en el curso.",
+      "descripcion": "Los estudiantes tienen acceso a información sobre la accesibilidad de las tecnologías utilizadas en el curso, incluido el sistema de gestión del aprendizaje. Este Estándar de Revisión Específico se cumple si el curso incluye un enlace a la declaración de accesibilidad del proveedor para cada tecnología. Si no existe una declaración de accesibilidad para una tecnología en particular, se proporciona una declaración de que la declaración de accesibilidad no existe, junto con la información de contacto del proveedor.",
+      "puntos": 1,
+      "perteneceAEstandarGeneral": {
+        "@id": "qm:standard/GS8",
+        "@type": "EstandarGeneralCalidad",
+        "identificador": "GS8",
+        "nombre": "Accesibilidad y Usabilidad"
+      }
+    }
+  ]
+}

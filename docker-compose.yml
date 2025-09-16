@@ -14,7 +14,7 @@ services:
     build: ./frontend
     container_name: validador_qm_frontend
     ports:
-      - "8081:8080"
+      - "8080:8080"
     volumes:
       - ./frontend:/app
       - /app/node_modules
