@@ -7,13 +7,14 @@
             <v-toolbar-title>Inicio de Sesión</v-toolbar-title>
           </v-toolbar>
           <v-card-text>
-            <v-form>
+            <v-form @submit.prevent="handleLogin">
               <v-text-field
                 label="Email"
                 name="login"
                 prepend-icon="mdi-account"
                 type="text"
                 v-model="email"
+                required
               ></v-text-field>
               <v-text-field
                 id="password"
@@ -22,20 +23,28 @@
                 prepend-icon="mdi-lock"
                 type="password"
                 v-model="password"
+                required
               ></v-text-field>
               <v-alert
-                v-if="error"
+                v-if="errorMessage"
                 type="error"
                 density="compact"
                 class="mb-4"
               >
-                Email y contraseña no pueden estar vacíos.
+                {{ errorMessage }}
               </v-alert>
             </v-form>
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn color="primary" @click="handleLogin">Ingresar</v-btn>
+            <v-btn 
+              color="primary" 
+              @click="handleLogin"
+              :loading="loading"
+              :disabled="loading"
+            >
+              Ingresar
+            </v-btn>
           </v-card-actions>
         </v-card>
       </v-col>
@@ -46,19 +55,44 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+// 3. Importamos nuestro cliente de Supabase
+import { supabase } from '@/supabase';
 
 const email = ref('');
 const password = ref('');
-const error = ref(false);
+// 4. Actualizamos las variables de estado para manejar carga y errores
+const loading = ref(false);
+const errorMessage = ref(null);
 const router = useRouter();
 
-function handleLogin() {
-  if (email.value && password.value) {
-    error.value = false;
-    // En una aplicación real, aquí se guardaría el token JWT
+// 5. La función de login ahora es asíncrona y se comunica con Supabase
+async function handleLogin() {
+  if (!email.value || !password.value) {
+    errorMessage.value = 'Email y contraseña no pueden estar vacíos.';
+    return;
+  }
+
+  try {
+    loading.value = true;
+    errorMessage.value = null;
+
+    // Realizamos la llamada a Supabase para iniciar sesión
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.value,
+      password: password.value,
+    });
+
+    if (error) throw error;
+
+    // Si el login es exitoso, la librería de Supabase guarda la sesión automáticamente.
+    // Solo necesitamos redirigir al usuario.
     router.push('/dashboard');
-  } else {
-    error.value = true;
+
+  } catch (error) {
+    errorMessage.value = 'Credenciales inválidas. Por favor, intente de nuevo.';
+    console.error('Error de autenticación:', error.message);
+  } finally {
+    loading.value = false;
   }
 }
 </script>
