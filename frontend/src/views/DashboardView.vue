@@ -50,6 +50,8 @@ onMounted(async () => {
 });
 
 function viewDetails(id) {
-  router.push(`/di/${id}`);
+  // En lugar de construir la URL manualmente, navegamos por el nombre de la ruta.
+  // Vue Router construirá la URL correcta (/app/di/1) automáticamente.
+  router.push({ name: 'detail', params: { id: id } });
 }
 </script>
