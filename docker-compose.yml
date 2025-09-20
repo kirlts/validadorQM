@@ -9,6 +9,8 @@ services:
     env_file:
       - .env
     restart: always
+    networks:
+      - validador-net
 
   frontend:
     build: ./frontend
@@ -21,3 +23,24 @@ services:
     depends_on:
       - backend
     restart: always
+    networks:
+      - validador-net
+
+  # --- NUEVO SERVICIO N8N ---
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: validador_qm_n8n
+    restart: always
+    ports:
+      - "5678:5678"
+    environment:
+      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE}
+    volumes:
+      - ./n8n_data:/home/node/.n8n
+    networks:
+      - validador-net
+
+# --- NUEVA RED COMPARTIDA ---
+networks:
+  validador-net:
+    driver: bridge
