@@ -1,13 +1,18 @@
 import os
 from flask import Flask, jsonify, request
 from dotenv import load_dotenv
-import jwt # ◀️ 1. Importar la nueva librería
+import jwt # ◀️
+from flask_cors import CORS
 
 # Cargar las variables de entorno desde el archivo .env
 load_dotenv()
 
 # Crear la instancia de la aplicación Flask
 app = Flask(__name__)
+
+# 2. Habilitar CORS para toda la aplicación, permitiendo peticiones
+# desde el origen donde corre el frontend.
+CORS(app, resources={r"/api/*": {"origins": "http://localhost:8080"}})
 
 # Imprimir la URL de la base de datos para confirmar que se cargó (opcional, para depuración)
 print(f"CONECTANDO A: {os.getenv('DATABASE_URL')}")
@@ -46,7 +51,7 @@ def validate_token():
 
     try:
         # 4. Decodificar y validar el token
-        jwt.decode(token, SUPABASE_JWT_SECRET, algorithms=['HS256'])
+        jwt.decode(token, SUPABASE_JWT_SECRET, algorithms=['HS256'], audience='authenticated')
         # Si la línea anterior no lanza una excepción, el token es válido
         return jsonify({"status": "token_valid"}), 200
 

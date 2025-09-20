@@ -16,17 +16,12 @@
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router';
 import { supabase } from '@/supabase';
-
-const router = useRouter();
 
 async function handleLogout() {
   try {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
-    // Redirige al usuario a la página de bienvenida/login después de cerrar sesión
-    router.push('/');
   } catch (error) {
     console.error('Error al cerrar sesión:', error.message);
   }

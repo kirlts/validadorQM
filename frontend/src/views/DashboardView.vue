@@ -39,19 +39,14 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
 import { getInstructionalDesigns } from '@/services/mockApiService';
 
 const designs = ref([]);
-const router = useRouter();
 
 onMounted(async () => {
+  // La validación ahora la hace el guardia del enrutador.
+  // El onMounted solo se preocupa de cargar los datos de la vista.
+  console.log('Dashboard montado, cargando datos...');
   designs.value = await getInstructionalDesigns();
 });
-
-function viewDetails(id) {
-  // En lugar de construir la URL manualmente, navegamos por el nombre de la ruta.
-  // Vue Router construirá la URL correcta (/app/di/1) automáticamente.
-  router.push({ name: 'detail', params: { id: id } });
-}
 </script>

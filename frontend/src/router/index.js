@@ -41,15 +41,15 @@ router.beforeEach(async (to, from, next) => {
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
 
   if (requiresAuth && !session) {
-    next('/');
-  } 
-  // 3. Actualizamos la redirección para que apunte a la nueva ruta del dashboard
-  else if (to.name === 'welcome' && session) {
-    next('/app/dashboard');
-  } 
-  else {
+    // Si la ruta es protegida y NO hay sesión, se va a la bienvenida.
+    next({ name: 'welcome' });
+  } else if (!requiresAuth && session && to.name === 'welcome') {
+    // Si la ruta NO es protegida (bienvenida) y SÍ hay sesión, se va al dashboard.
+    next({ name: 'dashboard' });
+  } else {
+    // En todos los demás casos, permite la navegación.
     next();
   }
 });
 
-export default router
+export default router;

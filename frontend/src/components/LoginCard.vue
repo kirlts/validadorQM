@@ -48,14 +48,12 @@
 
 <script setup>
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
 import { supabase } from '@/supabase';
 
 const email = ref('');
 const password = ref('');
 const loading = ref(false);
 const errorMessage = ref(null);
-const router = useRouter();
 
 async function handleLogin() {
   if (!email.value || !password.value) {
@@ -73,9 +71,6 @@ async function handleLogin() {
     });
 
     if (error) throw error;
-
-    router.push({ name: 'dashboard' });
-
   } catch (error) {
     errorMessage.value = 'Credenciales inválidas. Por favor, intente de nuevo.';
     console.error('Error de autenticación:', error.message);
