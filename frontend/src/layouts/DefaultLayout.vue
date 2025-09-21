@@ -16,12 +16,22 @@
 </template>
 
 <script setup>
+import { useRouter } from 'vue-router';
 import { supabase } from '@/supabase';
+import { useDiStore } from '@/stores/diStore';
+
+const router = useRouter();
+const diStore = useDiStore();
 
 async function handleLogout() {
   try {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
+    
+    // ANTES de redirigir, limpiamos los datos del store
+    diStore.clearDesigns(); 
+
+    router.push('/');
   } catch (error) {
     console.error('Error al cerrar sesión:', error.message);
   }
