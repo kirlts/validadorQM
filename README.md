@@ -2,17 +2,23 @@
 
 Este proyecto es una aplicación web diseñada para validar Diseños Instruccionales (DIs) contra la rúbrica de Quality Matters (QM) utilizando un asistente de Inteligencia Artificial. El sistema permite a los docentes subir sus DIs, recibir un análisis de calidad y obtener sugerencias de mejora.
 
+---
+
 ## 🚀 Tech Stack
 
 - **Frontend:** Vue.js 3 con Vuetify
 - **API Gateway:** Flask (Python)
 - **Orquestador de Lógica:** N8N
 - **Base de Datos y Almacenamiento:** Supabase
-- **Entorno:** Docker y Docker Compose
+- **Entorno:** Docker
+
+---
 
 ## 📋 Prerrequisitos
 
 - Docker y Docker Compose instalados.
+
+---
 
 ## ⚙️ Configuración
 
@@ -29,11 +35,7 @@ Este proyecto es una aplicación web diseñada para validar Diseños Instruccion
     ```
     Luego, edita el archivo `.env` y rellena todas las credenciales y URLs de tus servicios (Supabase, N8N, etc.).
 
-3.  **Crear el Directorio de N8N:**
-    El volumen de Docker para N8N requiere que el directorio exista antes de iniciar.
-    ```bash
-    mkdir n8n_data
-    ```
+---
 
 ## ▶️ Ejecutar el Proyecto
 
@@ -41,3 +43,24 @@ Una vez configurado el archivo `.env`, puedes levantar todo el entorno con un so
 
 ```bash
 docker compose up -d --build
+```
+
+Una vez iniciados los contenedores, los servicios estarán disponibles en:
+
+Frontend: **http://localhost:8080**
+
+API de Flask: **http://localhost:5000**
+
+Interfaz de N8N: **http://localhost:5678**
+
+## Endpoints de la API
+
+Todos los endpoints requieren un token JWT de Supabase en la cabecera Authorization: Bearer <token>.
+
+**GET /api/dis:** Lista los DIs del usuario autenticado.
+
+**POST /api/dis:** Sube un nuevo archivo DI.
+
+**DELETE /api/dis/<uuid:di_id>:** Elimina un DI específico.
+
+**GET /api/dis/<uuid:di_id>/download-url:** Genera una URL de descarga firmada.
