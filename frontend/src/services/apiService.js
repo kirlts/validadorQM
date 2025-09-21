@@ -36,3 +36,36 @@ export async function getDis() {
   const response = await fetchWithAuth('dis', { method: 'GET' });
   return response;
 }
+
+export async function uploadDi(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error('No hay sesión de usuario activa.');
+
+  const response = await fetch(`${API_URL}/dis`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${session.access_token}` },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({})); // Intenta parsear JSON, si falla, devuelve objeto vacío
+    // --- CAMBIO CLAVE AQUÍ ---
+    // Creamos y lanzamos un objeto de error personalizado que contiene el código de estado.
+    throw { 
+      status: response.status, 
+      message: errorData.message || errorData.error || `Error: ${response.statusText}`
+    };
+  }
+  return response.json();
+}
+
+export function deleteDi(diId) {
+  return fetchWithAuth(`dis/${diId}`, { method: 'DELETE' });
+}
+
+export function getDownloadUrl(diId) {
+  return fetchWithAuth(`dis/${diId}/download-url`);
+}

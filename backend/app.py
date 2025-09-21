@@ -5,6 +5,8 @@ import jwt
 from flask_cors import CORS
 import requests
 from functools import wraps
+from supabase import create_client, Client
+from uuid import UUID
 
 load_dotenv()
 app = Flask(__name__)
@@ -32,40 +34,104 @@ def token_required(f):
 def validate_token(current_user_id):
     return jsonify({"status": "token_valid", "user_id": current_user_id}), 200
 
-@app.route('/api/dis', methods=['GET'])
+# --- RUTA UNIFICADA PARA /api/dis ---
+@app.route('/api/dis', methods=['GET', 'POST'])
 @token_required
-def get_dis(current_user_id):
-    print("--- INICIANDO /api/dis ---") # Log de inicio
-    print(f"Usuario autenticado: {current_user_id}")
+def handle_dis(current_user_id):
+    # Si la petición es GET, ejecutamos la lógica para listar los DIs
+    if request.method == 'GET':
+        try:
+            n8n_webhook_url = os.getenv('N8N_WEBHOOK_URL_GET_DIS')
+            if not n8n_webhook_url:
+                return jsonify({'error': 'La URL del webhook no está configurada'}), 500
+            
+            response = requests.get(f"{n8n_webhook_url}?userId={current_user_id}")
+            response.raise_for_status()
+            
+            return jsonify(response.json()), 200
+        except Exception as e:
+            return jsonify({'error': f'Ocurrió un error al obtener los DIs: {e}'}), 500
 
+    # Si la petición es POST, ejecutamos la lógica para subir un archivo
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            return jsonify({'error': 'No se encontró el archivo'}), 400
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'No se seleccionó ningún archivo'}), 400
+        
+        try:
+            n8n_webhook_url = os.getenv('N8N_WEBHOOK_URL_UPLOAD_DI')
+            if not n8n_webhook_url:
+                return jsonify({'error': 'La URL del webhook de subida no está configurada'}), 500
+
+            files = {'file': (file.filename, file.stream, file.content_type)}
+            response = requests.post(f"{n8n_webhook_url}?userId={current_user_id}", files=files)
+
+            # --- LÍNEAS DE DEPURACIÓN CLAVE ---
+            # Si la respuesta de N8N fue un error (ej. 409), raise_for_status() lanzará una excepción
+            # y la ejecución pasará al bloque 'except'.
+            response.raise_for_status()
+            
+            return jsonify(response.json()), 200
+
+        except requests.exceptions.HTTPError as http_err:
+            # Este bloque se activará si N8N devuelve un código de error (4xx o 5xx)
+            print("--- ERROR HTTP RECIBIDO DE N8N ---")
+            print(f"Código de Estado: {http_err.response.status_code}")
+            print("Respuesta de N8N (texto):")
+            print(http_err.response.text)
+            # Pasamos la respuesta de error de N8N al frontend
+            return jsonify(http_err.response.json()), http_err.response.status_code
+            
+        except Exception as e:
+            print(f"!!! ERROR INESPERADO: {e}")
+            return jsonify({'error': f'Ocurrió un error inesperado: {e}'}), 500
+
+@app.route('/api/dis/<uuid:di_id>', methods=['DELETE'])
+@token_required
+def delete_di(current_user_id, di_id):
     try:
-        n8n_webhook_url = os.getenv('N8N_WEBHOOK_URL_GET_DIS')
-        if not n8n_webhook_url:
-            print("ERROR: La variable de entorno N8N_WEBHOOK_URL_GET_DIS no está configurada.")
-            return jsonify({'error': 'La URL del webhook no está configurada en el servidor'}), 500
+        n8n_base_url = os.getenv('N8N_WEBHOOK_URL_DELETE_DI')
+        if not n8n_base_url:
+            return jsonify({'error': 'La URL del webhook de borrado no está configurada'}), 500
         
-        # Construimos la URL completa con el parámetro
-        target_url = f"{n8n_webhook_url}?userId={current_user_id}"
-        print(f"Llamando al webhook de N8N en: {target_url}")
-
-        # Hacemos la petición a N8N
-        response = requests.get(target_url, timeout=10) # Añadimos un timeout
+        # --- CORRECCIÓN CLAVE AQUÍ ---
+        # Construimos la URL completa: base + path estático + path dinámico + query param
+        full_url = f"{n8n_base_url}/delete-di/{di_id}?userId={current_user_id}"
         
-        print(f"N8N respondió con código de estado: {response.status_code}")
-        
-        # Lanza un error si la respuesta no es 2xx
-        response.raise_for_status() 
-        
-        print("La llamada a N8N fue exitosa. Devolviendo datos al frontend.")
+        response = requests.delete(full_url)
+        response.raise_for_status()
         return jsonify(response.json()), 200
-
-    except requests.exceptions.RequestException as e:
-        # Este es el error más probable si hay un problema de red
-        print(f"!!! ERROR de Petición a N8N: {e}")
-        return jsonify({'error': f'Error al comunicarse con el servicio de orquestación: {e}'}), 500
     except Exception as e:
-        print(f"!!! ERROR Inesperado: {e}")
-        return jsonify({'error': f'Ocurrió un error inesperado: {e}'}), 500
+        return jsonify({'error': f'Ocurrió un error al eliminar el DI: {e}'}), 500
+
+@app.route('/api/dis/<uuid:di_id>/download-url', methods=['GET'])
+@token_required
+def get_download_url(current_user_id, di_id):
+    try:
+        url: str = os.getenv("SUPABASE_URL")
+        key: str = os.getenv("SUPABASE_SERVICE_KEY")
+        if not url or not key:
+            return jsonify({'error': 'Credenciales de Supabase no configuradas en el servidor'}), 500
+        
+        supabase: Client = create_client(url, key)
+        
+        di_result = supabase.table('disenos_instruccionales').select('id_usuario, nombre_archivo').eq('id_di', str(di_id)).single().execute()
+        
+        if not di_result.data:
+            return jsonify({'error': 'DI no encontrado'}), 404
+        
+        if di_result.data['id_usuario'] != current_user_id:
+            return jsonify({'error': 'No autorizado para acceder a este recurso'}), 403
+
+        file_path = f"{current_user_id}/{di_result.data['nombre_archivo']}"
+        
+        signed_url_response = supabase.storage.from_('di-bucket').create_signed_url(file_path, 60)
+        
+        return jsonify(signed_url_response), 200
+    except Exception as e:
+        return jsonify({'error': f'Error al generar URL de descarga: {e}'}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
