@@ -16,7 +16,7 @@ Este proyecto es una aplicación web diseñada para validar Diseños Instruccion
 
 ## 📋 Prerrequisitos
 
-- Docker y Docker Compose instalados.
+- Docker instalado.
 
 ---
 
@@ -53,9 +53,11 @@ API de Flask: **http://localhost:5000**
 
 Interfaz de N8N: **http://localhost:5678**
 
+---
+
 ## Endpoints de la API
 
-Todos los endpoints requieren un token JWT de Supabase en la cabecera Authorization: Bearer <token>.
+Todos los endpoints requieren un token JWT de Supabase en la cabecera Authorization: Bearer <token>
 
 **GET /api/dis:** Lista los DIs del usuario autenticado.
 
