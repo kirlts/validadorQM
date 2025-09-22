@@ -34,11 +34,9 @@ def token_required(f):
 def validate_token(current_user_id):
     return jsonify({"status": "token_valid", "user_id": current_user_id}), 200
 
-# --- RUTA UNIFICADA PARA /api/dis ---
 @app.route('/api/dis', methods=['GET', 'POST'])
 @token_required
 def handle_dis(current_user_id):
-    # Si la petición es GET, ejecutamos la lógica para listar los DIs
     if request.method == 'GET':
         try:
             n8n_webhook_url = os.getenv('N8N_WEBHOOK_URL_GET_DIS')
@@ -52,7 +50,6 @@ def handle_dis(current_user_id):
         except Exception as e:
             return jsonify({'error': f'Ocurrió un error al obtener los DIs: {e}'}), 500
 
-    # Si la petición es POST, ejecutamos la lógica para subir un archivo
     if request.method == 'POST':
         if 'file' not in request.files:
             return jsonify({'error': 'No se encontró el archivo'}), 400
@@ -67,26 +64,35 @@ def handle_dis(current_user_id):
 
             files = {'file': (file.filename, file.stream, file.content_type)}
             response = requests.post(f"{n8n_webhook_url}?userId={current_user_id}", files=files)
-
-            # --- LÍNEAS DE DEPURACIÓN CLAVE ---
-            # Si la respuesta de N8N fue un error (ej. 409), raise_for_status() lanzará una excepción
-            # y la ejecución pasará al bloque 'except'.
+            
             response.raise_for_status()
             
             return jsonify(response.json()), 200
-
         except requests.exceptions.HTTPError as http_err:
-            # Este bloque se activará si N8N devuelve un código de error (4xx o 5xx)
-            print("--- ERROR HTTP RECIBIDO DE N8N ---")
-            print(f"Código de Estado: {http_err.response.status_code}")
-            print("Respuesta de N8N (texto):")
-            print(http_err.response.text)
-            # Pasamos la respuesta de error de N8N al frontend
             return jsonify(http_err.response.json()), http_err.response.status_code
-            
         except Exception as e:
-            print(f"!!! ERROR INESPERADO: {e}")
             return jsonify({'error': f'Ocurrió un error inesperado: {e}'}), 500
+
+# --- NUEVO ENDPOINT PARA REINTENTAR LA TRANSFORMACIÓN ---
+@app.route('/api/dis/<uuid:di_id>/transform', methods=['POST'])
+@token_required
+def transform_di(current_user_id, di_id):
+    try:
+        n8n_webhook_url = os.getenv('N8N_WEBHOOK_URL_TRANSFORM_DI')
+        if not n8n_webhook_url:
+            return jsonify({'error': 'La URL del webhook de transformación no está configurada'}), 500
+        
+        payload = {
+            "di_id": str(di_id),
+            "user_id": current_user_id
+        }
+        response = requests.post(n8n_webhook_url, json=payload)
+        response.raise_for_status()
+
+        return jsonify({"message": "Proceso de transformación iniciado."}), 202 # 202 Accepted
+    except Exception as e:
+        return jsonify({'error': f'No se pudo iniciar la transformación: {e}'}), 500
+
 
 @app.route('/api/dis/<uuid:di_id>', methods=['DELETE'])
 @token_required
@@ -96,8 +102,6 @@ def delete_di(current_user_id, di_id):
         if not n8n_base_url:
             return jsonify({'error': 'La URL del webhook de borrado no está configurada'}), 500
         
-        # --- CORRECCIÓN CLAVE AQUÍ ---
-        # Construimos la URL completa: base + path estático + path dinámico + query param
         full_url = f"{n8n_base_url}/delete-di/{di_id}?userId={current_user_id}"
         
         response = requests.delete(full_url)
