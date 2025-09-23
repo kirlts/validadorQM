@@ -28,7 +28,7 @@ services:
 
   # --- NUEVO SERVICIO N8N ---
   n8n:
-    image: n8nio/n8n:latest
+    build: ./n8n_custom 
     container_name: validador_qm_n8n
     restart: always
     ports:

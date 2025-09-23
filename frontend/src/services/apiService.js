@@ -9,7 +9,6 @@ async function fetchWithAuth(endpoint, options = {}) {
     throw new Error('No hay sesión de usuario activa.');
   }
 
-  // Clave: No establecer Content-Type si el body es FormData
   const headers = {
     'Authorization': `Bearer ${session.access_token}`,
     ...options.headers,
@@ -23,12 +22,17 @@ async function fetchWithAuth(endpoint, options = {}) {
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ error: `Error en la API: ${response.statusText}` }));
-    const error = new Error(errorData.message || errorData.error);
+    const error = new Error(errorData.message || errorData.error || `Error: ${response.statusText}`);
     error.status = response.status;
     throw error;
   }
 
-  return response.json();
+  const contentType = response.headers.get("content-type");
+  if (contentType && contentType.indexOf("application/json") !== -1) {
+    return response.json();
+  } else {
+    return { success: true };
+  }
 }
 
 export function validateToken() {
@@ -54,10 +58,9 @@ export async function uploadDi(file) {
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw { 
-      status: response.status, 
-      message: errorData.message || errorData.error || `Error: ${response.statusText}`
-    };
+    const error = new Error(errorData.message || errorData.error || `Error: ${response.statusText}`);
+    error.status = response.status;
+    throw error;
   }
   return response.json();
 }

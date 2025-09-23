@@ -6,7 +6,7 @@
           <v-card-title class="d-flex align-center">
             <span class="headline">Mis Diseños Instruccionales</span>
             <v-spacer></v-spacer>
-            <v-btn icon variant="text" @click="handleRefresh" :loading="isLoading" :disabled="isLoading || isUploading || !!isTransforming">
+            <v-btn icon variant="text" @click="handleRefresh" :loading="isLoading" :disabled="isActionInProgress">
               <v-icon>mdi-refresh</v-icon>
             </v-btn>
           </v-card-title>
@@ -20,10 +20,10 @@
               :type="notification.type"
               variant="tonal"
               closable
-              @click:close="notification.message = ''"
+              @click:close="clearNotification"
               class="mb-4"
             >
-              {{ notification.message }}
+              <span v-html="notification.message"></span>
             </v-alert>
           </v-card-text>
 
@@ -35,15 +35,17 @@
               :key="design.id_di"
               @click="viewDetails(design)"
               link
+              :class="{ 'item-processing': isProcessing(design.id_di) }"
+              :disabled="isProcessing(design.id_di)"
             >
               <template v-slot:prepend>
-                <v-avatar :color="getStatusColor(design.estado_transformacion)">
+                <v-avatar :color="getStatusColor(design.contenido_jsonld)">
                   <v-progress-circular 
-                    v-if="design.estado_transformacion === 'pendiente' || isTransforming === design.id_di" 
+                    v-if="isProcessing(design.id_di)"
                     indeterminate 
                     size="24"
                   ></v-progress-circular>
-                  <v-icon v-else>{{ getStatusIcon(design.estado_transformacion) }}</v-icon>
+                  <v-icon v-else>{{ getStatusIcon(design.contenido_jsonld) }}</v-icon>
                 </v-avatar>
               </template>
 
@@ -52,14 +54,6 @@
 
               <template v-slot:append>
                 <div class="d-flex align-center">
-                  <v-btn 
-                    v-if="design.estado_transformacion === 'fallido'"
-                    icon="mdi-cogs" 
-                    variant="text" 
-                    @click.stop="showError(design)"
-                    :disabled="!!isTransforming"
-                    title="Ver Error y Reintentar"
-                  ></v-btn>
                   <v-btn icon="mdi-eye" variant="text" @click.stop="handleView(design)" title="Visualizar Archivo"></v-btn>
                   <v-btn icon="mdi-download" variant="text" @click.stop="handleDownload(design)" title="Descargar Archivo Original"></v-btn>
                   <v-btn icon="mdi-delete" variant="text" @click.stop="promptDelete(design)" title="Eliminar DI"></v-btn>
@@ -104,24 +98,6 @@
       </v-card>
     </v-dialog>
 
-    <v-dialog v-model="errorDialog.show" max-width="600px">
-        <v-card>
-            <v-card-title class="headline">Error en la Transformación</v-card-title>
-            <v-card-text>
-                <p class="text-body-1">No se pudo procesar el archivo <strong>{{ errorDialog.itemName }}</strong>. El sistema reportó el siguiente error:</p>
-                <v-alert type="error" variant="tonal" class="mt-4">
-                    <code>{{ errorDialog.message }}</code>
-                </v-alert>
-                <p class="mt-4">Por favor, revisa que el archivo sea un Diseño Instruccional válido. Puedes reintentar el proceso ahora.</p>
-            </v-card-text>
-            <v-card-actions>
-                <v-spacer></v-spacer>
-                <v-btn color="grey-darken-1" text @click="errorDialog.show = false">Cerrar</v-btn>
-                <v-btn color="primary" variant="flat" @click="handleTransform(errorDialog.item)" :loading="isTransforming === errorDialog.item?.id_di">Reintentar</v-btn>
-            </v-card-actions>
-        </v-card>
-    </v-dialog>
-
     <v-dialog v-model="transformDialog.show" max-width="500px">
         <v-card>
             <v-card-title class="headline">Procesamiento Pendiente</v-card-title>
@@ -152,15 +128,21 @@
             <v-icon>mdi-close</v-icon>
           </v-btn>
         </v-toolbar>
-        <v-card-text class="pa-0">
+        <v-card-text class="pa-0" style="height: calc(100vh - 64px);">
           <v-progress-linear v-if="!viewerDialog.url" indeterminate></v-progress-linear>
           <iframe v-if="viewerDialog.url" :src="viewerDialog.url" width="100%" height="100%" frameborder="0"></iframe>
         </v-card-text>
       </v-card>
     </v-dialog>
-
   </v-container>
 </template>
+
+<style scoped>
+.item-processing {
+  opacity: 0.5;
+  pointer-events: none;
+}
+</style>
 
 <script setup>
 import { ref, onMounted, reactive, computed } from 'vue';
@@ -175,78 +157,79 @@ const { designs, isLoading } = storeToRefs(diStore);
 
 const isUploading = ref(false);
 const isTransforming = ref(null);
+const isDeleting = ref(null);
 const notification = reactive({ message: '', type: 'success' });
 
-// Estados de los diálogos
+// Diálogos
 const deleteDialog = reactive({ show: false, itemId: null, itemName: '' });
-const errorDialog = reactive({ show: false, item: null, itemName: '', message: '' });
 const transformDialog = reactive({ show: false, item: null, itemName: '' });
 const viewerDialog = reactive({ show: false, url: '', itemName: '' });
+
+const isActionInProgress = computed(() => isUploading.value || !!isTransforming.value || !!isDeleting.value);
 
 onMounted(() => {
   diStore.fetchDesigns();
 });
 
-function handleRefresh() {
-  diStore.fetchDesigns(true);
+function handleRefresh(force = true) {
+  return diStore.fetchDesigns(force);
 }
 
+// Lógica de navegación principal
 function viewDetails(design) {
-    notification.message = ''; // Limpia notificaciones al interactuar
-    switch(design.estado_transformacion) {
-        case 'exitoso':
-            router.push({ name: 'detail', params: { id: design.id_di } });
-            break;
-        case 'fallido':
-            showError(design);
-            break;
-        case 'pendiente':
-        default:
-            promptTransform(design);
-            break;
+    clearNotification();
+    if (design.contenido_jsonld) {
+        router.push({ name: 'detail', params: { id: design.id_di } });
+    } else {
+        promptTransform(design);
     }
 }
 
-// Funciones de ayuda para la UI
-function getStatusIcon(status) {
-    const icons = {
-        exitoso: 'mdi-check-circle',
-        fallido: 'mdi-alert-circle',
-        pendiente: 'mdi-help-circle-outline' 
-    };
-    return icons[status] || 'mdi-help-circle-outline';
+// --- Lógica de UI ---
+function isProcessing(designId) {
+  return isTransforming.value === designId || isDeleting.value === designId;
 }
 
-function getStatusColor(status) {
-    const colors = {
-        exitoso: 'success',
-        fallido: 'error',
-        pendiente: 'grey-lighten-1'
-    };
-    return colors[status] || 'grey-lighten-1';
+function getStatusIcon(jsonldContent) {
+    return jsonldContent ? 'mdi-check-circle' : 'mdi-alert-circle';
 }
+
+function getStatusColor(jsonldContent) {
+    return jsonldContent ? 'success' : 'error';
+}
+
+function clearNotification() {
+  notification.message = '';
+}
+
+// --- Lógica de Acciones ---
 
 function triggerFileInput() {
-  notification.message = '';
+  clearNotification();
   document.getElementById('fileInput').click();
 }
 
 async function handleFileUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
+
   isUploading.value = true;
-  notification.message = '';
+  clearNotification();
+
   try {
     await uploadDi(file);
-    notification.message = 'Archivo subido. La transformación automática ha comenzado.';
+    notification.message = `Archivo "${file.name}" subido correctamente.`;
     notification.type = 'success';
-    setTimeout(() => handleRefresh(), 1500); 
   } catch (error) {
-    notification.message = error.message || 'Ocurrió un error inesperado al subir.';
+    if (error.status === 409) {
+      notification.message = `Error: El archivo "${file.name}" ya existe.`;
+    } else {
+      notification.message = error.message || 'Ocurrió un error inesperado al subir.';
+    }
     notification.type = 'error';
   } finally {
     isUploading.value = false;
-    event.target.value = '';
+    await handleRefresh();
   }
 }
 
@@ -258,60 +241,52 @@ function promptDelete(design) {
 
 async function confirmDelete() {
   if (!deleteDialog.itemId) return;
+  const itemIdToDelete = deleteDialog.itemId;
+  const itemNameToDelete = deleteDialog.itemName;
+
+  deleteDialog.show = false;
+  isDeleting.value = itemIdToDelete;
+  notification.message = `Eliminando "${itemNameToDelete}"...`;
+  notification.type = 'info';
+
   try {
-    await deleteDi(deleteDialog.itemId);
+    await deleteDi(itemIdToDelete);
     notification.message = 'Archivo eliminado correctamente.';
     notification.type = 'success';
-    handleRefresh();
   } catch (error) {
     notification.message = `Error al eliminar: ${error.message}`;
     notification.type = 'error';
   } finally {
-    deleteDialog.show = false;
-  }
-}
-
-async function handleDownload(design) {
-  try {
-    notification.message = `Preparando descarga para ${design.nombre_archivo}...`;
-    notification.type = 'info';
-    const response = await getDownloadUrl(design.id_di);
-    window.open(response.signedURL, '_blank');
-    notification.message = '';
-  } catch (error) {
-    notification.message = `Error al descargar: ${error.message}`;
-    notification.type = 'error';
+    isDeleting.value = null;
+    handleRefresh();
   }
 }
 
 async function handleTransform(design) {
   if (!design) return;
-  errorDialog.show = false;
-  transformDialog.show = false;
   
+  transformDialog.show = false;
   isTransforming.value = design.id_di;
-  notification.message = `Iniciando transformación para "${design.nombre_archivo}"...`;
+  notification.message = `Transformando "${design.nombre_archivo}"...`;
   notification.type = 'info';
   
   try {
     const response = await transformDiToLd(design.id_di);
-    notification.message = response.message || 'Proceso de transformación iniciado. El estado se actualizará en unos momentos.';
+    
+    // CORRECCIÓN: Formatea el mensaje de notificación según tu especificación
+    const status = response.status || 'éxito';
+    const message = response.message || 'Proceso completado.';
+    
+    notification.message = `Transformación: ${status}<br> ${message}`;
     notification.type = 'success';
-    setTimeout(() => handleRefresh(), 5000);
+
   } catch (error) {
-    notification.message = `Error al iniciar la transformación: ${error.message}`;
+    notification.message = `Falló la transformación: ${error.message}`;
     notification.type = 'error';
-    handleRefresh();
   } finally {
+    await handleRefresh();
     isTransforming.value = null;
   }
-}
-
-function showError(design) {
-    errorDialog.item = design;
-    errorDialog.itemName = design.nombre_archivo;
-    errorDialog.message = design.error_transformacion || 'No se proporcionaron detalles del error.';
-    errorDialog.show = true;
 }
 
 function promptTransform(design) {
@@ -322,17 +297,16 @@ function promptTransform(design) {
 
 async function handleView(design) {
   viewerDialog.itemName = design.nombre_archivo;
-  viewerDialog.url = ''; // Limpia la URL anterior
+  viewerDialog.url = '';
   viewerDialog.show = true;
   
   try {
     const response = await getDownloadUrl(design.id_di);
-    // Usamos el visor de Google Docs, que es compatible con DOCX y PDF
     viewerDialog.url = `https://docs.google.com/gview?url=${encodeURIComponent(response.signedURL)}&embedded=true`;
   } catch (error) {
     notification.message = `Error al obtener la URL de visualización: ${error.message}`;
     notification.type = 'error';
-    viewerDialog.show = false; // Cierra el diálogo si falla
+    viewerDialog.show = false;
   }
 }
 </script>

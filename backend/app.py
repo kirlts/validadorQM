@@ -29,6 +29,49 @@ def token_required(f):
         return f(current_user_id, *args, **kwargs)
     return decorated
 
+@app.route('/api/dis/<uuid:di_id>/transform', methods=['POST'])
+@token_required
+def transform_di(current_user_id, di_id):
+    try:
+        n8n_webhook_url = os.getenv('N8N_WEBHOOK_URL_TRANSFORM_DI')
+        if not n8n_webhook_url:
+            return jsonify({'error': 'La URL del webhook de transformación no está configurada'}), 500
+
+        payload = {"di_id": str(di_id), "user_id": current_user_id}
+        response = requests.post(n8n_webhook_url, json=payload)
+        response.raise_for_status()
+        
+        # CORRECCIÓN: Se valida explícitamente la estructura de la respuesta de N8N
+        try:
+            data = response.json()
+            # Si N8N devuelve una lista, tomamos el primer objeto
+            if isinstance(data, list) and len(data) > 0:
+                data = data[0]
+
+            if 'status' in data and 'message' in data:
+                return jsonify(data), response.status_code
+            else:
+                # Si el JSON no tiene la estructura esperada, se devuelve un error
+                return jsonify({
+                    'status': 'error_inesperado', 
+                    'message': 'La respuesta del workflow no tuvo el formato esperado (status, message).'
+                }), 502 # 502 Bad Gateway
+        except ValueError:
+            return jsonify({
+                'status': 'error_inesperado', 
+                'message': 'La respuesta del workflow no fue un JSON válido.'
+            }), 502
+    
+    except requests.exceptions.HTTPError as http_err:
+        try:
+            error_json = http_err.response.json()
+        except ValueError:
+            error_json = {'error': http_err.response.text or 'Error desconocido del servidor'}
+        return jsonify(error_json), http_err.response.status_code
+    except Exception as e:
+        return jsonify({'error': f'No se pudo iniciar la transformación: {e}'}), 500
+
+# --- (El resto de los endpoints de app.py permanecen sin cambios) ---
 @app.route('/api/validate-token', methods=['POST'])
 @token_required
 def validate_token(current_user_id):
@@ -40,70 +83,34 @@ def handle_dis(current_user_id):
     if request.method == 'GET':
         try:
             n8n_webhook_url = os.getenv('N8N_WEBHOOK_URL_GET_DIS')
-            if not n8n_webhook_url:
-                return jsonify({'error': 'La URL del webhook no está configurada'}), 500
-            
             response = requests.get(f"{n8n_webhook_url}?userId={current_user_id}")
             response.raise_for_status()
-            
             return jsonify(response.json()), 200
         except Exception as e:
             return jsonify({'error': f'Ocurrió un error al obtener los DIs: {e}'}), 500
-
     if request.method == 'POST':
-        if 'file' not in request.files:
-            return jsonify({'error': 'No se encontró el archivo'}), 400
+        if 'file' not in request.files: return jsonify({'error': 'No se encontró el archivo'}), 400
         file = request.files['file']
-        if file.filename == '':
-            return jsonify({'error': 'No se seleccionó ningún archivo'}), 400
-        
+        if file.filename == '': return jsonify({'error': 'No se seleccionó ningún archivo'}), 400
         try:
             n8n_webhook_url = os.getenv('N8N_WEBHOOK_URL_UPLOAD_DI')
-            if not n8n_webhook_url:
-                return jsonify({'error': 'La URL del webhook de subida no está configurada'}), 500
-
             files = {'file': (file.filename, file.stream, file.content_type)}
             response = requests.post(f"{n8n_webhook_url}?userId={current_user_id}", files=files)
-            
             response.raise_for_status()
-            
             return jsonify(response.json()), 200
         except requests.exceptions.HTTPError as http_err:
-            return jsonify(http_err.response.json()), http_err.response.status_code
+            try: error_json = http_err.response.json()
+            except ValueError: error_json = {'error': http_err.response.text}
+            return jsonify(error_json), http_err.response.status_code
         except Exception as e:
             return jsonify({'error': f'Ocurrió un error inesperado: {e}'}), 500
-
-# --- NUEVO ENDPOINT PARA REINTENTAR LA TRANSFORMACIÓN ---
-@app.route('/api/dis/<uuid:di_id>/transform', methods=['POST'])
-@token_required
-def transform_di(current_user_id, di_id):
-    try:
-        n8n_webhook_url = os.getenv('N8N_WEBHOOK_URL_TRANSFORM_DI')
-        if not n8n_webhook_url:
-            return jsonify({'error': 'La URL del webhook de transformación no está configurada'}), 500
-        
-        payload = {
-            "di_id": str(di_id),
-            "user_id": current_user_id
-        }
-        response = requests.post(n8n_webhook_url, json=payload)
-        response.raise_for_status()
-
-        return jsonify({"message": "Proceso de transformación iniciado."}), 202 # 202 Accepted
-    except Exception as e:
-        return jsonify({'error': f'No se pudo iniciar la transformación: {e}'}), 500
-
 
 @app.route('/api/dis/<uuid:di_id>', methods=['DELETE'])
 @token_required
 def delete_di(current_user_id, di_id):
     try:
         n8n_base_url = os.getenv('N8N_WEBHOOK_URL_DELETE_DI')
-        if not n8n_base_url:
-            return jsonify({'error': 'La URL del webhook de borrado no está configurada'}), 500
-        
         full_url = f"{n8n_base_url}/delete-di/{di_id}?userId={current_user_id}"
-        
         response = requests.delete(full_url)
         response.raise_for_status()
         return jsonify(response.json()), 200
@@ -114,25 +121,14 @@ def delete_di(current_user_id, di_id):
 @token_required
 def get_download_url(current_user_id, di_id):
     try:
-        url: str = os.getenv("SUPABASE_URL")
-        key: str = os.getenv("SUPABASE_SERVICE_KEY")
-        if not url or not key:
-            return jsonify({'error': 'Credenciales de Supabase no configuradas en el servidor'}), 500
-        
-        supabase: Client = create_client(url, key)
-        
+        url = os.getenv("SUPABASE_URL")
+        key = os.getenv("SUPABASE_SERVICE_KEY")
+        supabase = create_client(url, key)
         di_result = supabase.table('disenos_instruccionales').select('id_usuario, nombre_archivo').eq('id_di', str(di_id)).single().execute()
-        
-        if not di_result.data:
-            return jsonify({'error': 'DI no encontrado'}), 404
-        
-        if di_result.data['id_usuario'] != current_user_id:
-            return jsonify({'error': 'No autorizado para acceder a este recurso'}), 403
-
+        if not di_result.data: return jsonify({'error': 'DI no encontrado'}), 404
+        if di_result.data['id_usuario'] != current_user_id: return jsonify({'error': 'No autorizado'}), 403
         file_path = f"{current_user_id}/{di_result.data['nombre_archivo']}"
-        
         signed_url_response = supabase.storage.from_('di-bucket').create_signed_url(file_path, 60)
-        
         return jsonify(signed_url_response), 200
     except Exception as e:
         return jsonify({'error': f'Error al generar URL de descarga: {e}'}), 500
