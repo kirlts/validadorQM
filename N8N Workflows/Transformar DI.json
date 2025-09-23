@@ -12,7 +12,7 @@
       "typeVersion": 2.1,
       "position": [
         -16,
-        624
+        732
       ],
       "id": "7b03a6a6-8f81-483d-920b-a6227ca7b20b",
       "name": "Webhook",
@@ -35,8 +35,8 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        192,
-        624
+        208,
+        732
       ],
       "id": "d8df72da-d110-48ff-960d-7b9494145ced",
       "name": "Get a row",
@@ -63,8 +63,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        400,
-        624
+        656,
+        732
       ],
       "id": "95725620-dd86-4f0a-81b4-83941e856e20",
       "name": "HTTP Request",
@@ -84,8 +84,8 @@
       "type": "n8n-nodes-base.readWriteFile",
       "typeVersion": 1,
       "position": [
-        608,
-        624
+        880,
+        732
       ],
       "id": "7ec9e0a1-3bda-4c50-be1f-9a451a264d0f",
       "name": "Write Binary File"
@@ -97,21 +97,21 @@
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
       "position": [
-        816,
-        624
+        1104,
+        732
       ],
       "id": "1067b30e-bdb0-4840-998a-05e8f7c8e9bb",
       "name": "Convertir"
     },
     {
       "parameters": {
-        "jsCode": "// Este código toma el texto extraído del DI y construye un prompt robusto y enriquecido.\n\n// Obtenemos el texto plano del nodo anterior, que ahora viene del nodo \"Read Binary File\".\nconst textoDI = Buffer.from($input.first().binary.data.data, 'base64').toString('utf8');\n\n// CORRECCIÓN 1: Un glosario mucho más completo que incluye propiedades de datos.\nconst contextoGlosario = `\n--- INICIO CONTEXTO GLOSARIO (Tu fuente de verdad) ---\n- **Curso (Curso):** La entidad principal. Propiedades: nombre, codigo, creditos, numeroSemanas, modalidad, docenteExperto, disenadorInstruccional, resultadoAprendizajeGeneral, tieneUnidad, contieneSemana.\n- **UnidadDidactica (UnidadDidactica):** Una división temática. Propiedades: nombre, tieneAE.\n- **AprendizajeEsperado (AprendizajeEsperado):** Objetivo de aprendizaje de una unidad. Propiedades: descripcion, verboAccion, nivelTaxonomico, tieneIndicador.\n- **IndicadorLogro (IndicadorLogro):** Evidencia observable de un AE. Propiedades: descripcion, verboAccion.\n- **Semana (Semana):** Una unidad temporal. Propiedades: numeroSemanaOrdinal, nombre, contieneActividad, contieneEvaluacion.\n- **ActividadAprendizaje (ActividadAprendizaje):** Tarea para estudiantes. Propiedades: nombre, descripcion, estrategiaDidactica, ocurreEn, apoyaIndicador, utilizaRecurso.\n- **Evaluacion (Evaluacion):** Medición del aprendizaje. Propiedades: nombre, tipoEvaluacion, pesoCalificacion, retroalimentacion, ocurreEn, evaluaIndicador, utilizaInstrumento.\n- **RecursoAprendizaje (RecursoAprendizaje):** Material de apoyo. Propiedades: nombre, formatoRecurso, urlRecurso.\n- **InstrumentoEvaluacion (InstrumentoEvaluacion):** Herramienta para evaluar (ej. Rúbrica). Propiedades: nombre.\n- **ResultadoAprendizajeGeneral (ResultadoAprendizajeGeneral):** El resultado global del curso. Propiedades: descripcion.\n--- FIN CONTEXTO GLOSARIO ---\n`;\n\n// CORRECCIÓN 2: Se añade una regla con un ejemplo explícito.\nconst reglasEstrictas = `\n--- INICIO REGLAS ESTRICTAS ---\n1. Tu única salida DEBE ser un bloque de código JSON válido. No incluyas explicaciones ni texto adicional fuera del JSON.\n2. Toda la salida DEBE estar contenida dentro de un objeto principal con una única clave \"@graph\", que contendrá un array de objetos.\n3. Cada entidad (Curso, Semana, etc.) DEBE ser un objeto separado en el array \"@graph\".\n4. Cada objeto en el array DEBE tener una propiedad \"@id\" única y un \"@type\" que corresponda a un término del glosario. Usa prefijos para los IDs (ej: \"curso:ATDF102\", \"unidad:U1\", \"ae:AE1\").\n5. Para enlazar entidades, usa un array de objetos con la clave \"@id\". Ejemplo: \"tieneUnidad\": [{ \"@id\": \"unidad:U1\" }].\n6. Utiliza EXCLUSIVAMENTE los términos definidos en el CONTEXTO GLOSARIO. No inventes nuevas propiedades.\n7. EJEMPLO DE ENTIDAD COMPLETA: { \"@id\": \"curso:ATDF102\", \"@type\": \"Curso\", \"nombre\": \"Introducción a la Programación\", \"codigo\": \"ATDF102\", \"creditos\": \"3\" }\n--- FIN REGLAS ESTRICTAS ---\n`;\n\nconst promptFinal = `\nTu rol es ser un sistema experto que transforma texto de un Diseño Instruccional (DI) a un formato JSON-LD. Tu única fuente de verdad para la estructura y los términos es el vocabulario que te proporciono.\n\n${reglasEstrictas}\n\n${contextoGlosario}\n\nAhora, transforma el siguiente texto del Diseño Instruccional, extrayendo todos los datos relevantes para cada entidad:\n\n--- INICIO TEXTO A TRANSFORMAR ---\n${textoDI}\n--- FIN TEXTO A TRANSFORMAR ---\n`;\n\nreturn {\n  json: {\n    prompt: promptFinal\n  }\n};"
+        "jsCode": "const textoDI = $input.first().json.texto\n  \nconst contextoGlosario = `\n--- INICIO CONTEXTO GLOSARIO (Tu fuente de verdad) ---\n- **Curso (Curso):** La entidad principal. Propiedades: nombre, codigo, creditos, numeroSemanas, modalidad, docenteExperto, disenadorInstruccional, resultadoAprendizajeGeneral, tieneUnidad, contieneSemana.\n- **UnidadDidactica (UnidadDidactica):** Una división temática. Propiedades: nombre, tieneAE.\n- **AprendizajeEsperado (AprendizajeEsperado):** Objetivo de aprendizaje de una unidad. Propiedades: descripcion, verboAccion, nivelTaxonomico, tieneIndicador.\n- **IndicadorLogro (IndicadorLogro):** Evidencia observable de un AE. Propiedades: descripcion, verboAccion.\n- **Semana (Semana):** Una unidad temporal. Propiedades: numeroSemanaOrdinal, nombre, contieneActividad, contieneEvaluacion.\n- **ActividadAprendizaje (ActividadAprendizaje):** Tarea para estudiantes. Propiedades: nombre, descripcion, estrategiaDidactica, ocurreEn, apoyaIndicador, utilizaRecurso.\n- **Evaluacion (Evaluacion):** Medición del aprendizaje. Propiedades: nombre, tipoEvaluacion, pesoCalificacion, retroalimentacion, ocurreEn, evaluaIndicador, utilizaInstrumento.\n- **RecursoAprendizaje (RecursoAprendizaje):** Material de apoyo. Propiedades: nombre, formatoRecurso, urlRecurso.\n- **InstrumentoEvaluacion (InstrumentoEvaluacion):** Herramienta para evaluar (ej. Rúbrica). Propiedades: nombre.\n- **ResultadoAprendizajeGeneral (ResultadoAprendizajeGeneral):** El resultado global del curso. Propiedades: descripcion.\n--- FIN CONTEXTO GLOSARIO ---\n`;\n\n// CORRECCIÓN 2: Se añade una regla con un ejemplo explícito.\nconst reglasEstrictas = `\n--- INICIO REGLAS ESTRICTAS ---\n1. Tu única salida DEBE ser un bloque de código JSON válido. No incluyas explicaciones ni texto adicional fuera del JSON.\n2. Toda la salida DEBE estar contenida dentro de un objeto principal con una única clave \"@graph\", que contendrá un array de objetos.\n3. Cada entidad (Curso, Semana, etc.) DEBE ser un objeto separado en el array \"@graph\".\n4. Cada objeto en el array DEBE tener una propiedad \"@id\" única y un \"@type\" que corresponda a un término del glosario. Usa prefijos para los IDs (ej: \"curso:ATDF102\", \"unidad:U1\", \"ae:AE1\").\n5. Para enlazar entidades, usa un array de objetos con la clave \"@id\". Ejemplo: \"tieneUnidad\": [{ \"@id\": \"unidad:U1\" }].\n6. Utiliza EXCLUSIVAMENTE los términos definidos en el CONTEXTO GLOSARIO. No inventes nuevas propiedades.\n7. EJEMPLO DE ENTIDAD COMPLETA: { \"@id\": \"curso:ATDF102\", \"@type\": \"Curso\", \"nombre\": \"Introducción a la Programación\", \"codigo\": \"ATDF102\", \"creditos\": \"3\" }\n--- FIN REGLAS ESTRICTAS ---\n`;\n\nconst promptFinal = `\nTu rol es ser un sistema experto que transforma texto de un Diseño Instruccional (DI) a un formato JSON-LD. Tu única fuente de verdad para la estructura y los términos es el vocabulario que te proporciono.\n\n${reglasEstrictas}\n\n${contextoGlosario}\n\nAhora, transforma el siguiente texto del Diseño Instruccional, extrayendo todos los datos relevantes para cada entidad:\n\n--- INICIO TEXTO A TRANSFORMAR ---\n${textoDI}\n--- FIN TEXTO A TRANSFORMAR ---\n`;\n\nreturn {\n  json: {\n    prompt: promptFinal\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1248,
-        624
+        2128,
+        608
       ],
       "id": "32fbf358-1ba5-4894-a838-4a958dbc4109",
       "name": "Construir Prompt"
@@ -124,47 +124,11 @@
       "type": "n8n-nodes-base.readWriteFile",
       "typeVersion": 1,
       "position": [
-        1040,
-        624
+        1328,
+        732
       ],
       "id": "5bcbd1af-084c-4696-bdb1-07eac782c063",
       "name": "Leer output"
-    },
-    {
-      "parameters": {
-        "promptType": "define",
-        "text": "={{ $json.prompt }}",
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 2.2,
-      "position": [
-        1456,
-        624
-      ],
-      "id": "b3593009-6563-480e-b70f-3be983d88f72",
-      "name": "AI Agent"
-    },
-    {
-      "parameters": {
-        "options": {
-          "temperature": 0.2
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
-      "typeVersion": 1,
-      "position": [
-        1456,
-        848
-      ],
-      "id": "aa4fb7a9-10d5-4fea-9ad7-0a0add3624de",
-      "name": "Google Gemini Chat Model",
-      "credentials": {
-        "googlePalmApi": {
-          "id": "1fRbxclakan4SB2c",
-          "name": "Api 1"
-        }
-      }
     },
     {
       "parameters": {
@@ -173,11 +137,12 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1808,
-        624
+        2704,
+        608
       ],
       "id": "397b25d8-225a-4067-a290-b0f5d6fe70b1",
-      "name": "Validar y Limpiar"
+      "name": "Validar y Limpiar",
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -200,7 +165,7 @@
             },
             {
               "fieldId": "estado_transformacion",
-              "fieldValue": "Completa"
+              "fieldValue": "success"
             },
             {
               "fieldId": "error_transformacion",
@@ -212,11 +177,424 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        2016,
-        624
+        3152,
+        512
       ],
       "id": "ae9b6aca-0964-4cc9-bfc0-dba4354d95ca",
       "name": "Subir JSON-LD",
+      "credentials": {
+        "supabaseApi": {
+          "id": "m0DUcQthM94wIR7O",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        3824,
+        704
+      ],
+      "id": "191bd605-e595-42ad-8863-ffa851c6b9f3",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "3d55d6d8-c2db-49bf-b6ce-f1f4de150ad3",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notExists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2928,
+        608
+      ],
+      "id": "fa0e1e53-0bdc-42dd-a29a-81720060658c",
+      "name": "Validated?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a9f8b2ad-bbe7-4647-93d9-4fce1e8dbed3",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": "error",
+              "operator": {
+                "type": "string",
+                "operation": "notExists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3376,
+        512
+      ],
+      "id": "13202297-a415-4c51-8c9f-53f9e583a00e",
+      "name": "Uploaded?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c7f60397-b7f6-46e2-90e4-eb865c37c20e",
+              "name": "status",
+              "value": "error",
+              "type": "string"
+            },
+            {
+              "id": "1207d819-a15e-4dab-83ee-15d93a02b044",
+              "name": "message",
+              "value": "={{ $json.error }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3600,
+        608
+      ],
+      "id": "1493a45b-292e-4e3f-8e2d-d935fef6aab4",
+      "name": "Not uploaded"
+    },
+    {
+      "parameters": {
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2424,
+        832
+      ],
+      "id": "aa4fb7a9-10d5-4fea-9ad7-0a0add3624de",
+      "name": "AI Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "1fRbxclakan4SB2c",
+          "name": "Api 1"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "disenos_instruccionales",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id_di",
+              "condition": "eq",
+              "keyValue": "={{ $('Webhook').item.json.body.di_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "estado_transformacion",
+              "fieldValue": "=error"
+            },
+            {
+              "fieldId": "error_transformacion",
+              "fieldValue": "={{ $json.error }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3376,
+        800
+      ],
+      "id": "e7f21a9f-5e14-45f8-99e1-e8bf4454257d",
+      "name": "Insert error",
+      "credentials": {
+        "supabaseApi": {
+          "id": "m0DUcQthM94wIR7O",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c7f60397-b7f6-46e2-90e4-eb865c37c20e",
+              "name": "status",
+              "value": "error",
+              "type": "string"
+            },
+            {
+              "id": "1207d819-a15e-4dab-83ee-15d93a02b044",
+              "name": "message",
+              "value": "={{ $('Validated?').item.json.error }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3600,
+        800
+      ],
+      "id": "2433ddfd-bdbb-4e27-8cf1-bbfe9c02b92a",
+      "name": "Not Validated"
+    },
+    {
+      "parameters": {
+        "jsCode": "const textoDI = Buffer.from($input.first().binary.data.data, 'base64').toString('utf8');\n\nreturn {\n  json: {\n    texto: textoDI\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1552,
+        732
+      ],
+      "id": "bf9e7e4b-b0fa-4a46-86e0-4625b65f0d85",
+      "name": "Extraer Texto"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1848,
+        956
+      ],
+      "id": "508b1e93-e614-49bc-86bd-3a63d2222816",
+      "name": "Classifier Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "1fRbxclakan4SB2c",
+          "name": "Api 1"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fe524bbd-7044-4189-84ae-341f175fcba7",
+              "name": "status",
+              "value": "error",
+              "type": "string"
+            },
+            {
+              "id": "3b44c5ad-e4dc-4b3a-8556-9ddda9dd8d2b",
+              "name": "message",
+              "value": "El archivo no se pudo clasificar como Diseño Instruccional.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3600,
+        1020
+      ],
+      "id": "97663464-2e1e-4baf-8efa-1401c46416bc",
+      "name": "Not DI"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "disenos_instruccionales",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id_di",
+              "condition": "eq",
+              "keyValue": "={{ $('Webhook').item.json.body.di_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "estado_transformacion",
+              "fieldValue": "=error"
+            },
+            {
+              "fieldId": "error_transformacion",
+              "fieldValue": "El archivo no se pudo clasificar como Diseño Instruccional."
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3376,
+        1020
+      ],
+      "id": "281a5edb-c9dc-4696-b8f2-273436bbe955",
+      "name": "Insert format error",
+      "credentials": {
+        "supabaseApi": {
+          "id": "m0DUcQthM94wIR7O",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "inputText": "={{ $json.texto }}",
+        "categories": {
+          "categories": [
+            {
+              "category": "Es un Diseño Instruccional o documento académico",
+              "description": "Un diseño instruccional (DI) constituye un proceso estructurado para crear experiencias de aprendizaje efectivas y eficientes. El objetivo es guiar a los estudiantes a través de una serie de actividades y evaluaciones para que logren resultados de aprendizaje específicos. Un DI integra elementos pedagógicos y organizacionales en un plan coherente, detallando qué se enseñará, cómo se enseñará y cómo se evaluará el aprendizaje."
+            },
+            {
+              "category": "No es un Diseño Instruccional ni un documento académico",
+              "description": "Cualquier otro caso, en el que el texto proporcionado no es claramente un diseño instruccional o documento académico."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "position": [
+        1776,
+        732
+      ],
+      "id": "9eacdd23-d2d3-485d-98a3-5b2838d3daba",
+      "name": "Clasificador"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Construir Prompt').item.json.prompt }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        2352,
+        608
+      ],
+      "id": "b3593009-6563-480e-b70f-3be983d88f72",
+      "name": "Transformador a JSON-LD"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fc9f62f1-cbee-4053-b8bd-e2e35123464f",
+              "name": "status",
+              "value": "success",
+              "type": "string"
+            },
+            {
+              "id": "36093849-ddf4-48bc-9804-432d007b6b74",
+              "name": "message",
+              "value": "Transformation successful",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3600,
+        416
+      ],
+      "id": "218dc320-dcf3-4f4d-80af-b02cd420c5fe",
+      "name": "success"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "disenos_instruccionales",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id_di",
+              "condition": "eq",
+              "keyValue": "={{ $('Webhook').item.json.body.di_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "estado_transformacion",
+              "fieldValue": "=processing"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        432,
+        732
+      ],
+      "id": "1f5b4243-44bd-44e6-9bbc-14e93553f4ec",
+      "name": "Insert Processing",
       "credentials": {
         "supabaseApi": {
           "id": "m0DUcQthM94wIR7O",
@@ -241,7 +619,7 @@
           "params": {},
           "query": {},
           "body": {
-            "di_id": "3beea40b-47c2-4ed3-b14d-d3c52374c138",
+            "di_id": "9f79d255-ae66-4ea4-92c1-3e51b9c397db",
             "user_id": "08599cea-434a-4be5-9079-0ee73b619ce4"
           },
           "webhookUrl": "http://localhost:5678/webhook/e71af77b-8c5f-4f15-af5a-f0fa2d75d279",
@@ -266,7 +644,7 @@
       "main": [
         [
           {
-            "node": "HTTP Request",
+            "node": "Insert Processing",
             "type": "main",
             "index": 0
           }
@@ -310,7 +688,7 @@
       "main": [
         [
           {
-            "node": "AI Agent",
+            "node": "Transformador a JSON-LD",
             "type": "main",
             "index": 0
           }
@@ -321,29 +699,7 @@
       "main": [
         [
           {
-            "node": "Construir Prompt",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Google Gemini Chat Model": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "AI Agent",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "AI Agent": {
-      "main": [
-        [
-          {
-            "node": "Validar y Limpiar",
+            "node": "Extraer Texto",
             "type": "main",
             "index": 0
           }
@@ -354,7 +710,193 @@
       "main": [
         [
           {
+            "node": "Validated?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Subir JSON-LD": {
+      "main": [
+        [
+          {
+            "node": "Uploaded?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validated?": {
+      "main": [
+        [
+          {
             "node": "Subir JSON-LD",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Insert error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Uploaded?": {
+      "main": [
+        [
+          {
+            "node": "success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Not uploaded",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Not uploaded": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Transformador a JSON-LD",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert error": {
+      "main": [
+        [
+          {
+            "node": "Not Validated",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Not Validated": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Texto": {
+      "main": [
+        [
+          {
+            "node": "Clasificador",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classifier Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Clasificador",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert format error": {
+      "main": [
+        [
+          {
+            "node": "Not DI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Not DI": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clasificador": {
+      "main": [
+        [
+          {
+            "node": "Construir Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Insert format error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transformador a JSON-LD": {
+      "main": [
+        [
+          {
+            "node": "Validar y Limpiar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "success": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Processing": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
             "type": "main",
             "index": 0
           }
@@ -366,7 +908,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "2fc8416a-2a70-4ce9-a9cf-8203e4471971",
+  "versionId": "7ec7df72-a517-46d1-b873-72ac157eb38e",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "81f9aa344da0912f901e07498089d3dd54ba6d767dbe4d581a261cb5d8886bb9"

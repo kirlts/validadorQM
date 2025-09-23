@@ -28,43 +28,45 @@
           </v-card-text>
 
           <v-progress-linear v-if="isLoading" indeterminate color="primary"></v-progress-linear>
-          
-          <v-list v-if="!isLoading && designs.length > 0" lines="two">
-            <v-list-item
-              v-for="design in designs"
-              :key="design.id_di"
-              @click="viewDetails(design)"
-              link
-              :class="{ 'item-processing': isProcessing(design.id_di) }"
-              :disabled="isProcessing(design.id_di)"
-            >
-              <template v-slot:prepend>
-                <v-avatar :color="getStatusColor(design.contenido_jsonld)">
-                  <v-progress-circular 
-                    v-if="isProcessing(design.id_di)"
-                    indeterminate 
-                    size="24"
-                  ></v-progress-circular>
-                  <v-icon v-else>{{ getStatusIcon(design.contenido_jsonld) }}</v-icon>
-                </v-avatar>
-              </template>
+          <v-progress-linear v-if="isPolling && !isLoading" indeterminate color="primary"></v-progress-linear>
 
-              <v-list-item-title>{{ design.nombre_archivo }}</v-list-item-title>
-              <v-list-item-subtitle>{{ 'Creado: ' + new Date(design.created_at).toLocaleDateString() }}</v-list-item-subtitle>
+          <v-list v-if="diStore.hasLoaded" lines="two">
+            <template v-if="designs.length > 0">
+              <v-list-item
+                v-for="design in designs"
+                :key="design.id_di"
+                @click="viewDetails(design)"
+                link
+                :class="{ 'item-processing': isProcessing(design) }"
+                :disabled="isProcessing(design)"
+              >
+                <template v-slot:prepend>
+                  <v-avatar :color="getStatusColor(design.contenido_jsonld, design.estado_transformacion)">
+                    <v-progress-circular 
+                      v-if="isProcessing(design)"
+                      indeterminate 
+                      size="24"
+                    ></v-progress-circular>
+                    <v-icon v-else>{{ getStatusIcon(design.contenido_jsonld, design.estado_transformacion) }}</v-icon>
+                  </v-avatar>
+                </template>
 
-              <template v-slot:append>
-                <div class="d-flex align-center">
-                  <v-btn icon="mdi-eye" variant="text" @click.stop="handleView(design)" title="Visualizar Archivo"></v-btn>
-                  <v-btn icon="mdi-download" variant="text" @click.stop="handleDownload(design)" title="Descargar Archivo Original"></v-btn>
-                  <v-btn icon="mdi-delete" variant="text" @click.stop="promptDelete(design)" title="Eliminar DI"></v-btn>
-                </div>
-              </template>
-            </v-list-item>
+                <v-list-item-title>{{ design.nombre_archivo }}</v-list-item-title>
+                <v-list-item-subtitle>{{ 'Creado: ' + new Date(design.created_at).toLocaleDateString() }}</v-list-item-subtitle>
+
+                <template v-slot:append>
+                  <div class="d-flex align-center">
+                    <v-btn icon="mdi-eye" variant="text" @click.stop="handleView(design)" title="Visualizar Archivo"></v-btn>
+                    <v-btn icon="mdi-download" variant="text" @click.stop="handleDownload(design)" title="Descargar Archivo Original"></v-btn>
+                    <v-btn icon="mdi-delete" variant="text" @click.stop="promptDelete(design)" title="Eliminar DI"></v-btn>
+                  </div>
+                </template>
+              </v-list-item>
+            </template>
+            <v-card-text v-else class="text-center py-4">
+              No has subido ningún Diseño Instruccional todavía.
+            </v-card-text>
           </v-list>
-          
-          <v-card-text v-if="!isLoading && designs.length === 0" class="text-center py-4">
-            No has subido ningún Diseño Instruccional todavía.
-          </v-card-text>
           
           <v-card-actions>
             <v-spacer></v-spacer>
@@ -112,7 +114,7 @@
             <v-card-actions class="px-4 pb-4">
                 <v-btn text @click="transformDialog.show = false">Cancelar</v-btn>
                 <v-spacer></v-spacer>
-                <v-btn color="primary" variant="flat" @click="handleTransform(transformDialog.item)" :loading="isTransforming === transformDialog.item?.id_di">
+                <v-btn color="primary" variant="flat" @click="handleTransform(transformDialog.item)" :loading="isProcessing(transformDialog.item)">
                     Transformar
                 </v-btn>
             </v-card-actions>
@@ -145,7 +147,7 @@
 </style>
 
 <script setup>
-import { ref, onMounted, reactive, computed } from 'vue';
+import { ref, onMounted, reactive, computed, watch, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useDiStore } from '@/stores/diStore';
 import { storeToRefs } from 'pinia';
@@ -156,26 +158,55 @@ const diStore = useDiStore();
 const { designs, isLoading } = storeToRefs(diStore);
 
 const isUploading = ref(false);
-const isTransforming = ref(null);
 const isDeleting = ref(null);
 const notification = reactive({ message: '', type: 'success' });
+const pollingInterval = ref(null);
+const isPolling = ref(false);
 
-// Diálogos
 const deleteDialog = reactive({ show: false, itemId: null, itemName: '' });
 const transformDialog = reactive({ show: false, item: null, itemName: '' });
 const viewerDialog = reactive({ show: false, url: '', itemName: '' });
 
-const isActionInProgress = computed(() => isUploading.value || !!isTransforming.value || !!isDeleting.value);
+const isActionInProgress = computed(() => isUploading.value || isPolling.value || !!isDeleting.value);
 
 onMounted(() => {
   diStore.fetchDesigns();
 });
 
-function handleRefresh(force = true) {
-  return diStore.fetchDesigns(force);
+onUnmounted(() => {
+  stopPolling();
+});
+
+watch(designs, (newDesigns) => {
+  const isAnyProcessing = newDesigns.some(d => d.estado_transformacion === 'processing');
+  if (isAnyProcessing && !pollingInterval.value) {
+    startPolling();
+  } else if (!isAnyProcessing && pollingInterval.value) {
+    stopPolling();
+  }
+}, { deep: true, immediate: true });
+
+function startPolling() {
+  console.log('Iniciando polling...');
+  isPolling.value = true;
+  pollingInterval.value = setInterval(() => {
+    diStore.fetchDesigns();
+  }, 5000);
 }
 
-// Lógica de navegación principal
+function stopPolling() {
+  if (pollingInterval.value) {
+    console.log('Deteniendo polling.');
+    clearInterval(pollingInterval.value);
+    pollingInterval.value = null;
+    isPolling.value = false;
+  }
+}
+
+function handleRefresh() {
+  return diStore.fetchDesigns();
+}
+
 function viewDetails(design) {
     clearNotification();
     if (design.contenido_jsonld) {
@@ -185,28 +216,49 @@ function viewDetails(design) {
     }
 }
 
-// --- Lógica de UI ---
-function isProcessing(designId) {
-  return isTransforming.value === designId || isDeleting.value === designId;
+function isProcessing(design) {
+  return design.estado_transformacion === 'processing' || isDeleting.value === design.id_di;
 }
 
-function getStatusIcon(jsonldContent) {
-    return jsonldContent ? 'mdi-check-circle' : 'mdi-alert-circle';
+function getStatusIcon(jsonldContent, estadoTransformacion) {
+  if (estadoTransformacion === 'processing') return 'mdi-clock-time-three-outline';
+  return jsonldContent ? 'mdi-check-circle' : 'mdi-alert-circle';
 }
 
-function getStatusColor(jsonldContent) {
-    return jsonldContent ? 'success' : 'error';
+function getStatusColor(jsonldContent, estadoTransformacion) {
+  if (estadoTransformacion === 'processing') return 'warning';
+  return jsonldContent ? 'success' : 'error';
 }
 
 function clearNotification() {
   notification.message = '';
 }
 
-// --- Lógica de Acciones ---
-
 function triggerFileInput() {
   clearNotification();
   document.getElementById('fileInput').click();
+}
+
+async function handleDownload(design) {
+  clearNotification();
+
+  try {
+    const response = await getDownloadUrl(design.id_di);
+    const url = response.signedURL;
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = design.nombre_archivo;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    notification.message = `Descarga de "${design.nombre_archivo}" iniciada.`;
+    notification.type = 'success';
+  } catch (error) {
+    notification.message = `Error al descargar: ${error.message}`;
+    notification.type = 'error';
+  }
 }
 
 async function handleFileUpload(event) {
@@ -266,26 +318,31 @@ async function handleTransform(design) {
   if (!design) return;
   
   transformDialog.show = false;
-  isTransforming.value = design.id_di;
+  
+  // SOLUCIÓN: Actualizar el estado localmente de forma optimista
+  design.estado_transformacion = 'processing';
+
   notification.message = `Transformando "${design.nombre_archivo}"...`;
   notification.type = 'info';
   
   try {
     const response = await transformDiToLd(design.id_di);
     
-    // CORRECCIÓN: Formatea el mensaje de notificación según tu especificación
-    const status = response.status || 'éxito';
-    const message = response.message || 'Proceso completado.';
-    
-    notification.message = `Transformación: ${status}<br> ${message}`;
-    notification.type = 'success';
+    // El polling se encarga de actualizar el estado real, la notificación local
+    // solo debe reflejar si el inicio del proceso fue exitoso o no
+    if (response.status === 'success') {
+      notification.message = `Transformación iniciada: ${response.message}`;
+      notification.type = 'info';
+    } else {
+      notification.message = `La transformación falló: ${response.message}`;
+      notification.type = 'error';
+    }
 
   } catch (error) {
     notification.message = `Falló la transformación: ${error.message}`;
     notification.type = 'error';
-  } finally {
-    await handleRefresh();
-    isTransforming.value = null;
+    // Si la API falla al iniciar, el estado se revierte
+    design.estado_transformacion = 'failed';
   }
 }
 

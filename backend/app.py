@@ -1,5 +1,5 @@
 import os
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, make_response
 from dotenv import load_dotenv
 import jwt
 from flask_cors import CORS
@@ -71,7 +71,6 @@ def transform_di(current_user_id, di_id):
     except Exception as e:
         return jsonify({'error': f'No se pudo iniciar la transformación: {e}'}), 500
 
-# --- (El resto de los endpoints de app.py permanecen sin cambios) ---
 @app.route('/api/validate-token', methods=['POST'])
 @token_required
 def validate_token(current_user_id):
@@ -85,7 +84,14 @@ def handle_dis(current_user_id):
             n8n_webhook_url = os.getenv('N8N_WEBHOOK_URL_GET_DIS')
             response = requests.get(f"{n8n_webhook_url}?userId={current_user_id}")
             response.raise_for_status()
-            return jsonify(response.json()), 200
+            
+            # SOLUCIÓN: Añadir cabeceras para deshabilitar la caché
+            resp = make_response(jsonify(response.json()))
+            resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+            resp.headers['Pragma'] = 'no-cache'
+            resp.headers['Expires'] = '0'
+            return resp
+            
         except Exception as e:
             return jsonify({'error': f'Ocurrió un error al obtener los DIs: {e}'}), 500
     if request.method == 'POST':
