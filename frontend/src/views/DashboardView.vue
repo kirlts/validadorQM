@@ -331,7 +331,7 @@ async function handleTransform(design) {
     // El polling se encarga de actualizar el estado real, la notificación local
     // solo debe reflejar si el inicio del proceso fue exitoso o no
     if (response.status === 'success') {
-      notification.message = `Transformación iniciada: ${response.message}`;
+      notification.message = `${response.message}`;
       notification.type = 'info';
     } else {
       notification.message = `La transformación falló: ${response.message}`;
