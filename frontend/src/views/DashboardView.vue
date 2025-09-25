@@ -1,3 +1,5 @@
+// frontend/src/views/DashboardView.vue
+
 <template>
   <v-container>
     <v-row justify="center">
@@ -28,37 +30,34 @@
           </v-card-text>
 
           <v-progress-linear v-if="isLoading" indeterminate color="primary"></v-progress-linear>
-          <v-progress-linear v-if="isPolling && !isLoading" indeterminate color="primary"></v-progress-linear>
 
-          <v-list v-if="diStore.hasLoaded" lines="two">
+          <v-list v-if="!isLoading" lines="two">
             <template v-if="designs.length > 0">
               <v-list-item
                 v-for="design in designs"
                 :key="design.id_di"
                 @click="viewDetails(design)"
                 link
-                :class="{ 'item-processing': isProcessing(design) }"
-                :disabled="isProcessing(design)"
               >
                 <template v-slot:prepend>
-                  <v-avatar :color="getStatusColor(design.contenido_jsonld, design.estado_transformacion)">
-                    <v-progress-circular 
-                      v-if="isProcessing(design)"
+                  <v-avatar :color="getStatusColor(design)">
+                     <v-progress-circular 
+                      v-if="isProcessing(design)" 
                       indeterminate 
                       size="24"
                     ></v-progress-circular>
-                    <v-icon v-else>{{ getStatusIcon(design.contenido_jsonld, design.estado_transformacion) }}</v-icon>
+                    <v-icon v-else>{{ getStatusIcon(design) }}</v-icon>
                   </v-avatar>
                 </template>
 
                 <v-list-item-title>{{ design.nombre_archivo }}</v-list-item-title>
-                <v-list-item-subtitle>{{ 'Creado: ' + new Date(design.created_at).toLocaleDateString() }}</v-list-item-subtitle>
+                <v-list-item-subtitle>{{ getStatusText(design) }}</v-list-item-subtitle>
 
                 <template v-slot:append>
                   <div class="d-flex align-center">
                     <v-btn icon="mdi-eye" variant="text" @click.stop="handleView(design)" title="Visualizar Archivo"></v-btn>
-                    <v-btn icon="mdi-download" variant="text" @click.stop="handleDownload(design)" title="Descargar Archivo Original"></v-btn>
-                    <v-btn icon="mdi-delete" variant="text" @click.stop="promptDelete(design)" title="Eliminar DI"></v-btn>
+                    <v-btn icon="mdi-download" variant="text" @click.stop="handleDownload(design)" title="Descargar Archivo Original" :disabled="isProcessing(design)"></v-btn>
+                    <v-btn icon="mdi-delete" variant="text" @click.stop="promptDelete(design)" title="Eliminar DI" :loading="isDeleting === design.id_di" :disabled="isActionInProgress"></v-btn>
                   </div>
                 </template>
               </v-list-item>
@@ -70,14 +69,8 @@
           
           <v-card-actions>
             <v-spacer></v-spacer>
-            <input 
-              type="file" 
-              id="fileInput" 
-              @change="handleFileUpload" 
-              hidden 
-              accept=".pdf,.doc,.docx"
-            >
-            <v-btn color="primary" variant="flat" @click="triggerFileInput" :loading="isUploading">
+            <input type="file" id="fileInput" @change="handleFileUpload" hidden accept=".pdf,.doc,.docx">
+            <v-btn color="primary" variant="flat" @click="triggerFileInput" :loading="isUploading" :disabled="isActionInProgress">
               <v-icon left>mdi-upload</v-icon>
               Subir Nuevo DI
             </v-btn>
@@ -85,8 +78,8 @@
         </v-card>
       </v-col>
     </v-row>
-
-    <v-dialog v-model="deleteDialog.show" max-width="500px">
+    
+    <v-dialog v-model="deleteDialog.show" max-width="500px" persistent>
       <v-card>
         <v-card-title class="headline">Confirmar Eliminación</v-card-title>
         <v-card-text>
@@ -100,54 +93,42 @@
       </v-card>
     </v-dialog>
 
-    <v-dialog v-model="transformDialog.show" max-width="500px">
+    <v-dialog v-model="transformDialog.show" max-width="500px" persistent>
         <v-card>
             <v-card-title class="headline">Procesamiento Pendiente</v-card-title>
             <v-card-text>
-                <v-alert type="info" variant="tonal" class="mb-4">
-                    Este Diseño Instruccional aún no ha sido procesado para su análisis.
-                </v-alert>
-                <p class="text-justify">
-                    Para poder validarlo e interactuar con el asistente de IA, primero debe ser transformado a un formato estructurado.
-                </p>
+                <p>Para analizar este DI, primero debe ser transformado. Este proceso puede tardar unos segundos y el estado se actualizará automáticamente.</p>
             </v-card-text>
             <v-card-actions class="px-4 pb-4">
                 <v-btn text @click="transformDialog.show = false">Cancelar</v-btn>
                 <v-spacer></v-spacer>
-                <v-btn color="primary" variant="flat" @click="handleTransform(transformDialog.item)" :loading="isProcessing(transformDialog.item)">
-                    Transformar
+                <v-btn color="primary" variant="flat" @click="handleTransform" :loading="isTransforming">
+                    Transformar Ahora
                 </v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
     
-    <v-dialog v-model="viewerDialog.show" fullscreen>
-      <v-card>
+    <v-dialog v-model="viewerDialog.show" fullscreen scrollable>
+       <v-card>
         <v-toolbar color="primary" dark>
           <v-toolbar-title>{{ viewerDialog.itemName }}</v-toolbar-title>
           <v-spacer></v-spacer>
-          <v-btn icon @click="viewerDialog.show = false">
-            <v-icon>mdi-close</v-icon>
-          </v-btn>
+          <v-btn icon @click="viewerDialog.show = false"><v-icon>mdi-close</v-icon></v-btn>
         </v-toolbar>
         <v-card-text class="pa-0" style="height: calc(100vh - 64px);">
-          <v-progress-linear v-if="!viewerDialog.url" indeterminate></v-progress-linear>
-          <iframe v-if="viewerDialog.url" :src="viewerDialog.url" width="100%" height="100%" frameborder="0"></iframe>
+          <div v-if="!viewerDialog.url" class="d-flex justify-center align-center h-100">
+            <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
+          </div>
+          <iframe v-else :src="viewerDialog.url" width="100%" height="100%" frameborder="0"></iframe>
         </v-card-text>
       </v-card>
     </v-dialog>
   </v-container>
 </template>
 
-<style scoped>
-.item-processing {
-  opacity: 0.5;
-  pointer-events: none;
-}
-</style>
-
 <script setup>
-import { ref, onMounted, reactive, computed, watch, onUnmounted } from 'vue';
+import { ref, reactive, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useDiStore } from '@/stores/diStore';
 import { storeToRefs } from 'pinia';
@@ -159,129 +140,73 @@ const { designs, isLoading } = storeToRefs(diStore);
 
 const isUploading = ref(false);
 const isDeleting = ref(null);
+const isTransforming = ref(false);
 const notification = reactive({ message: '', type: 'success' });
-const pollingInterval = ref(null);
-const isPolling = ref(false);
 
 const deleteDialog = reactive({ show: false, itemId: null, itemName: '' });
-const transformDialog = reactive({ show: false, item: null, itemName: '' });
+const transformDialog = reactive({ show: false, item: null });
 const viewerDialog = reactive({ show: false, url: '', itemName: '' });
 
-const isActionInProgress = computed(() => isUploading.value || isPolling.value || !!isDeleting.value);
-
-onMounted(() => {
-  diStore.fetchDesigns();
-});
-
-onUnmounted(() => {
-  stopPolling();
-});
-
-watch(designs, (newDesigns) => {
-  const isAnyProcessing = newDesigns.some(d => d.estado_transformacion === 'processing');
-  if (isAnyProcessing && !pollingInterval.value) {
-    startPolling();
-  } else if (!isAnyProcessing && pollingInterval.value) {
-    stopPolling();
-  }
-}, { deep: true, immediate: true });
-
-function startPolling() {
-  console.log('Iniciando polling...');
-  isPolling.value = true;
-  pollingInterval.value = setInterval(() => {
-    diStore.fetchDesigns();
-  }, 5000);
-}
-
-function stopPolling() {
-  if (pollingInterval.value) {
-    console.log('Deteniendo polling.');
-    clearInterval(pollingInterval.value);
-    pollingInterval.value = null;
-    isPolling.value = false;
-  }
-}
+const isActionInProgress = computed(() => isUploading.value || isTransforming.value || !!isDeleting.value);
 
 function handleRefresh() {
-  return diStore.fetchDesigns();
+  notification.message = '';
+  diStore.fetchDesigns();
 }
 
 function viewDetails(design) {
     clearNotification();
-    if (design.contenido_jsonld) {
-        router.push({ name: 'detail', params: { id: design.id_di } });
-    } else {
+    if (design.estado_transformacion === 'error' || !design.contenido_jsonld) {
         promptTransform(design);
+    } else {
+        router.push({ name: 'detail', params: { id: design.id_di } });
     }
 }
 
-function isProcessing(design) {
-  return design.estado_transformacion === 'processing' || isDeleting.value === design.id_di;
-}
-
-function getStatusIcon(jsonldContent, estadoTransformacion) {
-  if (estadoTransformacion === 'processing') return 'mdi-clock-time-three-outline';
-  return jsonldContent ? 'mdi-check-circle' : 'mdi-alert-circle';
-}
-
-function getStatusColor(jsonldContent, estadoTransformacion) {
-  if (estadoTransformacion === 'processing') return 'warning';
-  return jsonldContent ? 'success' : 'error';
-}
-
-function clearNotification() {
-  notification.message = '';
-}
-
-function triggerFileInput() {
-  clearNotification();
-  document.getElementById('fileInput').click();
-}
-
-async function handleDownload(design) {
-  clearNotification();
-
-  try {
-    const response = await getDownloadUrl(design.id_di);
-    const url = response.signedURL;
-
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = design.nombre_archivo;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-
-    notification.message = `Descarga de "${design.nombre_archivo}" iniciada.`;
-    notification.type = 'success';
-  } catch (error) {
-    notification.message = `Error al descargar: ${error.message}`;
-    notification.type = 'error';
+const isProcessing = (design) => design.estado_transformacion === 'processing';
+const getStatusIcon = (design) => {
+  switch (design.estado_transformacion) {
+    case 'success': return 'mdi-check-circle';
+    case 'error': return 'mdi-alert-circle';
+    default: return 'mdi-file-question';
   }
-}
+};
+const getStatusColor = (design) => {
+  switch (design.estado_transformacion) {
+    case 'processing': return 'blue-grey';
+    case 'success': return 'success';
+    case 'error': return 'error';
+    default: return 'grey';
+  }
+};
+const getStatusText = (design) => {
+    switch (design.estado_transformacion) {
+        case 'processing': return 'Transformando...';
+        case 'success': return `Listo para validar. Creado: ${new Date(design.created_at).toLocaleDateString()}`;
+        case 'error': return 'Error en la transformación. Haz clic para reintentar.';
+        case 'pending': return `Pendiente. Creado: ${new Date(design.created_at).toLocaleDateString()}`;
+        default: return `Creado: ${new Date(design.created_at).toLocaleDateString()}`;
+    }
+};
+
+function clearNotification() { notification.message = ''; }
+function triggerFileInput() { clearNotification(); document.getElementById('fileInput').click(); }
 
 async function handleFileUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
-
   isUploading.value = true;
   clearNotification();
-
   try {
-    await uploadDi(file);
-    notification.message = `Archivo "${file.name}" subido correctamente.`;
+    const result = await uploadDi(file);
+    notification.message = result.message || `"${file.name}" subido con éxito.`;
     notification.type = 'success';
   } catch (error) {
-    if (error.status === 409) {
-      notification.message = `Error: El archivo "${file.name}" ya existe.`;
-    } else {
-      notification.message = error.message || 'Ocurrió un error inesperado al subir.';
-    }
+    notification.message = `<b>Error al subir "${file.name}":</b><br>${error.message}`;
     notification.type = 'error';
   } finally {
     isUploading.value = false;
-    await handleRefresh();
+    event.target.value = '';
   }
 }
 
@@ -293,75 +218,52 @@ function promptDelete(design) {
 
 async function confirmDelete() {
   if (!deleteDialog.itemId) return;
-  const itemIdToDelete = deleteDialog.itemId;
-  const itemNameToDelete = deleteDialog.itemName;
-
-  deleteDialog.show = false;
-  isDeleting.value = itemIdToDelete;
-  notification.message = `Eliminando "${itemNameToDelete}"...`;
-  notification.type = 'info';
-
+  isDeleting.value = deleteDialog.itemId;
   try {
-    await deleteDi(itemIdToDelete);
-    notification.message = 'Archivo eliminado correctamente.';
+    await deleteDi(deleteDialog.itemId);
+    notification.message = 'DI eliminado.';
     notification.type = 'success';
   } catch (error) {
     notification.message = `Error al eliminar: ${error.message}`;
     notification.type = 'error';
   } finally {
     isDeleting.value = null;
-    handleRefresh();
-  }
-}
-
-async function handleTransform(design) {
-  if (!design) return;
-  
-  transformDialog.show = false;
-  
-  // SOLUCIÓN: Actualizar el estado localmente de forma optimista
-  design.estado_transformacion = 'processing';
-
-  notification.message = `Transformando "${design.nombre_archivo}"...`;
-  notification.type = 'info';
-  
-  try {
-    const response = await transformDiToLd(design.id_di);
-    
-    // El polling se encarga de actualizar el estado real, la notificación local
-    // solo debe reflejar si el inicio del proceso fue exitoso o no
-    if (response.status === 'success') {
-      notification.message = `${response.message}`;
-      notification.type = 'info';
-    } else {
-      notification.message = `La transformación falló: ${response.message}`;
-      notification.type = 'error';
-    }
-
-  } catch (error) {
-    notification.message = `Falló la transformación: ${error.message}`;
-    notification.type = 'error';
-    // Si la API falla al iniciar, el estado se revierte
-    design.estado_transformacion = 'failed';
+    deleteDialog.show = false;
   }
 }
 
 function promptTransform(design) {
     transformDialog.item = design;
-    transformDialog.itemName = design.nombre_archivo;
     transformDialog.show = true;
+}
+
+async function handleTransform() {
+  const design = transformDialog.item;
+  if (!design) return;
+  isTransforming.value = true;
+  clearNotification();
+  try {
+    await transformDiToLd(design.id_di);
+    notification.message = `Transformación iniciada para "<b>${design.nombre_archivo}</b>". La lista se actualizará automáticamente.`;
+    notification.type = 'info';
+  } catch (error) {
+    notification.message = `Falló la transformación: ${error.message}`;
+    notification.type = 'error';
+  } finally {
+    isTransforming.value = false;
+    transformDialog.show = false;
+  }
 }
 
 async function handleView(design) {
   viewerDialog.itemName = design.nombre_archivo;
   viewerDialog.url = '';
   viewerDialog.show = true;
-  
   try {
     const response = await getDownloadUrl(design.id_di);
     viewerDialog.url = `https://docs.google.com/gview?url=${encodeURIComponent(response.signedURL)}&embedded=true`;
   } catch (error) {
-    notification.message = `Error al obtener la URL de visualización: ${error.message}`;
+    notification.message = `Error al obtener la URL: ${error.message}`;
     notification.type = 'error';
     viewerDialog.show = false;
   }

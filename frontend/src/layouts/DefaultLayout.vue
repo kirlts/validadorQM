@@ -1,43 +1,35 @@
+// frontend/src/layouts/DefaultLayout.vue
+
 <template>
   <v-app>
     <v-app-bar app color="primary" dark>
-      <v-toolbar-title>Validador QM</v-toolbar-title>
+      <v-toolbar-title class="font-weight-bold">
+        Validador QM
+      </v-toolbar-title>
       <v-spacer></v-spacer>
-      <v-btn @click="handleLogout" text>
-        <v-icon left>mdi-logout</v-icon>
-        Cerrar Sesión
+      <v-btn icon @click="handleLogout" title="Cerrar Sesión">
+        <v-icon>mdi-logout</v-icon>
       </v-btn>
     </v-app-bar>
-    
-    <v-main>
-      <router-view />
+
+    <v-main class="bg-grey-lighten-3">
+      <v-container>
+        <router-view />
+      </v-container>
     </v-main>
   </v-app>
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router';
-import { supabase } from '@/supabase';
-import { useDiStore } from '@/stores/diStore';
+import { useAuthStore } from '@/stores/authStore';
 
-const router = useRouter();
-const diStore = useDiStore();
+const authStore = useAuthStore();
 
-async function handleLogout() {
-  try {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-    
-    // ANTES de redirigir, limpiamos los datos del store
-    diStore.clearDesigns(); 
-
-    router.push('/');
-  } catch (error) {
-    console.error('Error al cerrar sesión:', error.message);
-  }
-}
+const handleLogout = () => {
+  authStore.signOut();
+};
 </script>
 
 <style scoped>
-/* Puedes añadir estilos específicos para el layout si es necesario */
+/* Puedes añadir estilos específicos para el layout si lo necesitas */
 </style>

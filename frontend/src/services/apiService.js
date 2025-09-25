@@ -1,3 +1,4 @@
+// frontend/src/services/apiService.js
 import { supabase } from '@/supabase';
 
 const API_URL = 'http://localhost:5000/api';
@@ -9,16 +10,20 @@ async function fetchWithAuth(endpoint, options = {}) {
     throw new Error('No hay sesión de usuario activa.');
   }
 
+  const fetchOptions = { ...options, cache: 'no-store' };
+
   const headers = {
     'Authorization': `Bearer ${session.access_token}`,
-    ...options.headers,
+    ...fetchOptions.headers,
   };
 
-  if (!(options.body instanceof FormData)) {
+  if (!(fetchOptions.body instanceof FormData)) {
     headers['Content-Type'] = 'application/json';
   }
 
-  const response = await fetch(`${API_URL}/${endpoint}`, { ...options, headers });
+  fetchOptions.headers = headers;
+
+  const response = await fetch(`${API_URL}/${endpoint}`, fetchOptions);
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ error: `Error en la API: ${response.statusText}` }));
@@ -35,10 +40,6 @@ async function fetchWithAuth(endpoint, options = {}) {
   }
 }
 
-export function validateToken() {
-  return fetchWithAuth('validate-token', { method: 'POST' });
-}
-
 export function getDis() {
   return fetchWithAuth('dis');
 }
@@ -46,16 +47,13 @@ export function getDis() {
 export async function uploadDi(file) {
   const formData = new FormData();
   formData.append('file', file);
-
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error('No hay sesión de usuario activa.');
-
   const response = await fetch(`${API_URL}/dis`, {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${session.access_token}` },
     body: formData,
   });
-
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     const error = new Error(errorData.message || errorData.error || `Error: ${response.statusText}`);
@@ -75,4 +73,12 @@ export function getDownloadUrl(diId) {
 
 export function transformDiToLd(diId) {
   return fetchWithAuth(`dis/${diId}/transform`, { method: 'POST' });
+}
+
+export function getDiValidation(diId) {
+  return fetchWithAuth(`dis/${diId}/validation`);
+}
+
+export function generateDiValidation(diId) {
+  return fetchWithAuth(`dis/${diId}/validate`, { method: 'POST' });
 }
