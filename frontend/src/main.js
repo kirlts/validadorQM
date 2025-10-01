@@ -5,34 +5,32 @@ import { createPinia } from 'pinia';
 import App from './App.vue';
 import router from './router';
 import { supabase } from './supabase';
-import { useAuthStore } from './stores/authStore';
+import { useAppStore } from './stores/appStore';
 
-// Vuetify
+// Estilos de Vuetify
 import 'vuetify/styles';
+// --- LÍNEA CORREGIDA ---
+// Importa la fuente de íconos Material Design Icons
+import '@mdi/font/css/materialdesignicons.css'; 
+// --- FIN DE LA CORRECCIÓN ---
 import { createVuetify } from 'vuetify';
 import * as components from 'vuetify/components';
 import * as directives from 'vuetify/directives';
-import '@mdi/font/css/materialdesignicons.css';
 
 const vuetify = createVuetify({ components, directives });
-
 const app = createApp(App);
 app.use(createPinia());
 
-// Función de inicialización asíncrona
 async function initializeApp() {
-  const authStore = useAuthStore();
-
-  // Espera a que Supabase verifique la sesión inicial
-  const { data: { session } } = await supabase.auth.getSession();
-  await authStore.initialize(session);
-
-  // El listener de onAuthStateChange maneja los cambios POSTERIORES (login/logout)
+  const appStore = useAppStore();
+  
   supabase.auth.onAuthStateChange((event, session) => {
-    authStore.setSession(session);
+    appStore.setSession(session);
   });
   
-  // Ahora que la autenticación está lista, usamos el router y montamos la app
+  const { data: { session } } = await supabase.auth.getSession();
+  await appStore.initialize(session);
+
   app.use(router);
   app.use(vuetify);
   app.mount('#app');

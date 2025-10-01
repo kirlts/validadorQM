@@ -1,5 +1,3 @@
-// frontend/src/views/DetailView.vue
-
 <template>
   <v-container>
     <v-row justify="center">
@@ -8,63 +6,121 @@
           <v-icon start>mdi-arrow-left</v-icon>
           Volver al Dashboard
         </v-btn>
-        <v-card class="mb-4">
+
+        <!-- Card del Informe de Validación (existente) -->
+        <v-card v-if="diData" class="mb-4">
           <v-card-title class="headline">
-            Informe de Calidad para: {{ diData?.nombre_archivo || 'Cargando...' }}
+            Informe para: {{ diData.nombre_archivo }}
           </v-card-title>
           <v-card-subtitle>
             Análisis de alineación con la rúbrica Quality Matters.
           </v-card-subtitle>
           <v-divider></v-divider>
           
-          <v-card-text v-if="isLoadingReport" class="text-center pa-4">
-            <v-progress-circular indeterminate color="primary"></v-progress-circular>
-            <p class="mt-2 text-grey-darken-1">Cargando datos del informe...</p>
-          </v-card-text>
-
-          <v-card-text v-else-if="diData && diData.estado_evaluacion === 'success' && diData.evaluacion_di">
+          <v-card-text v-if="diData.estado_evaluacion === 'success' && diData.evaluacion_di">
             <v-expansion-panels variant="inset">
-              <v-expansion-panel
-                v-for="item in reportSections"
-                :key="item.key"
-              >
+              <v-expansion-panel v-for="item in reportSections" :key="item.key">
                 <v-expansion-panel-title>{{ item.title }}</v-expansion-panel-title>
                 <v-expansion-panel-text class="report-text" v-if="diData.evaluacion_di[item.key]">
                   {{ diData.evaluacion_di[item.key] }}
                 </v-expansion-panel-text>
-                 <v-expansion-panel-text class="text-grey" v-else>
+                <v-expansion-panel-text class="text-grey" v-else>
                   No se encontraron datos para esta sección.
                 </v-expansion-panel-text>
               </v-expansion-panel>
             </v-expansion-panels>
           </v-card-text>
 
-          <v-card-text v-else-if="diData && diData.estado_evaluacion === 'processing'" class="text-center pa-4">
+          <v-card-text v-else-if="diData.estado_evaluacion === 'processing'" class="text-center pa-4">
             <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
             <p class="mt-4 text-grey-darken-1 text-h6">Generando informe de validación...</p>
-            <p class="text-grey-darken-2">Este proceso puede tardar unos minutos. El estado se actualizará automáticamente.</p>
+            <p class="text-grey-darken-2">Este proceso puede tardar unos minutos.</p>
           </v-card-text>
 
-          <v-card-text v-else-if="diData && diData.estado_evaluacion === 'error'" class="pa-4">
+          <v-card-text v-else-if="diData.estado_evaluacion === 'error'" class="pa-4">
             <v-alert type="error" variant="tonal" border="start" prominent>
               <h3 class="mb-2">Error al Generar el Informe</h3>
-              <p>Ocurrió un error durante la validación del DI. Detalles del error:</p>
-              <code class="d-block mt-2 pa-2 error-code">{{ diData.error_evaluacion || 'No se proporcionaron detalles.' }}</code>
-              <v-btn color="error" variant="outlined" class="mt-4" @click="startValidation" :loading="isStartingValidation">
-                Reintentar Generación
+              <p>Ocurrió un error: <code class="d-block mt-2 pa-2 error-code">{{ diData.error_evaluacion || 'No hay detalles.' }}</code></p>
+              <v-btn color="error" variant="outlined" class="mt-4" @click="startValidation" :loading="isStartingValidation" :disabled="isActionDisabled">
+                Reintentar
               </v-btn>
             </v-alert>
           </v-card-text>
 
           <v-card-text v-else class="text-center pa-4">
             <v-alert type="info" variant="tonal" class="mb-4">
-              Aún no se ha generado un informe de validación para este Diseño Instruccional.
+              Aún no se ha generado un informe para este DI.
             </v-alert>
-            <v-btn color="primary" @click="startValidation" :loading="isStartingValidation">
+            <v-btn color="primary" @click="startValidation" :loading="isStartingValidation" :disabled="isActionDisabled">
               <v-icon left>mdi-play-circle-outline</v-icon>
-              Generar Informe de Validación
+              Generar Informe
             </v-btn>
           </v-card-text>
+        </v-card>
+        <v-card v-else class="text-center pa-10">
+            <v-progress-circular indeterminate color="primary"></v-progress-circular>
+            <p class="mt-4">Cargando datos del Diseño Instruccional...</p>
+        </v-card>
+
+        <!-- ================================================================== -->
+        <!-- NUEVA CARD PARA LA MODIFICACIÓN INTERACTIVA (SIMULADA) -->
+        <!-- ================================================================== -->
+        <v-card class="mt-6" v-if="diData && diData.estado_evaluacion === 'success'">
+          <v-card-title>Modificación Interactiva (Demo)</v-card-title>
+          <v-card-subtitle>Propón cambios en lenguaje natural para mejorar el DI.</v-card-subtitle>
+          <v-divider class="mt-2"></v-divider>
+
+          <v-card-text>
+            <!-- Área para mostrar la respuesta de la IA -->
+            <v-expand-transition>
+              <div v-if="suggestionResponse">
+                <v-alert
+                  icon="mdi-auto-fix"
+                  variant="tonal"
+                  color="info"
+                  class="mb-4"
+                  border="start"
+                >
+                  <h4 class="mb-2">Sugerencia de Implementación:</h4>
+                  <!-- Usamos v-html porque la respuesta mock tiene formato HTML -->
+                  <div v-html="suggestionResponse"></div>
+                </v-alert>
+              </div>
+            </v-expand-transition>
+
+            <!-- Área de texto para la entrada del usuario -->
+            <v-textarea
+              v-model="userInput"
+              label="Describe la modificación que deseas realizar"
+              placeholder="Ej: Añadir una actividad práctica en la semana 3 sobre bucles for."
+              rows="3"
+              variant="outlined"
+              auto-grow
+              clearable
+              :disabled="isSuggestionLoading"
+            ></v-textarea>
+          </v-card-text>
+
+          <!-- Barra de progreso lineal mientras se "genera" la respuesta -->
+          <v-progress-linear
+            :active="isSuggestionLoading"
+            indeterminate
+            color="primary"
+          ></v-progress-linear>
+
+          <v-card-actions class="pa-4">
+            <v-spacer></v-spacer>
+            <v-btn
+              color="primary"
+              variant="flat"
+              @click="handleSuggestionRequest"
+              :loading="isSuggestionLoading"
+              :disabled="!userInput.trim()"
+              prepend-icon="mdi-send"
+            >
+              Enviar Propuesta
+            </v-btn>
+          </v-card-actions>
         </v-card>
       </v-col>
     </v-row>
@@ -73,22 +129,25 @@
 
 <style scoped>
 .report-text { white-space: pre-wrap; text-align: justify; }
-.error-code { background-color: rgba(0,0,0,0.05); border-radius: 4px; padding: 4px 8px; display: block; white-space: pre-wrap; word-break: break-all; }
+.error-code { background-color: rgba(0,0,0,0.05); border-radius: 4px; }
 </style>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
-import { supabase } from '@/supabase';
-import { getDiValidation, generateDiValidation } from '@/services/apiService';
+import { ref, computed } from 'vue';
+import { useAppStore } from '@/stores/appStore';
+import { generateDiValidation } from '@/services/apiService';
+// Importamos la función de simulación desde mockApiService
+import { getModificationSuggestion } from '@/services/mockApiService';
 
-const props = defineProps({
-  id: { type: String, required: true }
-});
-
-const diData = ref(null);
-const isLoadingReport = ref(true);
+const props = defineProps({ id: { type: String, required: true } });
+const appStore = useAppStore();
 const isStartingValidation = ref(false);
-const realtimeChannel = ref(null);
+
+const diData = computed(() => appStore.designs.find(d => d.id_di === props.id));
+
+const isActionDisabled = computed(() => {
+  return isStartingValidation.value || (diData.value && diData.value.estado_evaluacion === 'processing');
+});
 
 const reportSections = [
   { key: 'evaluacionPorEje', title: '1. Evaluación por Eje QM' },
@@ -98,72 +157,53 @@ const reportSections = [
   { key: 'comentariosProceso', title: '5. Comentarios del Proceso' }
 ];
 
-async function fetchData() {
-  isLoadingReport.value = true;
-  try {
-    diData.value = await getDiValidation(props.id);
-  } catch (error) {
-    console.error("Error al cargar los datos del DI:", error);
-  } finally {
-    isLoadingReport.value = false;
-  }
-}
-
-function subscribeToDiChanges() {
-  if (realtimeChannel.value) return;
-
-  realtimeChannel.value = supabase
-    .channel(`di-detail-${props.id}`)
-    .on(
-      'postgres_changes',
-      {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'disenos_instruccionales',
-        filter: `id_di=eq.${props.id}`
-      },
-      (payload) => {
-        console.log('DetailView: Cambio detectado en el DI actual.', payload.new);
-        // Actualización robusta: reemplaza el objeto completo para asegurar la reactividad
-        if (payload.new) {
-          diData.value = payload.new;
-        }
-      }
-    )
-    .subscribe();
-}
-
 async function startValidation() {
   isStartingValidation.value = true;
   
-  // Actualización Optimista: cambia el estado local inmediatamente
-  if (diData.value) {
-    diData.value.estado_evaluacion = 'processing';
+  const diIndex = appStore.designs.findIndex(d => d.id_di === props.id);
+  if (diIndex !== -1) {
+    appStore.designs[diIndex].estado_evaluacion = 'processing';
+    appStore.designs[diIndex].error_evaluacion = null;
   }
 
   try {
     await generateDiValidation(props.id);
-    // La suscripción de Realtime se encargará de actualizar con el resultado final ('success' o 'error')
+    appStore.startPollingDiStatus(props.id, 'estado_evaluacion');
   } catch (error) {
-    console.error("Error al iniciar la validación:", error);
-    // Si la llamada a la API falla, revierte el estado
-    if (diData.value) {
-      diData.value.estado_evaluacion = 'error';
-      diData.value.error_evaluacion = error.message || 'Fallo al contactar el servidor.';
+    if (diIndex !== -1) {
+      appStore.designs[diIndex].estado_evaluacion = 'error';
+      appStore.designs[diIndex].error_evaluacion = error.message;
     }
   } finally {
     isStartingValidation.value = false;
   }
 }
 
-onMounted(() => {
-  fetchData();
-  subscribeToDiChanges();
-});
+// ==================================================================
+// NUEVA LÓGICA PARA LA SIMULACIÓN DE CHAT
+// ==================================================================
+const userInput = ref('');
+const isSuggestionLoading = ref(false);
+const suggestionResponse = ref('');
 
-onUnmounted(() => {
-  if (realtimeChannel.value) {
-    supabase.removeChannel(realtimeChannel.value);
+async function handleSuggestionRequest() {
+  // No enviar si el input está vacío
+  if (!userInput.value.trim()) return;
+
+  isSuggestionLoading.value = true;
+  suggestionResponse.value = ''; // Limpiar respuesta anterior
+
+  try {
+    // Llamamos a la función simulada y esperamos su respuesta
+    const response = await getModificationSuggestion(userInput.value);
+    suggestionResponse.value = response;
+  } catch (error) {
+    // Manejo de error por si la simulación falla
+    suggestionResponse.value = '<p style="color: red;">Error al simular la respuesta de la IA.</p>';
+  } finally {
+    // Limpiamos el input y reactivamos el botón
+    userInput.value = '';
+    isSuggestionLoading.value = false;
   }
-});
-</script>q  
+}
+</script>

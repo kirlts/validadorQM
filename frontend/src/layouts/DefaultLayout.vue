@@ -6,27 +6,29 @@
       <v-toolbar-title class="font-weight-bold">
         Validador QM
       </v-toolbar-title>
+      
       <v-spacer></v-spacer>
-      <v-btn icon @click="handleLogout" title="Cerrar Sesión">
+      
+      <v-btn v-if="appStore.user" icon @click="handleLogout" title="Cerrar Sesión">
         <v-icon>mdi-logout</v-icon>
       </v-btn>
     </v-app-bar>
 
     <v-main class="bg-grey-lighten-3">
-      <v-container>
-        <router-view />
-      </v-container>
+      <router-view />
     </v-main>
   </v-app>
 </template>
 
 <script setup>
-import { useAuthStore } from '@/stores/authStore';
+// --- LA CORRECCIÓN ESTÁ AQUÍ ---
+// Se importa desde 'appStore' en lugar del antiguo 'authStore'
+import { useAppStore } from '@/stores/appStore';
 
-const authStore = useAuthStore();
+const appStore = useAppStore();
 
 const handleLogout = () => {
-  authStore.signOut();
+  appStore.signOut();
 };
 </script>
 

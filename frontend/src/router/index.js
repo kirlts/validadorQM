@@ -1,37 +1,25 @@
 // frontend/src/router/index.js
-
 import { createRouter, createWebHistory } from 'vue-router';
-import { useAuthStore } from '@/stores/authStore';
-import WelcomeView from '../views/WelcomeView.vue';
-import DashboardView from '../views/DashboardView.vue';
-import DetailView from '../views/DetailView.vue';
-import DefaultLayout from '../layouts/DefaultLayout.vue';
+import { useAppStore } from '@/stores/appStore';
 
 const routes = [
-  { path: '/', name: 'welcome', component: WelcomeView, meta: { requiresAuth: false } },
+  { path: '/', name: 'welcome', component: () => import('@/views/WelcomeView.vue'), meta: { requiresAuth: false } },
   {
-    path: '/app', component: DefaultLayout, meta: { requiresAuth: true }, children: [
+    path: '/app', component: () => import('@/layouts/DefaultLayout.vue'), meta: { requiresAuth: true }, children: [
       { path: '', redirect: { name: 'dashboard' } },
-      { path: 'dashboard', name: 'dashboard', component: DashboardView },
-      { path: 'di/:id', name: 'detail', component: DetailView, props: true }
+      { path: 'dashboard', name: 'dashboard', component: () => import('@/views/DashboardView.vue') },
+      { path: 'di/:id', name: 'detail', component: () => import('@/views/DetailView.vue'), props: true }
     ]
   },
   { path: '/:pathMatch(.*)*', redirect: '/' }
 ];
+const router = createRouter({ history: createWebHistory(import.meta.env.BASE_URL), routes });
 
-const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
-  routes
-});
-
-// Guardia de navegación
 router.beforeEach(async (to, from, next) => {
-  const authStore = useAuthStore();
-  
-  // Espera a que la inicialización en main.js termine
-  if (!authStore.isAuthReady) {
+  const appStore = useAppStore();
+  if (!appStore.isAuthReady) {
     await new Promise(resolve => {
-      const unsubscribe = authStore.$subscribe((mutation, state) => {
+      const unsubscribe = appStore.$subscribe((mutation, state) => {
         if (state.isAuthReady) {
           unsubscribe();
           resolve();
@@ -39,8 +27,7 @@ router.beforeEach(async (to, from, next) => {
       });
     });
   }
-
-  const isLoggedIn = authStore.isLoggedIn;
+  const isLoggedIn = appStore.isLoggedIn;
   if (to.meta.requiresAuth && !isLoggedIn) {
     next({ name: 'welcome' });
   } else if (to.name === 'welcome' && isLoggedIn) {
@@ -49,5 +36,4 @@ router.beforeEach(async (to, from, next) => {
     next();
   }
 });
-
 export default router;

@@ -1,8 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Lee las variables de entorno del archivo .env del frontend
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-// Crea y exporta el cliente de Supabase
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)

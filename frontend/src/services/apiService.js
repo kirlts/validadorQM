@@ -1,4 +1,3 @@
-// frontend/src/services/apiService.js
 import { supabase } from '@/supabase';
 
 const API_URL = 'http://localhost:5000/api';
@@ -7,15 +6,12 @@ async function fetchWithAuth(endpoint, options = {}) {
   const { data: { session } } = await supabase.auth.getSession();
   
   if (!session) {
+    console.error('[apiService] fetchWithAuth falló: No hay sesión de usuario activa.');
     throw new Error('No hay sesión de usuario activa.');
   }
 
   const fetchOptions = { ...options, cache: 'no-store' };
-
-  const headers = {
-    'Authorization': `Bearer ${session.access_token}`,
-    ...fetchOptions.headers,
-  };
+  const headers = { 'Authorization': `Bearer ${session.access_token}`, ...fetchOptions.headers };
 
   if (!(fetchOptions.body instanceof FormData)) {
     headers['Content-Type'] = 'application/json';
@@ -23,15 +19,18 @@ async function fetchWithAuth(endpoint, options = {}) {
 
   fetchOptions.headers = headers;
 
+  console.log(`[apiService] Realizando fetch a: ${API_URL}/${endpoint}`);
   const response = await fetch(`${API_URL}/${endpoint}`, fetchOptions);
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ error: `Error en la API: ${response.statusText}` }));
+    console.error(`[apiService] Fetch fallido a ${endpoint}:`, errorData);
     const error = new Error(errorData.message || errorData.error || `Error: ${response.statusText}`);
     error.status = response.status;
     throw error;
   }
-
+  
+  console.log(`[apiService] Fetch exitoso a ${endpoint}`);
   const contentType = response.headers.get("content-type");
   if (contentType && contentType.indexOf("application/json") !== -1) {
     return response.json();
@@ -39,6 +38,7 @@ async function fetchWithAuth(endpoint, options = {}) {
     return { success: true };
   }
 }
+
 
 export function getDis() {
   return fetchWithAuth('dis');

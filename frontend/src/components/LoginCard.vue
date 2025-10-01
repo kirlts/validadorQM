@@ -4,9 +4,9 @@
     <v-card-title class="text-center text-h5">Bienvenido</v-card-title>
     <v-card-text>
       <v-form @submit.prevent="handleLogin">
-        <v-text-field v-model="email" label="Email" type="email" required></v-text-field>
-        <v-text-field v-model="password" label="Contraseña" type="password" required></v-text-field>
-        <v-alert v-if="errorMessage" type="error" dense>{{ errorMessage }}</v-alert>
+        <v-text-field v-model="email" label="Email" type="email" required variant="outlined"></v-text-field>
+        <v-text-field v-model="password" label="Contraseña" type="password" required variant="outlined" class="mt-2"></v-text-field>
+        <v-alert v-if="errorMessage" type="error" dense class="mt-4">{{ errorMessage }}</v-alert>
         <v-btn :loading="loading" type="submit" block color="primary" class="mt-4">Iniciar Sesión</v-btn>
       </v-form>
     </v-card-text>
@@ -15,20 +15,19 @@
 
 <script setup>
 import { ref } from 'vue';
-import { useAuthStore } from '@/stores/authStore';
+import { useAppStore } from '@/stores/appStore';
 
 const email = ref('');
 const password = ref('');
 const loading = ref(false);
 const errorMessage = ref('');
-const authStore = useAuthStore();
+const appStore = useAppStore();
 
 const handleLogin = async () => {
   loading.value = true;
   errorMessage.value = '';
   try {
-    await authStore.signIn({ email: email.value, password: password.value });
-    // La redirección es manejada por el listener en setSession del authStore
+    await appStore.signIn({ email: email.value, password: password.value });
   } catch (error) {
     errorMessage.value = error.message;
   } finally {
