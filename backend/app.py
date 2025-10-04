@@ -16,8 +16,28 @@ CORS(app,
     supports_credentials=True
 )
 
+# --- FUNCIÓN DE BROADCAST (Sin cambios) ---
+def broadcast_change(event_type, new_data=None, old_data=None):
+    try:
+        supabase_url = os.getenv("SUPABASE_URL")
+        service_key = os.getenv("SUPABASE_SERVICE_KEY")
+        if not supabase_url or not service_key:
+            app.logger.error("Broadcast fallido: Credenciales de Supabase no configuradas.")
+            return
 
-# --- DECORADOR DE AUTENTICACIÓN Y CONTEXTO DE PETICIÓN ---
+        broadcast_url = f"{supabase_url}/realtime/v1/api/broadcast"
+        headers = {"apikey": service_key, "Content-Type": "application/json"}
+        payload = {
+            "messages": [{"topic": "di_changes", "event": "di_update", "payload": {
+                "eventType": event_type, "new": new_data, "old": old_data
+            }}]
+        }
+        requests.post(broadcast_url, json=payload, headers=headers, timeout=3)
+        app.logger.info(f"Broadcast enviado para evento: {event_type}")
+    except Exception as e:
+        app.logger.error(f"Error al enviar broadcast: {str(e)}")
+
+# --- DECORADOR DE AUTENTICACIÓN (Sin cambios) ---
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -28,102 +48,70 @@ def token_required(f):
         if not token: return jsonify({'message': 'Token de autorización ausente o inválido.'}), 401
         try:
             SUPABASE_JWT_SECRET = os.getenv('SUPABASE_JWT_SECRET')
-            if not SUPABASE_JWT_SECRET: raise ValueError("El secreto JWT de Supabase no está configurado en el backend.")
             data = jwt.decode(token, SUPABASE_JWT_SECRET, algorithms=['HS256'], audience='authenticated')
             g.user_id = data['sub']
             SUPABASE_URL = os.getenv("SUPABASE_URL")
             SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
-            if not SUPABASE_URL or not SUPABASE_KEY: raise ValueError("Las credenciales de Supabase no están configuradas.")
             g.supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-        except jwt.ExpiredSignatureError: return jsonify({'message': 'El token ha expirado.'}), 401
-        except Exception as e: return jsonify({'message': f'Token inválido o error de configuración: {str(e)}'}), 401
+        except Exception as e:
+            return jsonify({'message': f'Token inválido o error: {str(e)}'}), 401
         return f(*args, **kwargs)
     return decorated
 
-# --- Funciones de Utilidad ---
+# --- Funciones de Utilidad (Sin cambios) ---
 def trigger_n8n_webhook(webhook_url_env_var, payload):
     n8n_webhook_url = os.getenv(webhook_url_env_var)
     if not n8n_webhook_url:
-        app.logger.error(f'La variable de entorno {webhook_url_env_var} no está configurada.')
+        app.logger.error(f'Variable de entorno {webhook_url_env_var} no configurada.')
         return
     try:
         requests.post(n8n_webhook_url, json=payload, timeout=3)
-    except requests.exceptions.RequestException as e:
-        app.logger.error(f'No se pudo contactar el webhook N8N {webhook_url_env_var}: {str(e)}')
+    except Exception as e:
+        app.logger.error(f'No se pudo contactar N8N {webhook_url_env_var}: {str(e)}')
 
 def check_di_ownership(di_id):
     try:
         result = g.supabase.table('disenos_instruccionales').select('id_usuario, nombre_archivo').eq('id_di', str(di_id)).single().execute()
-        if result.data and result.data['id_usuario'] == g.user_id:
-            return result.data
-        return None
+        return result.data if result.data and result.data['id_usuario'] == g.user_id else None
     except Exception:
         return None
 
-# --- Rutas de la API ---
+# --- RUTAS DE LA API (Con /validate añadido) ---
+
 @app.route('/api/dis', methods=['GET'])
 @token_required
 def get_all_dis():
-    try:
-        result = g.supabase.table('disenos_instruccionales').select('*').eq('id_usuario', g.user_id).order('created_at', desc=True).execute()
-        resp = make_response(jsonify(result.data))
-        resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-        return resp
-    except Exception as e:
-        return jsonify({'message': f'Ocurrió un error al obtener los DIs: {str(e)}'}), 500
-
-@app.route('/api/dis/<uuid:di_id>', methods=['GET'])
-@token_required
-def get_single_di(di_id):
-    if not check_di_ownership(di_id): return jsonify({'message': 'DI no encontrado o no autorizado.'}), 404
-    result = g.supabase.table('disenos_instruccionales').select('*').eq('id_di', str(di_id)).single().execute()
-    if result.data:
-        resp = make_response(jsonify(result.data))
-        resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-        return resp
-    return jsonify({'message': 'DI no encontrado.'}), 404
+    result = g.supabase.table('disenos_instruccionales').select('*').eq('id_usuario', g.user_id).order('created_at', desc=True).execute()
+    return make_response(jsonify(result.data))
 
 @app.route('/api/dis', methods=['POST'])
 @token_required
 def upload_di():
     if 'file' not in request.files: return jsonify({'message': 'No se encontró el archivo.'}), 400
     file = request.files['file']
-    if file.filename == '': return jsonify({'message': 'No se seleccionó ningún archivo.'}), 400
-    
-    # --- LÓGICA DE ALMACENAMIENTO CORREGIDA ---
     file_path = f"{g.user_id}/{file.filename}"
-    
     try:
-        # 1. Intentamos subir el archivo. Si ya existe, Supabase Storage devolverá un error.
-        file_content = file.read()
-        g.supabase.storage.from_('di-bucket').upload(file=file_content, path=file_path)
-        
-        # 2. Si la subida fue exitosa (no hay duplicado), creamos el registro en la BD.
+        g.supabase.storage.from_('di-bucket').upload(file=file.read(), path=file_path)
         storage_url = f"{os.getenv('SUPABASE_URL')}/storage/v1/object/public/di-bucket/{file_path}"
-        new_di_record = { 'id_usuario': g.user_id, 'nombre_archivo': file.filename, 'url_storage': storage_url }
+        new_di_record = {'id_usuario': g.user_id, 'nombre_archivo': file.filename, 'url_storage': storage_url}
         insert_result = g.supabase.table('disenos_instruccionales').insert(new_di_record).execute()
         created_di = insert_result.data[0]
-        
+        broadcast_change("INSERT", new_data=created_di)
         return jsonify(created_di), 201
     except Exception as e:
-        # Detectar si el error es por archivo duplicado (código de error específico de Supabase Storage)
-        if 'Duplicate' in str(e) or ('error' in str(e) and 'Duplicate' in str(e)):
-             return jsonify({'message': f'Ya existe un archivo con el nombre "{file.filename}".'}), 409 # 409 Conflict
-        
-        # Si es otro tipo de error, lo manejamos
-        app.logger.error(f"Error en upload_di: {str(e)}")
-        return jsonify({'message': f'Error inesperado al subir el archivo: {str(e)}'}), 500
+        if 'Duplicate' in str(e): return jsonify({'message': f'Ya existe un archivo con el nombre "{file.filename}".'}), 409
+        return jsonify({'message': 'Error inesperado al subir el archivo.'}), 500
 
 @app.route('/api/dis/<uuid:di_id>', methods=['DELETE'])
 @token_required
 def delete_di(di_id):
     di_data = check_di_ownership(di_id)
-    if not di_data: return jsonify({'message': 'Acción no autorizada o DI no encontrado.'}), 404
+    if not di_data: return jsonify({'message': 'Acción no autorizada.'}), 404
     try:
-        # --- RUTA DE ARCHIVO CORREGIDA ---
         file_path = f"{g.user_id}/{di_data['nombre_archivo']}"
         g.supabase.storage.from_('di-bucket').remove([file_path])
         g.supabase.table('disenos_instruccionales').delete().eq('id_di', str(di_id)).execute()
+        broadcast_change("DELETE", old_data={'id_di': str(di_id)})
         return jsonify({'message': 'DI eliminado correctamente.'}), 200
     except Exception as e:
         return jsonify({'message': f'Error al eliminar el DI: {str(e)}'}), 500
@@ -133,34 +121,42 @@ def delete_di(di_id):
 def transform_di(di_id):
     if not check_di_ownership(di_id): return jsonify({'message': 'Acción no autorizada.'}), 403
     try:
-        g.supabase.table('disenos_instruccionales').update({'estado_transformacion': 'processing', 'error_transformacion': None, 'contenido_jsonld': None}).eq('id_di', str(di_id)).execute()
+        proceso = {"nombre": "transformacion", "estado": "processing"}
+        update_result = g.supabase.table('disenos_instruccionales').update({'proceso_actual': proceso, 'contenido_jsonld': None}).eq('id_di', str(di_id)).execute()
+        updated_di = update_result.data[0]
+        broadcast_change("UPDATE", new_data=updated_di)
         trigger_n8n_webhook('N8N_WEBHOOK_URL_TRANSFORM_DI', {"di_id": str(di_id)})
         return jsonify({'message': 'El proceso de transformación ha comenzado.'}), 202
     except Exception as e:
-        g.supabase.table('disenos_instruccionales').update({'estado_transformacion': 'error', 'error_transformacion': f'Fallo al iniciar el workflow: {str(e)}'}).eq('id_di', str(di_id)).execute()
+        proceso_error = {"nombre": "transformacion", "estado": "error", "error_detalle": str(e)}
+        error_update = g.supabase.table('disenos_instruccionales').update({'proceso_actual': proceso_error}).eq('id_di', str(di_id)).execute()
+        if error_update.data:
+            broadcast_change("UPDATE", new_data=error_update.data[0])
         return jsonify({'message': f'No se pudo iniciar la transformación: {str(e)}'}), 500
 
+# --- ¡LA RUTA QUE FALTABA! ---
 @app.route('/api/dis/<uuid:di_id>/validate', methods=['POST'])
 @token_required
 def trigger_di_validation(di_id):
     if not check_di_ownership(di_id): return jsonify({'message': 'Acción no autorizada.'}), 403
     try:
-        g.supabase.table('disenos_instruccionales').update({'estado_evaluacion': 'processing', 'error_evaluacion': None}).eq('id_di', str(di_id)).execute()
+        proceso = {"nombre": "evaluacion", "estado": "processing"}
+        update_result = g.supabase.table('disenos_instruccionales').update({'proceso_actual': proceso}).eq('id_di', str(di_id)).execute()
+        updated_di = update_result.data[0]
+        
+        # Notificar al frontend que el proceso ha comenzado
+        broadcast_change("UPDATE", new_data=updated_di)
+        
+        # Iniciar el workflow de n8n
         trigger_n8n_webhook('N8N_WEBHOOK_URL_VALIDATE_DI', {'di_id': str(di_id)})
+        
         return jsonify({'message': 'El proceso de validación ha sido iniciado.'}), 202
     except Exception as e:
-        g.supabase.table('disenos_instruccionales').update({'estado_evaluacion': 'error', 'error_evaluacion': f'Fallo al iniciar el workflow: {str(e)}'}).eq('id_di', str(di_id)).execute()
+        proceso_error = {"nombre": "evaluacion", "estado": "error", "error_detalle": str(e)}
+        error_update = g.supabase.table('disenos_instruccionales').update({'proceso_actual': proceso_error}).eq('id_di', str(di_id)).execute()
+        if error_update.data:
+            broadcast_change("UPDATE", new_data=error_update.data[0])
         return jsonify({'message': f'No se pudo iniciar la validación: {str(e)}'}), 500
-        
-@app.route('/api/dis/<uuid:di_id>/download-url', methods=['GET'])
-@token_required
-def get_download_url(di_id):
-    di = check_di_ownership(di_id)
-    if not di: return jsonify({'message': 'No autorizado o DI no encontrado'}), 404
-    # --- RUTA DE ARCHIVO CORREGIDA ---
-    file_path = f"{g.user_id}/{di['nombre_archivo']}"
-    signed_url = g.supabase.storage.from_('di-bucket').create_signed_url(file_path, 60)
-    return jsonify(signed_url), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

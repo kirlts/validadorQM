@@ -21,8 +21,6 @@
 </template>
 
 <script setup>
-// --- LA CORRECCIÓN ESTÁ AQUÍ ---
-// Se importa desde 'appStore' en lugar del antiguo 'authStore'
 import { useAppStore } from '@/stores/appStore';
 
 const appStore = useAppStore();

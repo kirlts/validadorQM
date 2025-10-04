@@ -13,11 +13,7 @@
           <v-card-subtitle>
             Gestiona tus DIs y su estado de procesamiento.
           </v-card-subtitle>
-          <v-card-text>
-            <v-alert v-if="notification.message" :type="notification.type" variant="tonal" closable @click:close="clearNotification" class="mb-4">
-              <span v-html="notification.message"></span>
-            </v-alert>
-          </v-card-text>
+          
           <v-progress-linear v-if="isLoading && designs.length === 0" indeterminate color="primary"></v-progress-linear>
           
           <v-list v-else lines="two">
@@ -25,12 +21,15 @@
               <v-list-item v-for="design in designs" :key="design.id_di" @click="viewDetails(design)" link>
                 <template v-slot:prepend>
                   <v-avatar :color="getStatusColor(design)">
-                     <v-progress-circular v-if="isProcessing(design)" indeterminate size="24" color="white"></v-progress-circular>
-                    <v-icon v-else>{{ getStatusIcon(design) }}</v-icon>
+                      <v-progress-circular v-if="isProcessing(design)" indeterminate size="24" color="white"></v-progress-circular>
+                      <v-icon v-else>{{ getStatusIcon(design) }}</v-icon>
                   </v-avatar>
                 </template>
+
                 <v-list-item-title>{{ design.nombre_archivo }}</v-list-item-title>
+                
                 <v-list-item-subtitle>{{ getStatusText(design) }}</v-list-item-subtitle>
+
                 <template v-slot:append>
                   <div class="d-flex align-center">
                     <v-btn icon="mdi-eye" variant="text" @click.stop="handleView(design)" title="Visualizar Archivo"></v-btn>
@@ -57,7 +56,6 @@
       </v-col>
     </v-row>
     
-    <!-- Dialogs remain the same -->
     <v-dialog v-model="deleteDialog.show" max-width="500px" persistent>
       <v-card>
         <v-card-title class="headline">Confirmar Eliminación</v-card-title>
@@ -95,8 +93,7 @@
         </v-card-text>
       </v-card>
     </v-dialog>
-
-  </v-container>
+    </v-container>
 </template>
 
 <script setup>
@@ -113,64 +110,93 @@ const { designs, isLoading } = storeToRefs(appStore);
 const isUploading = ref(false);
 const isDeleting = ref(null);
 const isTransforming = ref(false);
-const notification = reactive({ message: '', type: 'success' });
+// const notification = reactive({ message: '', type: 'success' }); // ELIMINADO
 const deleteDialog = reactive({ show: false, itemId: null, itemName: '' });
 const transformDialog = reactive({ show: false, item: null });
 const viewerDialog = reactive({ show: false, url: '', itemName: '' });
 
 const isActionInProgress = computed(() => isUploading.value || isTransforming.value || !!isDeleting.value);
 
+// --- FUNCIONES DE ESTADO ---
+const isProcessing = (design) => design.proceso_actual?.estado === 'processing';
+
+const getStatusIcon = (design) => {
+    const estado = design.proceso_actual?.estado;
+    if (estado === 'success' || estado === 'completado') return 'mdi-check-circle';
+    if (estado === 'error') return 'mdi-alert-circle';
+    return 'mdi-file-question';
+};
+
+const getStatusColor = (design) => {
+    const estado = design.proceso_actual?.estado;
+    if (estado === 'success' || estado === 'completado') return 'success';
+    if (estado === 'error') return 'error';
+    if (estado === 'processing') return 'blue-grey';
+    return 'grey';
+};
+
+const getStatusText = (design) => {
+    const proceso = design.proceso_actual;
+    const createdAt = design.created_at;
+    const createdText = `Creado: ${new Date(createdAt).toLocaleDateString()}`;
+
+    if (!proceso || !proceso.estado || proceso.estado === 'pendiente') {
+        return `Pendiente de transformación. ${createdText}`;
+    }
+
+    switch (proceso.estado) {
+        case 'processing':
+            return `Procesando: ${proceso.nombre}...`;
+        case 'success':
+        case 'completado':
+            if (proceso.nombre === 'evaluacion') {
+                return `Evaluación completada. ${createdText}`;
+            }
+            return `Listo para analizar. ${createdText}`;
+        case 'error':
+            const errorMsg = proceso.error_detalle || 'Error desconocido.';
+            return `Error en '${proceso.nombre}': ${errorMsg}`;
+        default:
+            return `Estado desconocido. ${createdText}`;
+    }
+};
+
+// --- LÓGICA DE NAVEGACIÓN Y ACCIONES ---
 function handleRefresh() {
-  notification.message = '';
   appStore.fetchDesigns();
 }
 
 function viewDetails(design) {
-    clearNotification();
-    if (design.estado_transformacion === 'processing') return;
-    if (design.estado_transformacion === 'error' || design.estado_transformacion === 'pendiente') {
-        promptTransform(design);
-    } else {
+    if (design.proceso_actual?.estado === 'processing') {
+      return;
+    }
+    
+    const isReadyForDetail = 
+        (design.proceso_actual?.estado === 'success' || design.proceso_actual?.estado === 'completado') &&
+        (design.proceso_actual?.nombre === 'transformacion' || design.proceso_actual?.nombre === 'evaluacion') &&
+        design.contenido_jsonld != null;
+
+    if (isReadyForDetail) {
         router.push({ name: 'detail', params: { id: design.id_di } });
+    } else {
+        promptTransform(design);
     }
 }
 
-const isProcessing = (design) => design.estado_transformacion === 'processing';
-const getStatusIcon = (d) => d.estado_transformacion === 'success' ? 'mdi-check-circle' : d.estado_transformacion === 'error' ? 'mdi-alert-circle' : 'mdi-file-question';
-const getStatusColor = (d) => d.estado_transformacion === 'success' ? 'success' : d.estado_transformacion === 'error' ? 'error' : d.estado_transformacion === 'processing' ? 'blue-grey' : 'grey';
-const getStatusText = (d) => {
-    switch (d.estado_transformacion) {
-        case 'processing': return 'Transformando...';
-        case 'success': return `Listo. Creado: ${new Date(d.created_at).toLocaleDateString()}`;
-        case 'error': return `Error: ${d.error_transformacion || 'Clic para reintentar.'}`;
-        default: return `Pendiente de transformación. Creado: ${new Date(d.created_at).toLocaleDateString()}`;
-    }
-};
+function triggerFileInput() { document.getElementById('fileInput').click(); }
 
-function clearNotification() { notification.message = ''; }
-function triggerFileInput() { clearNotification(); document.getElementById('fileInput').click(); }
-
-// --- FUNCIÓN handleFileUpload CORREGIDA ---
 async function handleFileUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
   isUploading.value = true;
-  clearNotification();
   try {
-    // 1. Llamamos a la API y esperamos la respuesta con el nuevo objeto DI
-    const newDi = await uploadDi(file);
-    
-    // 2. ¡ACTUALIZACIÓN OPTIMISTA! Añadimos el nuevo DI a la lista localmente.
-    appStore.designs.unshift(newDi);
-
-    notification.message = `"${file.name}" subido correctamente.`;
-    notification.type = 'success';
+    await uploadDi(file);
+    // Líneas de notificación eliminadas
   } catch (error) {
-    notification.message = `<b>Error al subir:</b><br>${error.message}`;
-    notification.type = 'error';
+    console.error("Error al subir:", error); // Mantenemos el log de error para depuración
   } finally {
     isUploading.value = false;
-    event.target.value = ''; // Reset input
+    event.target.value = '';
   }
 }
 
@@ -186,12 +212,9 @@ async function confirmDelete() {
   isDeleting.value = diId;
   try {
     await deleteDi(diId);
-    // Dejamos que Realtime (que sí funciona para DELETE) se encargue de la eliminación de la UI
-    notification.message = 'DI eliminado.';
-    notification.type = 'success';
+    // Líneas de notificación eliminadas
   } catch (error) {
-    notification.message = `Error al eliminar: ${error.message}`;
-    notification.type = 'error';
+    console.error("Error al eliminar:", error);
   } finally {
     isDeleting.value = null;
     deleteDialog.show = false;
@@ -208,26 +231,13 @@ async function handleTransform() {
   if (!design) return;
   
   isTransforming.value = true;
-  clearNotification();
   transformDialog.show = false;
-
-  const designIndex = appStore.designs.findIndex(d => d.id_di === design.id_di);
-  if (designIndex !== -1) {
-    appStore.designs[designIndex].estado_transformacion = 'processing';
-  }
   
   try {
     await transformDiToLd(design.id_di);
-    appStore.startPollingDiStatus(design.id_di, 'estado_transformacion');
-    notification.message = `Transformación iniciada para "<b>${design.nombre_archivo}</b>".`;
-    notification.type = 'info';
+    // Líneas de notificación eliminadas
   } catch (error) {
-    if (designIndex !== -1) {
-      appStore.designs[designIndex].estado_transformacion = 'error';
-      appStore.designs[designIndex].error_transformacion = `Fallo al iniciar: ${error.message}`;
-    }
-    notification.message = `No se pudo iniciar la transformación: ${error.message}`;
-    notification.type = 'error';
+    console.error("No se pudo iniciar la transformación:", error);
   } finally {
     isTransforming.value = false;
   }
@@ -241,8 +251,7 @@ async function handleView(design) {
     const response = await getDownloadUrl(design.id_di);
     viewerDialog.url = `https://docs.google.com/gview?url=${encodeURIComponent(response.signedURL)}&embedded=true`;
   } catch (error) {
-    notification.message = `Error al obtener la URL: ${error.message}`;
-    notification.type = 'error';
+    console.error("Error al obtener la URL:", error);
     viewerDialog.show = false;
   }
 }
@@ -252,8 +261,7 @@ async function handleDownload(design) {
         const { signedURL } = await getDownloadUrl(design.id_di);
         window.open(signedURL, '_blank');
     } catch (error) {
-        notification.message = `Error al obtener enlace de descarga: ${error.message}`;
-        notification.type = 'error';
+        console.error("Error al obtener enlace de descarga:", error);
     }
 }
 </script>

@@ -7,6 +7,12 @@
 </template>
 
 <script setup>
+import { onMounted } from 'vue';
 import { useAppStore } from '@/stores/appStore';
 const appStore = useAppStore();
+
+// Llama a la inicialización cuando el componente se monta por primera vez.
+onMounted(() => {
+  appStore.initialize();
+});
 </script>

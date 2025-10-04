@@ -12,7 +12,7 @@
       "typeVersion": 2.1,
       "position": [
         -16,
-        732
+        736
       ],
       "id": "7b03a6a6-8f81-483d-920b-a6227ca7b20b",
       "name": "Webhook",
@@ -36,7 +36,7 @@
       "typeVersion": 1,
       "position": [
         208,
-        732
+        736
       ],
       "id": "d8df72da-d110-48ff-960d-7b9494145ced",
       "name": "Get a row",
@@ -64,7 +64,7 @@
       "typeVersion": 4.2,
       "position": [
         656,
-        732
+        736
       ],
       "id": "95725620-dd86-4f0a-81b4-83941e856e20",
       "name": "HTTP Request",
@@ -85,20 +85,20 @@
       "typeVersion": 1,
       "position": [
         880,
-        732
+        736
       ],
       "id": "7ec9e0a1-3bda-4c50-be1f-9a451a264d0f",
       "name": "Write Binary File"
     },
     {
       "parameters": {
-        "command": "={{ $json.nombre_archivo.endsWith('.docx') ? `pandoc -f docx -t plain \"${$json.fileName}\" -o \"${$json.fileName}.txt\"` : `pdftotext \"${$json.nombre_archivo}\" \"${$json.nombre_archivo}.txt\"` }}"
+        "command": "={{ $json.nombre_archivo.endsWith('.docx') ? `pandoc -f docx -t plain \"${$('Write Binary File').item.json.fileName}\" -o \"${$('Write Binary File').item.json.fileName}.txt\"` : `pdftotext \"${$('Write Binary File').item.json.fileName}\" \"${$('Write Binary File').item.json.fileName}.txt\"` }}"
       },
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
       "position": [
         1104,
-        732
+        736
       ],
       "id": "1067b30e-bdb0-4840-998a-05e8f7c8e9bb",
       "name": "Convertir"
@@ -125,7 +125,7 @@
       "typeVersion": 1,
       "position": [
         1328,
-        732
+        736
       ],
       "id": "5bcbd1af-084c-4696-bdb1-07eac782c063",
       "name": "Leer output"
@@ -146,59 +146,13 @@
     },
     {
       "parameters": {
-        "operation": "update",
-        "tableId": "disenos_instruccionales",
-        "filters": {
-          "conditions": [
-            {
-              "keyName": "id_di",
-              "condition": "eq",
-              "keyValue": "={{ $('Webhook').item.json.body.di_id }}"
-            }
-          ]
-        },
-        "fieldsUi": {
-          "fieldValues": [
-            {
-              "fieldId": "contenido_jsonld",
-              "fieldValue": "={{ JSON.stringify($json.contenido_jsonld) }}"
-            },
-            {
-              "fieldId": "estado_transformacion",
-              "fieldValue": "success"
-            },
-            {
-              "fieldId": "error_transformacion",
-              "fieldValue": "Sin errores"
-            }
-          ]
-        }
-      },
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        3152,
-        512
-      ],
-      "id": "ae9b6aca-0964-4cc9-bfc0-dba4354d95ca",
-      "name": "Subir JSON-LD",
-      "credentials": {
-        "supabaseApi": {
-          "id": "m0DUcQthM94wIR7O",
-          "name": "Supabase account"
-        }
-      },
-      "onError": "continueRegularOutput"
-    },
-    {
-      "parameters": {
         "respondWith": "allIncomingItems",
         "options": {}
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.4,
       "position": [
-        3824,
+        4240,
         704
       ],
       "id": "191bd605-e595-42ad-8863-ffa851c6b9f3",
@@ -266,7 +220,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        3376,
+        3792,
         512
       ],
       "id": "13202297-a415-4c51-8c9f-53f9e583a00e",
@@ -295,7 +249,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        3600,
+        4016,
         608
       ],
       "id": "1493a45b-292e-4e3f-8e2d-d935fef6aab4",
@@ -310,8 +264,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        2424,
-        832
+        2352,
+        848
       ],
       "id": "aa4fb7a9-10d5-4fea-9ad7-0a0add3624de",
       "name": "AI Model",
@@ -351,7 +305,7 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        3376,
+        3584,
         800
       ],
       "id": "e7f21a9f-5e14-45f8-99e1-e8bf4454257d",
@@ -386,7 +340,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        3600,
+        3808,
         800
       ],
       "id": "2433ddfd-bdbb-4e27-8cf1-bbfe9c02b92a",
@@ -400,7 +354,7 @@
       "typeVersion": 2,
       "position": [
         1552,
-        732
+        736
       ],
       "id": "bf9e7e4b-b0fa-4a46-86e0-4625b65f0d85",
       "name": "Extraer Texto"
@@ -413,8 +367,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        1848,
-        956
+        1856,
+        960
       ],
       "id": "508b1e93-e614-49bc-86bd-3a63d2222816",
       "name": "Classifier Model",
@@ -449,7 +403,7 @@
       "typeVersion": 3.4,
       "position": [
         3600,
-        1020
+        1024
       ],
       "id": "97663464-2e1e-4baf-8efa-1401c46416bc",
       "name": "Not DI"
@@ -484,7 +438,7 @@
       "typeVersion": 1,
       "position": [
         3376,
-        1020
+        1024
       ],
       "id": "281a5edb-c9dc-4696-b8f2-273436bbe955",
       "name": "Insert format error",
@@ -501,12 +455,12 @@
         "categories": {
           "categories": [
             {
-              "category": "Es un Diseño Instruccional o documento académico",
+              "category": "Es un Diseño Instruccional",
               "description": "Un diseño instruccional (DI) constituye un proceso estructurado para crear experiencias de aprendizaje efectivas y eficientes. El objetivo es guiar a los estudiantes a través de una serie de actividades y evaluaciones para que logren resultados de aprendizaje específicos. Un DI integra elementos pedagógicos y organizacionales en un plan coherente, detallando qué se enseñará, cómo se enseñará y cómo se evaluará el aprendizaje."
             },
             {
-              "category": "No es un Diseño Instruccional ni un documento académico",
-              "description": "Cualquier otro caso, en el que el texto proporcionado no es claramente un diseño instruccional o documento académico."
+              "category": "No es un Diseño Instruccional",
+              "description": "Cualquier otro caso, en el que el texto proporcionado no es claramente un diseño instruccional"
             }
           ]
         },
@@ -516,7 +470,7 @@
       "typeVersion": 1.1,
       "position": [
         1776,
-        732
+        736
       ],
       "id": "9eacdd23-d2d3-485d-98a3-5b2838d3daba",
       "name": "Clasificador"
@@ -559,7 +513,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        3600,
+        4016,
         416
       ],
       "id": "218dc320-dcf3-4f4d-80af-b02cd420c5fe",
@@ -591,10 +545,55 @@
       "typeVersion": 1,
       "position": [
         432,
-        732
+        736
       ],
       "id": "1f5b4243-44bd-44e6-9bbc-14e93553f4ec",
       "name": "Insert Processing",
+      "credentials": {
+        "supabaseApi": {
+          "id": "m0DUcQthM94wIR7O",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "disenos_instruccionales",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id_di",
+              "condition": "eq",
+              "keyValue": "={{ $('Webhook').item.json.body.di_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "estado_transformacion",
+              "fieldValue": "=success"
+            },
+            {
+              "fieldId": "error_transformacion",
+              "fieldValue": "={{ $json.error }}"
+            },
+            {
+              "fieldId": "contenido_jsonld",
+              "fieldValue": "={{ $('Validar y Limpiar').item.json.contenido_jsonld }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3552,
+        512
+      ],
+      "id": "c34b72ae-1fa0-4de3-bb26-bc6cb6c629d6",
+      "name": "Insert JSON",
       "credentials": {
         "supabaseApi": {
           "id": "m0DUcQthM94wIR7O",
@@ -613,14 +612,13 @@
             "accept-encoding": "gzip, deflate",
             "accept": "*/*",
             "connection": "keep-alive",
-            "content-length": "100",
+            "content-length": "49",
             "content-type": "application/json"
           },
           "params": {},
           "query": {},
           "body": {
-            "di_id": "9f79d255-ae66-4ea4-92c1-3e51b9c397db",
-            "user_id": "08599cea-434a-4be5-9079-0ee73b619ce4"
+            "di_id": "fe817df8-3ef2-46f9-94a6-101772cd7cb9"
           },
           "webhookUrl": "http://localhost:5678/webhook/e71af77b-8c5f-4f15-af5a-f0fa2d75d279",
           "executionMode": "production"
@@ -717,22 +715,11 @@
         ]
       ]
     },
-    "Subir JSON-LD": {
-      "main": [
-        [
-          {
-            "node": "Uploaded?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Validated?": {
       "main": [
         [
           {
-            "node": "Subir JSON-LD",
+            "node": "Insert JSON",
             "type": "main",
             "index": 0
           }
@@ -902,13 +889,24 @@
           }
         ]
       ]
+    },
+    "Insert JSON": {
+      "main": [
+        [
+          {
+            "node": "Uploaded?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "19f6b6de-9b97-4df9-ad2c-5311d869bd40",
+  "versionId": "92bb483d-83ad-49af-b224-56ca02c99646",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "81f9aa344da0912f901e07498089d3dd54ba6d767dbe4d581a261cb5d8886bb9"

@@ -15,19 +15,35 @@
 
 <script setup>
 import { ref } from 'vue';
+// ¡Importamos supabase directamente!
+import { supabase } from '@/supabase'; 
+// Seguimos usando el store, pero no para la acción de login.
 import { useAppStore } from '@/stores/appStore';
 
 const email = ref('');
 const password = ref('');
 const loading = ref(false);
 const errorMessage = ref('');
-const appStore = useAppStore();
+const appStore = useAppStore(); // El store sigue siendo útil para acceder al estado si fuera necesario.
 
 const handleLogin = async () => {
   loading.value = true;
   errorMessage.value = '';
   try {
-    await appStore.signIn({ email: email.value, password: password.value });
+    // --- CAMBIO CLAVE ---
+    // Llamamos directamente a la función de Supabase para iniciar sesión.
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.value,
+      password: password.value,
+    });
+    
+    // Si Supabase devuelve un error, lo mostramos.
+    if (error) throw error;
+
+    // Si el login es exitoso, el listener `onAuthStateChange` en appStore.js
+    // se activará automáticamente y se encargará de redirigir al dashboard.
+    // No necesitamos hacer nada más aquí.
+
   } catch (error) {
     errorMessage.value = error.message;
   } finally {

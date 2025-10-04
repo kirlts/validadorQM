@@ -4,19 +4,40 @@ Este proyecto es una aplicación web diseñada para validar Diseños Instruccion
 
 ---
 
-## 🚀 Tech Stack
+## 🚀 Stack Tecnológico
 
-- **Frontend:** Vue.js 3 con Vuetify
-- **API Gateway:** Flask (Python)
-- **Orquestador de Lógica:** N8N
-- **Base de Datos y Almacenamiento:** Supabase
+- **Frontend:** Vue.js 3 con Vuety y Pinia
+- **Backend (API Gateway):** Flask (Python)
+- **Orquestador de Lógica Asíncrona:** n8n
+- **Base de Datos y Servicios:** Supabase (PostgreSQL, Auth, Storage, Realtime)
 - **Entorno:** Docker
+
+---
+
+## 🏛️ Arquitectura
+
+La aplicación sigue una arquitectura de microservicios desacoplados, orquestada por Docker Compose. Cada componente tiene una responsabilidad única:
+
+- **Frontend (Vue.js):** Es la única interfaz con la que el usuario interactúa. Su rol es mostrar datos y capturar eventos de usuario, delegando toda la lógica de negocio al backend.
+- **Backend (Flask):** Actúa como un **API Gateway seguro**. Valida la autenticación del usuario, gestiona las operaciones con Supabase Storage y es el único punto de entrada para iniciar procesos asíncronos en n8n.
+- **n8n:** Es el motor para **tareas de larga duración** (ej. conversión de documentos, llamadas a LLMs). Opera en segundo plano y nunca es contactado directamente por el frontend.
+- **Supabase:** Provee la infraestructura de backend completa, actuando como la **fuente única de verdad** para los datos, la autenticación, el almacenamiento de archivos y el sistema de notificaciones.
+
+---
+
+## ⚡ Flujo de Datos en Tiempo Real
+
+Para una experiencia de usuario fluida y reactiva, el sistema utiliza un **patrón de `Broadcast` híbrido**, garantizando que la UI siempre refleje el estado real de los datos.
+
+1.  **Notificación Inmediata:** Cuando un usuario inicia una acción (ej. transformar un archivo), la API de Flask actualiza el estado en la base de datos y envía inmediatamente un mensaje `Broadcast` a través de Supabase. Esto actualiza la UI en menos de un segundo.
+2.  **Notificación de Respaldo:** Cuando un proceso asíncrono en n8n finaliza y actualiza la base de datos, un `Trigger` en PostgreSQL se activa y envía otro mensaje `Broadcast`.
+3.  **Suscripción del Frontend:** El frontend (a través de Pinia) está suscrito a un único canal de `Broadcast`. Al recibir un mensaje, actualiza el estado global y la interfaz reacciona automáticamente.
 
 ---
 
 ## 📋 Prerrequisitos
 
-- Docker instalado.
+- Docker y Docker Compose instalados.
 
 ---
 
@@ -33,36 +54,13 @@ Este proyecto es una aplicación web diseñada para validar Diseños Instruccion
     ```bash
     cp .env.example .env
     ```
-    Luego, edita el archivo `.env` y rellena todas las credenciales y URLs de tus servicios (Supabase, N8N, etc.).
+    Luego, edita el archivo `.env` y rellena todas las credenciales y URLs de tus servicios (Supabase, n8n, etc.). Asegúrate de configurar también las variables `VITE_*` en el archivo `.env` dentro de la carpeta `frontend/`.
 
 ---
 
 ## ▶️ Ejecutar el Proyecto
 
-Una vez configurado el archivo `.env`, puedes levantar todo el entorno con un solo comando:
+Una vez configurados los archivos `.env`, puedes levantar todo el entorno con un solo comando:
 
 ```bash
 docker compose up -d --build
-```
-
-Una vez iniciados los contenedores, los servicios estarán disponibles en:
-
-Frontend: **http://localhost:8080**
-
-API de Flask: **http://localhost:5000**
-
-Interfaz de N8N: **http://localhost:5678**
-
----
-
-## Endpoints de la API
-
-Todos los endpoints requieren un token JWT de Supabase en la cabecera Authorization: Bearer <token>
-
-**GET /api/dis:** Lista los DIs del usuario autenticado.
-
-**POST /api/dis:** Sube un nuevo archivo DI.
-
-**DELETE /api/dis/<uuid:di_id>:** Elimina un DI específico.
-
-**GET /api/dis/<uuid:di_id>/download-url:** Genera una URL de descarga firmada.

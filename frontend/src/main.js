@@ -2,38 +2,36 @@
 
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
+
 import App from './App.vue';
 import router from './router';
-import { supabase } from './supabase';
-import { useAppStore } from './stores/appStore';
 
-// Estilos de Vuetify
+// Import Vuetify
 import 'vuetify/styles';
-// --- LÍNEA CORREGIDA ---
-// Importa la fuente de íconos Material Design Icons
-import '@mdi/font/css/materialdesignicons.css'; 
-// --- FIN DE LA CORRECCIÓN ---
 import { createVuetify } from 'vuetify';
 import * as components from 'vuetify/components';
 import * as directives from 'vuetify/directives';
+import '@mdi/font/css/materialdesignicons.css'; // Ensure you have this line for MDI icons
 
-const vuetify = createVuetify({ components, directives });
+// Create the app instance
 const app = createApp(App);
-app.use(createPinia());
 
-async function initializeApp() {
-  const appStore = useAppStore();
-  
-  supabase.auth.onAuthStateChange((event, session) => {
-    appStore.setSession(session);
-  });
-  
-  const { data: { session } } = await supabase.auth.getSession();
-  await appStore.initialize(session);
+// Create and use Pinia for state management
+const pinia = createPinia();
+app.use(pinia);
 
-  app.use(router);
-  app.use(vuetify);
-  app.mount('#app');
-}
+// Create and use Vuetify for UI components
+const vuetify = createVuetify({
+  components,
+  directives,
+  icons: {
+    defaultSet: 'mdi', // This is the default icon set
+  },
+});
+app.use(vuetify);
 
-initializeApp();
+// Use the router for navigation
+app.use(router);
+
+// Mount the app to the DOM
+app.mount('#app');
