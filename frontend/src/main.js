@@ -11,7 +11,7 @@ import 'vuetify/styles';
 import { createVuetify } from 'vuetify';
 import * as components from 'vuetify/components';
 import * as directives from 'vuetify/directives';
-import '@mdi/font/css/materialdesignicons.css'; // Ensure you have this line for MDI icons
+import '@mdi/font/css/materialdesignicons.css';
 
 // Create the app instance
 const app = createApp(App);
@@ -25,7 +25,7 @@ const vuetify = createVuetify({
   components,
   directives,
   icons: {
-    defaultSet: 'mdi', // This is the default icon set
+    defaultSet: 'mdi',
   },
 });
 app.use(vuetify);

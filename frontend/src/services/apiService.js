@@ -82,3 +82,10 @@ export function getDiValidation(diId) {
 export function generateDiValidation(diId) {
   return fetchWithAuth(`dis/${diId}/validate`, { method: 'POST' });
 }
+
+export function interactWithDi(diId, prompt) {
+  return fetchWithAuth(`dis/${diId}/interact`, {
+    method: 'POST',
+    body: JSON.stringify({ prompt: prompt }),
+  });
+}

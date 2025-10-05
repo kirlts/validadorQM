@@ -1,6 +1,7 @@
 # backend/app.py
 
 import os
+from datetime import datetime, timezone
 from flask import Flask, jsonify, request, make_response, g
 from dotenv import load_dotenv
 import jwt
@@ -134,7 +135,6 @@ def transform_di(di_id):
             broadcast_change("UPDATE", new_data=error_update.data[0])
         return jsonify({'message': f'No se pudo iniciar la transformación: {str(e)}'}), 500
 
-# --- ¡LA RUTA QUE FALTABA! ---
 @app.route('/api/dis/<uuid:di_id>/validate', methods=['POST'])
 @token_required
 def trigger_di_validation(di_id):
@@ -157,6 +157,41 @@ def trigger_di_validation(di_id):
         if error_update.data:
             broadcast_change("UPDATE", new_data=error_update.data[0])
         return jsonify({'message': f'No se pudo iniciar la validación: {str(e)}'}), 500
+    
+@app.route('/api/dis/<uuid:di_id>/interact', methods=['POST'])
+@token_required
+def interact_with_di(di_id):
+    if not check_di_ownership(di_id):
+        return jsonify({'message': 'Acción no autorizada o DI no encontrado.'}), 404
+
+    data = request.get_json()
+    if not data or 'prompt' not in data:
+        return jsonify({'message': 'El prompt es requerido.'}), 400
+
+    try:
+        proceso = {"nombre": "consulta", "estado": "processing"}
+        update_result = g.supabase.table('disenos_instruccionales').update({
+            'proceso_actual': proceso
+        }).eq('id_di', str(di_id)).execute()
+        updated_di = update_result.data[0]
+        
+        broadcast_change("UPDATE", new_data=updated_di)
+
+        payload = { "di_id": str(di_id), "prompt": data['prompt'] }
+        trigger_n8n_webhook('N8N_WEBHOOK_URL_CONSULTA_DI', payload)
+
+        return jsonify({'message': 'La consulta ha sido enviada para procesamiento.'}), 202
+    except Exception as e:
+        proceso_error = {
+            "nombre": "consulta", 
+            "estado": "error", 
+            "error_detalle": str(e),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        error_update = g.supabase.table('disenos_instruccionales').update({'proceso_actual': proceso_error}).eq('id_di', str(di_id)).execute()
+        if error_update.data:
+            broadcast_change("UPDATE", new_data=error_update.data[0])
+        return jsonify({'message': f'No se pudo iniciar la consulta: {str(e)}'}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

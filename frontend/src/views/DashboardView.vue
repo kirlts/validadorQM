@@ -110,14 +110,13 @@ const { designs, isLoading } = storeToRefs(appStore);
 const isUploading = ref(false);
 const isDeleting = ref(null);
 const isTransforming = ref(false);
-// const notification = reactive({ message: '', type: 'success' }); // ELIMINADO
 const deleteDialog = reactive({ show: false, itemId: null, itemName: '' });
 const transformDialog = reactive({ show: false, item: null });
 const viewerDialog = reactive({ show: false, url: '', itemName: '' });
 
 const isActionInProgress = computed(() => isUploading.value || isTransforming.value || !!isDeleting.value);
 
-// --- FUNCIONES DE ESTADO ---
+// --- FUNCIONES DE ESTADO (Sin cambios) ---
 const isProcessing = (design) => design.proceso_actual?.estado === 'processing';
 
 const getStatusIcon = (design) => {
@@ -166,19 +165,19 @@ function handleRefresh() {
   appStore.fetchDesigns();
 }
 
+// --- ¡FUNCIÓN CORREGIDA! ---
 function viewDetails(design) {
+    // Si hay un proceso activo, no permitimos la navegación para evitar condiciones de carrera.
     if (design.proceso_actual?.estado === 'processing') {
       return;
     }
     
-    const isReadyForDetail = 
-        (design.proceso_actual?.estado === 'success' || design.proceso_actual?.estado === 'completado') &&
-        (design.proceso_actual?.nombre === 'transformacion' || design.proceso_actual?.nombre === 'evaluacion') &&
-        design.contenido_jsonld != null;
-
-    if (isReadyForDetail) {
+    // La única fuente de verdad para saber si un DI está listo para el detalle
+    // es la existencia de 'contenido_jsonld'.
+    if (design.contenido_jsonld) {
         router.push({ name: 'detail', params: { id: design.id_di } });
     } else {
+        // Si no hay JSON-LD, necesita ser transformado (o re-transformado si hubo un error).
         promptTransform(design);
     }
 }
@@ -191,9 +190,8 @@ async function handleFileUpload(event) {
   isUploading.value = true;
   try {
     await uploadDi(file);
-    // Líneas de notificación eliminadas
   } catch (error) {
-    console.error("Error al subir:", error); // Mantenemos el log de error para depuración
+    console.error("Error al subir:", error);
   } finally {
     isUploading.value = false;
     event.target.value = '';
@@ -212,7 +210,6 @@ async function confirmDelete() {
   isDeleting.value = diId;
   try {
     await deleteDi(diId);
-    // Líneas de notificación eliminadas
   } catch (error) {
     console.error("Error al eliminar:", error);
   } finally {
@@ -235,7 +232,6 @@ async function handleTransform() {
   
   try {
     await transformDiToLd(design.id_di);
-    // Líneas de notificación eliminadas
   } catch (error) {
     console.error("No se pudo iniciar la transformación:", error);
   } finally {

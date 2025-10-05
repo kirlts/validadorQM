@@ -6,7 +6,7 @@ Este proyecto es una aplicación web diseñada para validar Diseños Instruccion
 
 ## 🚀 Stack Tecnológico
 
-- **Frontend:** Vue.js 3 con Vuety y Pinia
+- **Frontend:** Vue.js 3 con Vuetify y Pinia
 - **Backend (API Gateway):** Flask (Python)
 - **Orquestador de Lógica Asíncrona:** n8n
 - **Base de Datos y Servicios:** Supabase (PostgreSQL, Auth, Storage, Realtime)
@@ -27,7 +27,7 @@ La aplicación sigue una arquitectura de microservicios desacoplados, orquestada
 
 ## ⚡ Flujo de Datos en Tiempo Real
 
-Para una experiencia de usuario fluida y reactiva, el sistema utiliza un **patrón de `Broadcast` híbrido**, garantizando que la UI siempre refleje el estado real de los datos.
+Para una experiencia de usuario fluida y reactiva, el sistema utiliza un **patrón de `Broadcast` híbrido** que elimina por completo la necesidad de `polling`, garantizando que la UI siempre refleje el estado real de los datos.
 
 1.  **Notificación Inmediata:** Cuando un usuario inicia una acción (ej. transformar un archivo), la API de Flask actualiza el estado en la base de datos y envía inmediatamente un mensaje `Broadcast` a través de Supabase. Esto actualiza la UI en menos de un segundo.
 2.  **Notificación de Respaldo:** Cuando un proceso asíncrono en n8n finaliza y actualiza la base de datos, un `Trigger` en PostgreSQL se activa y envía otro mensaje `Broadcast`.
@@ -64,3 +64,10 @@ Una vez configurados los archivos `.env`, puedes levantar todo el entorno con un
 
 ```bash
 docker compose up -d --build
+Una vez iniciados los contenedores, los servicios estarán disponibles en:
+
+Frontend: http://localhost:8080
+
+API de Flask: http://localhost:5000
+
+Interfaz de n8n: http://localhost:5678
