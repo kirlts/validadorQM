@@ -17,7 +17,6 @@ CORS(app,
     supports_credentials=True
 )
 
-# --- FUNCIÓN DE BROADCAST (Sin cambios) ---
 def broadcast_change(event_type, new_data=None, old_data=None):
     try:
         supabase_url = os.getenv("SUPABASE_URL")
@@ -38,7 +37,6 @@ def broadcast_change(event_type, new_data=None, old_data=None):
     except Exception as e:
         app.logger.error(f"Error al enviar broadcast: {str(e)}")
 
-# --- DECORADOR DE AUTENTICACIÓN (Sin cambios) ---
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -59,7 +57,6 @@ def token_required(f):
         return f(*args, **kwargs)
     return decorated
 
-# --- Funciones de Utilidad (Sin cambios) ---
 def trigger_n8n_webhook(webhook_url_env_var, payload):
     n8n_webhook_url = os.getenv(webhook_url_env_var)
     if not n8n_webhook_url:
@@ -90,17 +87,33 @@ def get_all_dis():
 def upload_di():
     if 'file' not in request.files: return jsonify({'message': 'No se encontró el archivo.'}), 400
     file = request.files['file']
+    if file.filename == '': return jsonify({'message': 'No se seleccionó ningún archivo.'}), 400
+    
     file_path = f"{g.user_id}/{file.filename}"
+    
     try:
-        g.supabase.storage.from_('di-bucket').upload(file=file.read(), path=file_path)
+        file_content = file.read()
+        content_type = file.content_type
+        file_options = {"content-type": content_type}
+
+        g.supabase.storage.from_('di-bucket').upload(
+            file=file_content, 
+            path=file_path, 
+            file_options=file_options
+        )
+        
         storage_url = f"{os.getenv('SUPABASE_URL')}/storage/v1/object/public/di-bucket/{file_path}"
         new_di_record = {'id_usuario': g.user_id, 'nombre_archivo': file.filename, 'url_storage': storage_url}
+        
         insert_result = g.supabase.table('disenos_instruccionales').insert(new_di_record).execute()
         created_di = insert_result.data[0]
+        
         broadcast_change("INSERT", new_data=created_di)
+        
         return jsonify(created_di), 201
     except Exception as e:
         if 'Duplicate' in str(e): return jsonify({'message': f'Ya existe un archivo con el nombre "{file.filename}".'}), 409
+        app.logger.error(f"Error en upload_di: {str(e)}")
         return jsonify({'message': 'Error inesperado al subir el archivo.'}), 500
 
 @app.route('/api/dis/<uuid:di_id>', methods=['DELETE'])
@@ -192,6 +205,26 @@ def interact_with_di(di_id):
         if error_update.data:
             broadcast_change("UPDATE", new_data=error_update.data[0])
         return jsonify({'message': f'No se pudo iniciar la consulta: {str(e)}'}), 500
+
+@app.route('/api/dis/<uuid:di_id>/download-url', methods=['GET'])
+@token_required
+def get_download_url(di_id):
+    # Usamos la función check_di_ownership que ya tenemos
+    di_info = check_di_ownership(di_id)
+    if not di_info:
+        return jsonify({'message': 'No autorizado o DI no encontrado'}), 404
+    
+    try:
+        # Construimos la ruta del archivo como lo espera Supabase Storage
+        file_path = f"{g.user_id}/{di_info['nombre_archivo']}"
+        
+        # Usamos el cliente de Supabase del contexto global 'g'
+        # para crear una URL firmada y segura con 60 segundos de validez.
+        signed_url_response = g.supabase.storage.from_('di-bucket').create_signed_url(file_path, 60)
+        
+        return jsonify(signed_url_response), 200
+    except Exception as e:
+        return jsonify({'error': f'Error al generar URL de descarga: {e}'}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
