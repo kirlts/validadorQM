@@ -44,16 +44,20 @@ export function getDis() {
   return fetchWithAuth('dis');
 }
 
-export async function uploadDi(file) {
+export async function uploadDi(file, paradigma) {
   const formData = new FormData();
   formData.append('file', file);
+  formData.append('paradigma', paradigma); 
+
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error('No hay sesión de usuario activa.');
+
   const response = await fetch(`${API_URL}/dis`, {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${session.access_token}` },
     body: formData,
   });
+
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     const error = new Error(errorData.message || errorData.error || `Error: ${response.statusText}`);
@@ -69,10 +73,6 @@ export function deleteDi(diId) {
 
 export function getDownloadUrl(diId) {
   return fetchWithAuth(`dis/${diId}/download-url`);
-}
-
-export function transformDiToLd(diId) {
-  return fetchWithAuth(`dis/${diId}/transform`, { method: 'POST' });
 }
 
 export function getDiValidation(diId) {

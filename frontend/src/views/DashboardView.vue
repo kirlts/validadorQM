@@ -44,10 +44,23 @@
             </v-card-text>
           </v-list>
 
-          <v-card-actions>
+          <v-divider></v-divider>
+
+          <v-card-actions class="pa-4">
+            <v-select
+              v-model="selectedParadigm"
+              :items="paradigmOptions"
+              label="Paradigma Curricular"
+              variant="outlined"
+              density="compact"
+              class="mr-4"
+              hide-details
+              :disabled="isActionInProgress"
+              style="max-width: 250px;"
+            ></v-select>
             <v-spacer></v-spacer>
-            <input type="file" id="fileInput" @change="handleFileUpload" hidden accept=".pdf,.doc,.docx">
-            <v-btn color="primary" variant="flat" @click="triggerFileInput" :loading="isUploading" :disabled="isActionInProgress">
+            <input type="file" id="fileInput" @change="handleFileUpload" hidden accept=".doc,.docx">
+            <v-btn color="primary" variant="flat" @click="triggerFileInput" :loading="isUploading" :disabled="isActionInProgress || !selectedParadigm">
               <v-icon left>mdi-upload</v-icon>
               Subir Nuevo DI
             </v-btn>
@@ -56,6 +69,7 @@
       </v-col>
     </v-row>
     
+    <!-- Diálogo de Eliminación -->
     <v-dialog v-model="deleteDialog.show" max-width="500px" persistent>
       <v-card>
         <v-card-title class="headline">Confirmar Eliminación</v-card-title>
@@ -67,17 +81,8 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-dialog v-model="transformDialog.show" max-width="500px" persistent>
-      <v-card>
-        <v-card-title class="headline">Procesamiento Pendiente</v-card-title>
-        <v-card-text><p>Para analizar este DI, primero debe ser transformado. El estado se actualizará automáticamente.</p></v-card-text>
-        <v-card-actions class="px-4 pb-4">
-          <v-btn text @click="transformDialog.show = false">Cancelar</v-btn>
-          <v-spacer></v-spacer>
-          <v-btn color="primary" variant="flat" @click="handleTransform" :loading="isTransforming">Transformar</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    
+    <!-- Diálogo de Visualización -->
     <v-dialog v-model="viewerDialog.show" fullscreen scrollable>
        <v-card>
         <v-toolbar color="primary" dark>
@@ -101,34 +106,39 @@ import { ref, reactive, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAppStore } from '@/stores/appStore';
 import { storeToRefs } from 'pinia';
-import { uploadDi, getDownloadUrl, deleteDi, transformDiToLd } from '@/services/apiService';
+import { uploadDi, getDownloadUrl, deleteDi } from '@/services/apiService';
 
 const router = useRouter();
 const appStore = useAppStore();
 const { designs, isLoading } = storeToRefs(appStore);
 
+// --- ESTADO LOCAL ---
 const isUploading = ref(false);
 const isDeleting = ref(null);
-const isTransforming = ref(false);
+const selectedParadigm = ref('CentradoEnAsignatura'); 
 const deleteDialog = reactive({ show: false, itemId: null, itemName: '' });
-const transformDialog = reactive({ show: false, item: null });
 const viewerDialog = reactive({ show: false, url: '', itemName: '' });
 
-const isActionInProgress = computed(() => isUploading.value || isTransforming.value || !!isDeleting.value);
+const paradigmOptions = [
+  { title: 'Antiguo (RA-AE-IL)', value: 'CentradoEnAsignatura' },
+  { title: 'Nuevo (RF-RA-ID)', value: 'CentradoEnPerfil' },
+];
 
-// --- FUNCIONES DE ESTADO (Sin cambios) ---
+const isActionInProgress = computed(() => isUploading.value || !!isDeleting.value);
+
+// --- FUNCIONES DE ESTADO ---
 const isProcessing = (design) => design.proceso_actual?.estado === 'processing';
 
 const getStatusIcon = (design) => {
     const estado = design.proceso_actual?.estado;
-    if (estado === 'success' || estado === 'completado') return 'mdi-check-circle';
+    if (estado === 'success') return 'mdi-check-circle';
     if (estado === 'error') return 'mdi-alert-circle';
     return 'mdi-file-question';
 };
 
 const getStatusColor = (design) => {
     const estado = design.proceso_actual?.estado;
-    if (estado === 'success' || estado === 'completado') return 'success';
+    if (estado === 'success') return 'success';
     if (estado === 'error') return 'error';
     if (estado === 'processing') return 'blue-grey';
     return 'grey';
@@ -137,21 +147,27 @@ const getStatusColor = (design) => {
 const getStatusText = (design) => {
     const proceso = design.proceso_actual;
     const createdAt = design.created_at;
-    const createdText = `Creado: ${new Date(createdAt).toLocaleDateString()}`;
+    const createdText = `Subido: ${new Date(createdAt).toLocaleDateString()}`;
+
+    // Mapeo de valores de paradigma a etiquetas amigables
+    const paradigmMap = {
+        'CentradoEnAsignatura': 'RA-AE-IL',
+        'CentradoEnPerfil': 'RF-RA-ID'
+    };
+    const paradigmLabel = design.paradigma ? paradigmMap[design.paradigma] : 'No definido';
 
     if (!proceso || !proceso.estado || proceso.estado === 'pendiente') {
-        return `Pendiente de transformación. ${createdText}`;
+        return `Paradigma: ${paradigmLabel}. ${createdText}`;
     }
 
     switch (proceso.estado) {
         case 'processing':
             return `Procesando: ${proceso.nombre}...`;
         case 'success':
-        case 'completado':
-            if (proceso.nombre === 'evaluacion') {
-                return `Evaluación completada. ${createdText}`;
+            if (proceso.nombre === 'ingesta') {
+              return `Paradigma: ${paradigmLabel}. ${createdText}`;
             }
-            return `Listo para analizar. ${createdText}`;
+            return `Análisis de '${proceso.nombre}' completado. ${createdText}`;
         case 'error':
             const errorMsg = proceso.error_detalle || 'Error desconocido.';
             return `Error en '${proceso.nombre}': ${errorMsg}`;
@@ -165,36 +181,30 @@ function handleRefresh() {
   appStore.fetchDesigns();
 }
 
-// --- ¡FUNCIÓN CORREGIDA! ---
 function viewDetails(design) {
-    // Si hay un proceso activo, no permitimos la navegación para evitar condiciones de carrera.
-    if (design.proceso_actual?.estado === 'processing') {
-      return;
+    if (isProcessing(design)) {
+      return; 
     }
-    
-    // La única fuente de verdad para saber si un DI está listo para el detalle
-    // es la existencia de 'contenido_jsonld'.
-    if (design.contenido_jsonld) {
-        router.push({ name: 'detail', params: { id: design.id_di } });
-    } else {
-        // Si no hay JSON-LD, necesita ser transformado (o re-transformado si hubo un error).
-        promptTransform(design);
-    }
+    router.push({ name: 'detail', params: { id: design.id_di } });
 }
 
 function triggerFileInput() { document.getElementById('fileInput').click(); }
 
 async function handleFileUpload(event) {
   const file = event.target.files[0];
-  if (!file) return;
+  if (!file || !selectedParadigm.value) {
+    return;
+  }
+
   isUploading.value = true;
   try {
-    await uploadDi(file);
+    await uploadDi(file, selectedParadigm.value);
   } catch (error) {
     console.error("Error al subir:", error);
   } finally {
     isUploading.value = false;
     event.target.value = '';
+    selectedParadigm.value = 'CentradoEnAsignatura';
   }
 }
 
@@ -218,27 +228,6 @@ async function confirmDelete() {
   }
 }
 
-function promptTransform(design) {
-    transformDialog.item = design;
-    transformDialog.show = true;
-}
-
-async function handleTransform() {
-  const design = transformDialog.item;
-  if (!design) return;
-  
-  isTransforming.value = true;
-  transformDialog.show = false;
-  
-  try {
-    await transformDiToLd(design.id_di);
-  } catch (error) {
-    console.error("No se pudo iniciar la transformación:", error);
-  } finally {
-    isTransforming.value = false;
-  }
-}
-
 async function handleView(design) {
   viewerDialog.itemName = design.nombre_archivo;
   viewerDialog.url = '';
@@ -247,7 +236,7 @@ async function handleView(design) {
     const response = await getDownloadUrl(design.id_di);
     viewerDialog.url = `https://docs.google.com/gview?url=${encodeURIComponent(response.signedURL)}&embedded=true`;
   } catch (error) {
-    console.error("Error al obtener la URL:", error);
+    console.error("Error al obtener la URL de visualización:", error);
     viewerDialog.show = false;
   }
 }

@@ -4,67 +4,30 @@
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "455ec6c7-6a0d-481b-af71-7516cbbb21a5",
+        "path": "=e71af77b-8c5f-4f15-af5a-f0fa2d75d279",
         "responseMode": "responseNode",
         "options": {}
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        432,
-        0
+        -16,
+        -224
       ],
-      "id": "7e4717a6-be57-493d-b383-0f0b22b6f852",
+      "id": "7b03a6a6-8f81-483d-920b-a6227ca7b20b",
       "name": "Webhook",
-      "webhookId": "455ec6c7-6a0d-481b-af71-7516cbbb21a5"
+      "webhookId": "e71af77b-8c5f-4f15-af5a-f0fa2d75d279"
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "=https://hzfcabvdrytxgaoqjeag.supabase.co/storage/v1/object/di-bucket/{{$json.query.userId}}/{{$binary.file.fileName.normalize(\"NFD\").replace(/[\\u0300-\\u036f]/g, \"\")}}\n",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "supabaseApi",
-        "sendBody": true,
-        "contentType": "binaryData",
-        "inputDataFieldName": "file",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        608,
-        0
-      ],
-      "id": "6afafeb3-fea0-4a01-99e8-6b7fe9c8c861",
-      "name": "Upload to S3 bucket",
-      "credentials": {
-        "supabaseApi": {
-          "id": "m0DUcQthM94wIR7O",
-          "name": "Supabase account"
-        },
-        "httpHeaderAuth": {
-          "id": "9Mj2fKfgn7ZbteoT",
-          "name": "Supabase Service Role"
-        }
-      },
-      "onError": "continueErrorOutput"
-    },
-    {
-      "parameters": {
+        "useCustomSchema": true,
+        "operation": "get",
         "tableId": "disenos_instruccionales",
-        "fieldsUi": {
-          "fieldValues": [
+        "filters": {
+          "conditions": [
             {
-              "fieldId": "id_usuario",
-              "fieldValue": "={{ $('Webhook').item.json.query.userId }}"
-            },
-            {
-              "fieldId": "nombre_archivo",
-              "fieldValue": "={{$('Webhook').item.binary.file.fileName.normalize(\"NFD\").replace(/[\\u0300-\\u036f]/g, \"\")}}"
-            },
-            {
-              "fieldId": "url_storage",
-              "fieldValue": "={{ $json.Id }}"
+              "keyName": "id_di",
+              "keyValue": "={{ $json.body.di_id }}"
             }
           ]
         }
@@ -72,11 +35,11 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        800,
-        -112
+        208,
+        -224
       ],
-      "id": "1b3297a8-fcc2-4b08-ae3a-e38f43536fc6",
-      "name": "Create a row",
+      "id": "d8df72da-d110-48ff-960d-7b9494145ced",
+      "name": "Get a row",
       "credentials": {
         "supabaseApi": {
           "id": "m0DUcQthM94wIR7O",
@@ -86,72 +49,402 @@
     },
     {
       "parameters": {
-        "respondWith": "json",
-        "responseBody": "{\"status\": \"success\", \"message\": \"Archivo subido y registrado correctamente.\"}",
+        "url": "={{ \"https://tjzqguiksidruuyhwwab.supabase.co/storage/v1/object/di-bucket/\" + $json.id_usuario + \"/\" + $json.nombre_archivo }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        432,
+        -224
+      ],
+      "id": "95725620-dd86-4f0a-81b4-83941e856e20",
+      "name": "HTTP Request",
+      "credentials": {
+        "supabaseApi": {
+          "id": "m0DUcQthM94wIR7O",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "={{ decodeURIComponent($binary.data.fileName) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        656,
+        -224
+      ],
+      "id": "7ec9e0a1-3bda-4c50-be1f-9a451a264d0f",
+      "name": "Write Binary File"
+    },
+    {
+      "parameters": {
+        "command": "={{ `pandoc -s \"${$('Write Binary File').item.json.fileName}\" -t html -o \"${$('Write Binary File').item.json.fileName}.html\"` }}"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        880,
+        -224
+      ],
+      "id": "1067b30e-bdb0-4840-998a-05e8f7c8e9bb",
+      "name": "Convertir"
+    },
+    {
+      "parameters": {
+        "fileSelector": "={{ $('Write Binary File').item.json.fileName }}.html",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        -224
+      ],
+      "id": "5bcbd1af-084c-4696-bdb1-07eac782c063",
+      "name": "Leer output"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
         "options": {}
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.4,
       "position": [
-        976,
-        -112
+        2336,
+        -224
       ],
-      "id": "a030f402-253c-494e-a517-35223356e89a",
-      "name": "Response Created"
+      "id": "191bd605-e595-42ad-8863-ffa851c6b9f3",
+      "name": "Respond to Webhook"
     },
     {
       "parameters": {
-        "respondWith": "allIncomingItems",
-        "options": {
-          "responseCode": 409
+        "jsCode": "const textoDI = Buffer.from($input.first().binary.data.data, 'base64').toString('utf8');\n\nreturn {\n  json: {\n    texto: textoDI\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1328,
+        -224
+      ],
+      "id": "bf9e7e4b-b0fa-4a46-86e0-4625b65f0d85",
+      "name": "Extraer Texto"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1840,
+        0
+      ],
+      "id": "508b1e93-e614-49bc-86bd-3a63d2222816",
+      "name": "Classifier Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "1fRbxclakan4SB2c",
+          "name": "Api 1"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "inputText": "={{ $json.simplifiedHtml }}",
+        "categories": {
+          "categories": [
+            {
+              "category": "Es un Diseño Instruccional",
+              "description": "Un diseño instruccional (DI) constituye un proceso estructurado para crear experiencias de aprendizaje efectivas y eficientes. El objetivo es guiar a los estudiantes a través de una serie de actividades y evaluaciones para que logren resultados de aprendizaje específicos. Un DI integra elementos pedagógicos y organizacionales en un plan coherente, detallando qué se enseñará, cómo se enseñará y cómo se evaluará el aprendizaje."
+            },
+            {
+              "category": "No es un Diseño Instruccional",
+              "description": "Cualquier otro caso, en el que el texto proporcionado no es claramente un diseño instruccional"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "position": [
+        1760,
+        -224
+      ],
+      "id": "9eacdd23-d2d3-485d-98a3-5b2838d3daba",
+      "name": "Clasificador"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "disenos_instruccionales",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id_di",
+              "condition": "eq",
+              "keyValue": "={{ $('Webhook').item.json.body.di_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "contenido_html",
+              "fieldValue": "={{ $json.simplifiedHtml }}"
+            },
+            {
+              "fieldId": "proceso_actual",
+              "fieldValue": "={{ {\"nombre\": \"ingesta\", \"estado\": \"success\"} }}"
+            }
+          ]
         }
       },
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.4,
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
       "position": [
-        800,
-        112
+        2112,
+        -320
       ],
-      "id": "f289ea41-b41e-408b-87d9-fcd49ae6cc46",
-      "name": "Response Exists"
+      "id": "c34b72ae-1fa0-4de3-bb26-bc6cb6c629d6",
+      "name": "Update Success",
+      "credentials": {
+        "supabaseApi": {
+          "id": "m0DUcQthM94wIR7O",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "disenos_instruccionales",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id_di",
+              "condition": "eq",
+              "keyValue": "={{ $('Webhook').item.json.body.di_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "contenido_html",
+              "fieldValue": "null"
+            },
+            {
+              "fieldId": "proceso_actual",
+              "fieldValue": "={{ {\"nombre\": \"ingesta\", \"estado\": \"error\", \"error_detalle\": \"El archivo subido no pudo ser clasificado como un Diseño Instruccional.\"} }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2112,
+        -128
+      ],
+      "id": "dd18c148-a894-4ccd-8007-3d460851186d",
+      "name": "Update Not DI",
+      "credentials": {
+        "supabaseApi": {
+          "id": "m0DUcQthM94wIR7O",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Se recibe el HTML completo desde el nodo anterior.\nconst fullHtml = $input.first().json.texto;\n\n// 1. Extraer únicamente el contenido dentro de la etiqueta <body>\n// Esto elimina de golpe el <head>, <style>, <meta>, etc.\nconst bodyMatch = fullHtml.match(/<body[^>]*>([\\s\\S]*?)<\\/body>/i);\nif (!bodyMatch || !bodyMatch[1]) {\n  // Si por alguna razón no se encuentra un body, devolvemos el original para no fallar.\n  return { json: { simplifiedHtml: fullHtml } };\n}\n\nlet cleanedHtml = bodyMatch[1];\n\n// 2. Eliminar todos los atributos de estilo en línea (style=\"...\")\ncleanedHtml = cleanedHtml.replace(/\\s*style=\"[^\"]*\"/g, '');\n\n// 3. Eliminar otros atributos puramente presentacionales\n// (colspan, rowspan, width, align, etc.)\ncleanedHtml = cleanedHtml.replace(/\\s*(colspan|rowspan|width|height|align|valign|cellspacing|cellpadding|border)=\"[^\"]*\"/g, '');\n\n// 4. Eliminar las etiquetas <colgroup> y su contenido, ya que son para estilo de columnas.\ncleanedHtml = cleanedHtml.replace(/<colgroup>[\\s\\S]*?<\\/colgroup>/gi, '');\n\n// 5. Eliminar saltos de línea y espacios en blanco excesivos para compactar la salida.\n// Reemplaza dos o más espacios/saltos de línea con un solo salto de línea.\ncleanedHtml = cleanedHtml.replace(/\\s{2,}/g, '\\n');\n\n// 6. Eliminar párrafos vacíos o que solo contienen un espacio de no ruptura.\ncleanedHtml = cleanedHtml.replace(/<p>\\s*(&nbsp;)?\\s*<\\/p>/gi, '');\n\n// 7. Recortar cualquier espacio en blanco al principio o al final del resultado.\ncleanedHtml = cleanedHtml.trim();\n\n// Devolvemos el HTML limpio en una nueva propiedad para usarla en los siguientes nodos.\nreturn {\n  json: {\n    simplifiedHtml: cleanedHtml\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1536,
+        -224
+      ],
+      "id": "74b7cdac-bdc9-4ec5-af0d-e22fda8bd009",
+      "name": "Limpiar y Simplificar HTML"
     }
   ],
-  "pinData": {},
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n:5678",
+            "user-agent": "python-requests/2.32.5",
+            "accept-encoding": "gzip, deflate",
+            "accept": "*/*",
+            "connection": "keep-alive",
+            "content-length": "86",
+            "content-type": "application/json"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "di_id": "e295553f-0463-42c8-8735-d4301307a65d",
+            "paradigma": "CentradoEnAsignatura"
+          },
+          "webhookUrl": "http://localhost:5678/webhook/e71af77b-8c5f-4f15-af5a-f0fa2d75d279",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
   "connections": {
     "Webhook": {
       "main": [
         [
           {
-            "node": "Upload to S3 bucket",
+            "node": "Get a row",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Upload to S3 bucket": {
+    "Get a row": {
       "main": [
         [
           {
-            "node": "Create a row",
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Write Binary File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Binary File": {
+      "main": [
+        [
+          {
+            "node": "Convertir",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convertir": {
+      "main": [
+        [
+          {
+            "node": "Leer output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer output": {
+      "main": [
+        [
+          {
+            "node": "Extraer Texto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Texto": {
+      "main": [
+        [
+          {
+            "node": "Limpiar y Simplificar HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classifier Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Clasificador",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clasificador": {
+      "main": [
+        [
+          {
+            "node": "Update Success",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Response Exists",
+            "node": "Update Not DI",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Create a row": {
+    "Update Success": {
       "main": [
         [
           {
-            "node": "Response Created",
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Not DI": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpiar y Simplificar HTML": {
+      "main": [
+        [
+          {
+            "node": "Clasificador",
             "type": "main",
             "index": 0
           }
@@ -163,11 +456,11 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "9313756a-77b4-4bdb-9ee7-e1789f4c3d44",
+  "versionId": "a376ef10-da70-4baa-a34a-1091315a2916",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "81f9aa344da0912f901e07498089d3dd54ba6d767dbe4d581a261cb5d8886bb9"
   },
-  "id": "IOl7EJaEpVfi8y8c",
+  "id": "52dCBOagXgGB8bCy",
   "tags": []
 }

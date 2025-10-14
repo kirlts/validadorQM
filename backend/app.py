@@ -86,31 +86,43 @@ def get_all_dis():
 @token_required
 def upload_di():
     if 'file' not in request.files: return jsonify({'message': 'No se encontró el archivo.'}), 400
+    
+    # --- NUEVO: Obtener paradigma del formulario ---
+    paradigma = request.form.get('paradigma')
+    if not paradigma: return jsonify({'message': 'El paradigma curricular es requerido.'}), 400
+
     file = request.files['file']
     if file.filename == '': return jsonify({'message': 'No se seleccionó ningún archivo.'}), 400
     
     file_path = f"{g.user_id}/{file.filename}"
     
     try:
+        # 1. Subir a Storage
         file_content = file.read()
-        content_type = file.content_type
-        file_options = {"content-type": content_type}
-
-        g.supabase.storage.from_('di-bucket').upload(
-            file=file_content, 
-            path=file_path, 
-            file_options=file_options
-        )
+        g.supabase.storage.from_('di-bucket').upload(file=file_content, path=file_path, file_options={"content-type": file.content_type})
         
-        storage_url = f"{os.getenv('SUPABASE_URL')}/storage/v1/object/public/di-bucket/{file_path}"
-        new_di_record = {'id_usuario': g.user_id, 'nombre_archivo': file.filename, 'url_storage': storage_url}
-        
+        # 2. Crear registro inicial en la DB, AHORA con paradigma
+        new_di_record = {
+            'id_usuario': g.user_id, 
+            'nombre_archivo': file.filename,
+            'paradigma': paradigma
+        }
         insert_result = g.supabase.table('disenos_instruccionales').insert(new_di_record).execute()
         created_di = insert_result.data[0]
+
+        # 3. Actualizar estado a "processing" para feedback inmediato
+        proceso_inicial = {"nombre": "ingesta", "estado": "processing"}
+        update_result = g.supabase.table('disenos_instruccionales').update({'proceso_actual': proceso_inicial}).eq('id_di', created_di['id_di']).execute()
+        di_para_broadcast = update_result.data[0]
+
+        # 4. Notificar al frontend
+        broadcast_change("INSERT", new_data=di_para_broadcast)
         
-        broadcast_change("INSERT", new_data=created_di)
-        
+        # 5. Disparar el workflow de ingesta en N8N
+        trigger_n8n_webhook('N8N_WEBHOOK_URL_INGESTA_DI', {"di_id": str(created_di['id_di']), "paradigma": paradigma})
+
         return jsonify(created_di), 201
+        
     except Exception as e:
         if 'Duplicate' in str(e): return jsonify({'message': f'Ya existe un archivo con el nombre "{file.filename}".'}), 409
         app.logger.error(f"Error en upload_di: {str(e)}")
@@ -129,24 +141,6 @@ def delete_di(di_id):
         return jsonify({'message': 'DI eliminado correctamente.'}), 200
     except Exception as e:
         return jsonify({'message': f'Error al eliminar el DI: {str(e)}'}), 500
-
-@app.route('/api/dis/<uuid:di_id>/transform', methods=['POST'])
-@token_required
-def transform_di(di_id):
-    if not check_di_ownership(di_id): return jsonify({'message': 'Acción no autorizada.'}), 403
-    try:
-        proceso = {"nombre": "transformacion", "estado": "processing"}
-        update_result = g.supabase.table('disenos_instruccionales').update({'proceso_actual': proceso, 'contenido_jsonld': None}).eq('id_di', str(di_id)).execute()
-        updated_di = update_result.data[0]
-        broadcast_change("UPDATE", new_data=updated_di)
-        trigger_n8n_webhook('N8N_WEBHOOK_URL_TRANSFORM_DI', {"di_id": str(di_id)})
-        return jsonify({'message': 'El proceso de transformación ha comenzado.'}), 202
-    except Exception as e:
-        proceso_error = {"nombre": "transformacion", "estado": "error", "error_detalle": str(e)}
-        error_update = g.supabase.table('disenos_instruccionales').update({'proceso_actual': proceso_error}).eq('id_di', str(di_id)).execute()
-        if error_update.data:
-            broadcast_change("UPDATE", new_data=error_update.data[0])
-        return jsonify({'message': f'No se pudo iniciar la transformación: {str(e)}'}), 500
 
 @app.route('/api/dis/<uuid:di_id>/validate', methods=['POST'])
 @token_required

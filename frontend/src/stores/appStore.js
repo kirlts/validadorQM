@@ -68,23 +68,20 @@ export const useAppStore = defineStore('app', {
       if (this.realtimeChannel) {
         this.unsubscribeFromDiChanges();
       }
-
-      console.log('[Realtime-Broadcast] Sintonizando el canal "di_changes"...');
       
+      console.log('[Realtime-Broadcast] Intentando conectar al canal "di_changes"...');
       this.realtimeChannel = supabase.channel('di_changes');
       
       this.realtimeChannel
         .on(
           'broadcast',
-          { event: 'di_update' }, // Escuchamos nuestro evento personalizado 'di_update'
+          { event: 'di_update' },
           (message) => {
-            // El payload real está dentro de message.payload
             const payload = message.payload;
             console.log('[Realtime-Broadcast] Mensaje recibido:', payload);
             
             switch (payload.eventType) {
               case 'INSERT':
-                // Añadimos el nuevo DI si no existe ya (para evitar duplicados)
                 if (!this.designs.some(d => d.id_di === payload.new.id_di)) {
                     this.designs.unshift(payload.new);
                 }
@@ -102,13 +99,45 @@ export const useAppStore = defineStore('app', {
           }
         )
         .subscribe((status, err) => {
-          if (status === 'SUBSCRIBED') {
-            console.log('[Realtime-Broadcast] ¡Conectado y escuchando broadcasts en "di_changes"!');
-          }
-          if (status === 'CHANNEL_ERROR') {
-            console.error('[Realtime-Broadcast] Error en el canal:', err);
+          // Escuchar todos los cambios de estado del canal ---
+          switch (status) {
+            case 'SUBSCRIBED':
+              console.log('[Realtime-Broadcast] ¡Conectado y escuchando broadcasts en "di_changes"!');
+              // Si había un timer de reconexión, lo limpiamos porque ya lo logramos.
+              if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+              break;
+            
+            case 'CHANNEL_ERROR':
+              console.error('[Realtime-Broadcast] Error en el canal:', err);
+              this.attemptReconnect();
+              break;
+
+            case 'TIMED_OUT':
+              console.warn('[Realtime-Broadcast] Conexión agotada (TIMED_OUT). Intentando reconectar...');
+              this.attemptReconnect();
+              break;
+            
+            case 'CLOSED':
+              console.warn('[Realtime-Broadcast] El canal fue cerrado (CLOSED). Podría ser por inactividad. Intentando reconectar...');
+              // No reconectamos inmediatamente si el usuario cerró sesión.
+              if (this.isLoggedIn) {
+                this.attemptReconnect();
+              }
+              break;
           }
         });
+    },
+    
+    attemptReconnect() {
+      // Limpiamos cualquier timer anterior para evitar múltiples intentos.
+      if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+
+      // Programamos un reintento en 5 segundos.
+      // Esto evita un bucle infinito de intentos si la red está caída.
+      this.reconnectTimer = setTimeout(() => {
+        console.log('[Realtime-Broadcast] Ejecutando intento de reconexión...');
+        this.subscribeToDiChanges();
+      }, 5000);
     },
 
     unsubscribeFromDiChanges() {
