@@ -16,6 +16,7 @@ export const useAppStore = defineStore('app', {
 
   getters: {
     isLoggedIn: (state) => !!state.user,
+    isAdmin: (state) => state.user?.user_metadata?.role === 'admin',
   },
 
   actions: {
@@ -41,7 +42,7 @@ export const useAppStore = defineStore('app', {
         this.isAuthReady = true;
         
         if (!previousUser && this.user) {
-          router.push({ name: 'dashboard' });
+          router.push({ name: 'dashboard' }); // Siempre al dashboard
           this.fetchDesigns();
           this.subscribeToDiChanges();
         } else if (previousUser && !this.user) {

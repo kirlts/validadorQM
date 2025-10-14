@@ -89,3 +89,12 @@ export function interactWithDi(diId, prompt) {
     body: JSON.stringify({ prompt: prompt }),
   });
 }
+
+// --- Nuevas funciones para el panel de administración ---
+export function syncDomainGlossary() {
+  return fetchWithAuth('sync/domain-glossary', { method: 'POST' });
+}
+
+export function syncVocabularyGlossary() {
+  return fetchWithAuth('sync/vocabulary-glossary', { method: 'POST' });
+}

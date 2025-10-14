@@ -47,8 +47,13 @@ def token_required(f):
         if not token: return jsonify({'message': 'Token de autorización ausente o inválido.'}), 401
         try:
             SUPABASE_JWT_SECRET = os.getenv('SUPABASE_JWT_SECRET')
-            data = jwt.decode(token, SUPABASE_JWT_SECRET, algorithms=['HS256'], audience='authenticated')
-            g.user_id = data['sub']
+            # Decodificamos el token para acceder a toda su información
+            decoded_token = jwt.decode(token, SUPABASE_JWT_SECRET, algorithms=['HS256'], audience='authenticated')
+            
+            # Guardamos la info del usuario en el contexto global 'g'
+            g.user_id = decoded_token['sub']
+            g.user_role = decoded_token.get('user_metadata', {}).get('role', 'docente') # Rol por defecto 'docente'
+            
             SUPABASE_URL = os.getenv("SUPABASE_URL")
             SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
             g.supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -56,6 +61,17 @@ def token_required(f):
             return jsonify({'message': f'Token inválido o error: {str(e)}'}), 401
         return f(*args, **kwargs)
     return decorated
+
+# --- NUEVO Decorador para verificar roles ---
+def require_role(role_name):
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if g.user_role != role_name:
+                return jsonify({'message': 'Acceso denegado: Permisos insuficientes.'}), 403
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
 
 def trigger_n8n_webhook(webhook_url_env_var, payload):
     n8n_webhook_url = os.getenv(webhook_url_env_var)
@@ -219,6 +235,25 @@ def get_download_url(di_id):
         return jsonify(signed_url_response), 200
     except Exception as e:
         return jsonify({'error': f'Error al generar URL de descarga: {e}'}), 500
+    
+# --- NUEVAS RUTAS DE ADMINISTRADOR ---
+
+@app.route('/api/sync/domain-glossary', methods=['POST'])
+@token_required
+@require_role('admin')
+def sync_domain_glossary():
+    # El cuerpo del request puede estar vacío o contener el archivo del glosario
+    # Por ahora, solo disparamos el webhook
+    trigger_n8n_webhook('N8N_WEBHOOK_URL_SYNC_DOMAIN', {})
+    return jsonify({'message': 'Proceso de sincronización del glosario de dominio iniciado.'}), 202
+
+@app.route('/api/sync/vocabulary-glossary', methods=['POST'])
+@token_required
+@require_role('admin')
+def sync_vocabulary_glossary():
+    trigger_n8n_webhook('N8N_WEBHOOK_URL_SYNC_VOCABULARY', {})
+    return jsonify({'message': 'Proceso de sincronización del vocabulario técnico iniciado.'}), 202
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
