@@ -1,0 +1,510 @@
+{
+  "name": "PoC - Alineacion AE / IL",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        752
+      ],
+      "id": "586d8e8b-e42d-4131-b15e-7faa2e764405",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-flash-lite-latest",
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1088,
+        976
+      ],
+      "id": "19b6adb0-2fd3-4dac-94c9-63aff1ed376e",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "1fRbxclakan4SB2c",
+          "name": "Api 1"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        512,
+        976
+      ],
+      "id": "5112ae24-8d03-4c3c-af9f-7ab1500963c2",
+      "name": "Embeddings Google Gemini1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "1fRbxclakan4SB2c",
+          "name": "Api 1"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres un experto en evaluación de calidad instruccional de la UNAB, riguroso y basado en evidencia.\n\n### CONTEXTO DE DOMINIO (Fuente de Verdad):\n{{ JSON.stringify($json.data) }}\n\n### DATOS DEL DISEÑO INSTRUCCIONAL (JSON-LD):\n{{ JSON.stringify($('Limpiar y Parsear JSON').first()) }}\n\n### TAREA:\nRealiza un análisis de alineamiento y coherencia para CADA 'aprendizajeEsperado' (AE) y sus 'indicadoresDeLogro' (IL) en los datos JSON-LD.\n\nPara cada 'aprendizajeEsperado' (AE):\n1.  Extrae su verbo principal (ej. \"Aplicar\"). Usando el CONTEXTO DE DOMINIO, identifica su nivel taxonómico (ej. \"Nivel 3: Aplicar\").\n2.  Para CADA 'indicadorDeLogro' (IL) asociado:\n    a. Extrae su verbo principal (ej. \"Explican\"). Usando el CONTEXTO DE DOMINIO, identifica su nivel taxonómico (ej. \"Nivel 2: Entender\").\n    b. Evalúa si el nivel del IL es coherente con el nivel del AE. (Un IL puede ser de nivel igual o inferior, pero nunca superior).\n    c. Evalúa si el contenido del IL es semánticamente coherente y desglosa correctamente el AE.\n3.  Basado en este análisis, emite un veredicto de alineamiento (ej. \"ALINEADO\", \"ALINEADO CON OBSERVACIONES\", \"NO ALINEADO\") para cada AE.\n4.  Proporciona una breve justificación para tu veredicto, citando los verbos y niveles identificados.\n\nResponde en formato Markdown, estructurando tu respuesta por cada AE.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        2384,
+        752
+      ],
+      "id": "bba63be4-4bb3-41ad-a97d-450e422d857c",
+      "name": "Analisis Final"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nlet styleGuide = \"### GUÍA DE ESTILO DEL VOCABULARIO (Schema):\\n\";\n\n// Iteramos sobre cada ítem que nos llega\nfor (const item of items) {\n  // Verificamos que la estructura anidada exista\n  if (item.json && item.json.document && item.json.document.metadata) {\n    \n    // Usamos los paths correctos: item.json.document.pageContent\n    const clave = item.json.document.pageContent;\n    \n    // Y item.json.document.metadata.descripcion\n    const descripcion = item.json.document.metadata.descripcion || \"Sin descripción\";\n    \n    styleGuide += `- Usa la clave: \\`${clave}\\` (Descripción: ${descripcion})\\n`;\n  }\n}\n\n// Devolvemos el texto completo\nreturn { json: { style_guide_text: styleGuide } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        784,
+        752
+      ],
+      "id": "8407c444-9c4e-47f9-b1f1-c70d00cfd045",
+      "name": "Crear Guia Estilo"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres un asistente de extracción de datos que SOLO responde con JSON.\nTu única tarea es rellenar una plantilla JSON.\n\n### 1. GUÍA DE CLAVES OBLIGATORIAS:\n{{ $json.style_guide_text }}\n\n### 2. DATOS DE ENTRADA:\n{{ $('Data').first().json.htmlSimulado }}\n\n### 3. TAREA:\nAnaliza los datos de entrada y extrae:\n1.  El 'resultadoAprendizaje' general de la asignatura.\n2.  TODOS los 'aprendizajeEsperado' (AE) con sus 'indicadoresDeLogro' (IL) asociados.\n\nSe minucioso en representar adecuadamente la estructura de tablas de los datos de entrada.\n\nGenera un ÚNICO objeto JSON con la siguiente estructura exacta:\n{\n  \"resultadoAprendizaje\": \"El texto del RA general...\",\n  \"aprendizajesEsperados\": [\n    {\n      \"aprendizajeEsperado\": \"El texto del AE1...\",\n      \"indicadoresDeLogro\": [\n        \"El texto del IL 1.1...\",\n        \"El texto del IL 1.2...\",\n        \"El texto del IL 1.3...\"\n      ]\n    },\n    {\n      \"aprendizajeEsperado\": \"El texto del AE2...\",\n      \"indicadoresDeLogro\": [\n        \"El texto del IL 2.1...\",\n        \"El texto del IL 2.2...\",\n        ...\n      ]\n    },\n    // ... (un objeto por cada AE)\n  ]\n}\n\nUsa ESTRICTAMENTE las claves 'resultadoAprendizaje', 'aprendizajeEsperado', 'indicadoresDeLogro'.\nResponde SÓLO con el objeto JSON y nada más.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1008,
+        752
+      ],
+      "id": "dea6c58d-9801-442d-b361-aebdc6efc3c4",
+      "name": "HTML a JSON-LD"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Obtiene la salida de texto crudo del nodo anterior\nconst rawOutput = $input.item.json.output;\n\n// Expresión regular para encontrar la primera ocurrencia de un bloque JSON\nconst jsonRegex = /\\{[\\s\\S]*\\}/;\nconst match = rawOutput.match(jsonRegex);\n\n// Si se encuentra una coincidencia, la parseamos a un objeto JSON\nif (match && match[0]) {\n  const jsonObject = JSON.parse(match[0]);\n  // Devuelve el objeto JSON limpio. N8N lo pondrá dentro de un objeto 'json'.\n  return { json: jsonObject };\n}\n\n// Si no se encuentra ningún JSON, devuelve un error para detener el flujo\nreturn { json: { error: \"No se encontró un objeto JSON válido en la salida del LLM.\" } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1360,
+        752
+      ],
+      "id": "b72a2b2f-c32f-4a90-8a0f-befd0863a2c4",
+      "name": "Limpiar y Parsear JSON"
+    },
+    {
+      "parameters": {
+        "mode": "load",
+        "tableName": {
+          "__rl": true,
+          "value": "vocabulario_jsonld",
+          "mode": "list",
+          "cachedResultName": "vocabulario_jsonld"
+        },
+        "prompt": "={{ JSON.stringify($json.terminosVocabulario) }}",
+        "topK": 10,
+        "options": {
+          "queryName": "match_vocabulario_jsonld"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        432,
+        752
+      ],
+      "id": "fa79ba24-a21e-4f89-ac80-8d17f1115201",
+      "name": "claves JSON-LD",
+      "credentials": {
+        "supabaseApi": {
+          "id": "m0DUcQthM94wIR7O",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "load",
+        "tableName": {
+          "__rl": true,
+          "value": "glosario_chunks",
+          "mode": "list",
+          "cachedResultName": "glosario_chunks"
+        },
+        "prompt": "={{ $('Data').first().json.terminosDominio }}",
+        "topK": 100,
+        "options": {
+          "queryName": "match_glosario_chunks",
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "paradigma",
+                "value": "={{ $('Data').first().json.paradigmaFiltro}}"
+              },
+              {
+                "name": "paradigma",
+                "value": "null"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        1584,
+        752
+      ],
+      "id": "692683a3-2d8c-4e02-bfca-4e88357a8217",
+      "name": "Recuperar Contexto",
+      "credentials": {
+        "supabaseApi": {
+          "id": "m0DUcQthM94wIR7O",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        2160,
+        752
+      ],
+      "id": "8147b96e-6ed2-4e7b-9495-99f58ce9225a",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Recibe el array completo desde el nodo Supabase Vector Store\nconst items = $input.all();\n\n// Prepara un nuevo array para guardar los resultados limpios\nconst cleanedContext = [];\n\n// Itera sobre cada documento recuperado\nfor (const item of items) {\n  // Verifica que la estructura esperada exista para evitar errores\n  if (item.json && item.json.document && item.json.document.metadata) {\n    \n    const doc = item.json.document;\n\n    // Construye un nuevo objeto solo con los campos que necesitamos\n    const cleanItem = {\n      // Mantenemos el 'pageContent' que es el texto principal\n      content: doc.pageContent,\n      \n      // Creamos un nuevo objeto 'metadata' solo con los campos útiles\n      metadata: {\n        termino: doc.metadata.termino,\n        fuente: doc.metadata.fuente,\n        paradigma: doc.metadata.paradigma,\n        tipo: doc.metadata.tipo,\n        nivelTaxonomico: doc.metadata.nivelTaxonomico,\n        definicionGeneralNivel: doc.metadata.definicionGeneralNivel\n      }\n    };\n    \n    // Agrega el objeto limpio a nuestro array de resultados\n    cleanedContext.push(cleanItem);\n  }\n}\n\n// Devuelve el array de objetos limpios.\n// El siguiente nodo recibirá esta data simplificada.\nreturn cleanedContext;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1936,
+        752
+      ],
+      "id": "f218fd2f-9ac1-4a01-a781-2410b7d19561",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-pro-latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2464,
+        976
+      ],
+      "id": "97c83a27-56f2-4b7a-9504-bfab537529ad",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "1fRbxclakan4SB2c",
+          "name": "Api 1"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7147e811-ddf3-4d71-b569-b5b35d7a87a2",
+              "name": "htmlSimulado",
+              "value": "<!DOCTYPE html> <html> <head>   <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">   <title>New Page</title> </head> <body>   <table>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>Nombre del curso</p>       </td>       <td colspan=\"5\" rowspan=\"1\">         <p>Introducción a la Programación</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Código</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>ATDF102</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>Créditos UNAB/SCT</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>3</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>N° Semanas</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>13</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Fecha de inicio</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>29-08-2024</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Modalidad</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Full Online</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>Docente Experto Disciplinar</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Inesmar Briceño</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>DI</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Erika Offerman</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>GPO</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Erika Offerman</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Horas directas: total</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>3</p>       </td>     </tr>   </table>   <table>     <tr>       <td colspan=\"7\" rowspan=\"1\">         <p>MATRIZ DE PLANIFICACIÓN INVERSA</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>Resultado de Aprendizaje</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Aprendizaje Esperado</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Indicadores de logro</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Organización temporal</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>¿Cómo lo vamos a enseñar?</p>         <p>(debe tener oportunidades de ensayar lo que se pide.</p>         <p>(Estrategia didáctica: proyecto, trabajo cooperativo, ensayos, aplicación de fórmulas etc.)-utilización taxonomía de actividades y estrategias</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>¿Cómo lo podrá demostrar?</p>         <p>(Situación de evaluación: trabajo de investigación, presentación oral, proyecto, resolución de problemas, guías, etc.) -procedimiento</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Instrumento de evaluación</p>         <p>(Cómo recolectamos información del logro: pauta de evaluación, rúbrica, etc.)-instrumento evaluativo</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>RA2: Modelar fuentes de datos, utilizando herramientas tecnológicas que faciliten la toma de decisiones de las organizaciones.</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>UNIDAD I: FUNDAMENTOS DE LA ALGORITMIA</p>         <p>AE1. Aplicar los fundamentos de la algoritmia para utilizar el razonamiento lógico-matemático, científico y cuantitativo en el diseño de algoritmos orientados a la solución computacional de problemas.</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>1.1 Identifican las características de los algoritmos a través de ejemplos en un contexto determinado.</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>S1</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Modelaje pedagógico y ejercitación. Representación de algoritmos. </p>         <p>Concepto de algoritmo, características e importancia y/o ventajas del diseño de algoritmos.  </p>         <p>(Podría usarse Canvas estudio)</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> Cuestionario Diagnóstico</p>         <p>Guía de ejercicios</p>         <p>Instrucciones para certificación se deberían incorporar en esta semana. </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Preguntas de selección</p>         <p>La retroalimentación se entregará de manera inmediata por corrección automática.</p>         <p>Solucionario</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\">         <p>1.2 Utilizan los fundamentos de la algoritmia junto al   razonamiento lógico-matemático, científico y cuantitativo en el diseño de algoritmos orientados a la solución computacional de problemas.</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>S2</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Aprendizaje Colaborativo, Modelaje Pedagógico. Aprendizaje orientado a proyectos.</p>         <p>- Resolución de problemas representación de algoritmos.  </p>         <p>Software: Lenguaje de programación Python</p>         <p> </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Guía de ejercicio</p>         <p>Vinculación de las etapas del proyecto (detalle en pw) </p>         <p>Definición del proyecto: Se plantea un problema o una pregunta desafiante que servirá como base del proyecto sobre representación de algoritmos.  </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Solucionario</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\">         <p>1.3        Utilizan algoritmos mediante pseudocódigo y/o diagramas de flujo para la resolución de problemáticas específicas.</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>S3</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Aprendizaje Colaborativo, Modelaje Pedagógico. Aprendizaje orientado a proyectos.</p>         <p>Diseño de algoritmos empleando pseudocódigo y/o diagramas de flujo.  </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Guía de ejercicio</p>         <p>Entrega de informe. Diseño del proyecto: considerando los recursos disponibles, el tiempo y las actividades que se llevarán a cabo, definir recursos disponibles como utilización de Chat Boot para el diseño de algoritmos.  </p>         <p>Uso del portafolio canvas para el registro del avance del proyecto.</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Solucionario</p>         <p>La retroalimentación se entregará a través de comentarios del docente en la rúbrica.</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\">         <p>Solemne 1</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>S4</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Aprendizaje orientado a proyectos. </p>         <p>Aplicación de conceptos y procedimientos.</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Parte 1 del proyecto. Planteamiento de posibles soluciones: Los estudiantes generan ideas o bocetos de cómo abordar el proyecto y los pasos que tomarán.</p>         <p>Uso del portafolio canvas para el registro del avance del proyecto.</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Rúbrica. (30%)</p>         <p>La retroalimentación se entregará a través de comentarios del docente en la rúbrica.</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\">         <p>UNIDAD II: CONCEPTOS DE LA COMPUTACIÓN Y LA PROGRAMACIÓN </p>         <p>AE2. Emplear conceptos de programación tales como variable, operadores, estructuras de control y funciones para desarrollar la solución computacional de un problema. </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>2.1 Identifican los tipos de datos y operadores en un lenguaje de programación específico. </p>         <p>2.2 Distinguen estructuras de control, tales como condicionales y ciclos, en búsqueda de solución a problemas específicos.</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>S5</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Aprendizaje Colaborativo y ejercitación. Aprendizaje orientado a proyectos.</p>         <p>Ejecución de programas en un computador en lenguajes interpretados y compilados. </p>         <p> </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Cuestionario Diagnóstico<a href=\"#cmnt1\">[a]</a><a href=\"#cmnt2\">[b]</a></p>         <p>Guía de ejercicios</p>         <p>Búsqueda de información: Los estudiantes investigan y recaban información necesaria para entender mejor el problema y desarrollar una posible solución.</p>         <p>Representación de la información en un computador y el concepto de Tipo de Dato.  </p>         <p>Uso del portafolio canvas para el registro del avance del proyecto.</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Preguntas de selección</p>         <p>La retroalimentación se entregará de manera inmediata por corrección automática.</p>         <p>Solucionario</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\">         <p>2.3 Utilizan técnicas de depuración y prueba para corregir errores en el código. </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>S6</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Aprendizaje Colaborativo y ejercitación.</p>         <p>Control de Flujo - técnicas de resolución de problemas y diseño.  </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Guía de ejercicios: problemas aplicando técnicas de prueba y depuración de programas.  </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Solucionario</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\">         <p>2.4 Emplean funciones para modularizar el código y mejorar su legibilidad y mantenibilidad.  </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>S7</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Aprendizaje Colaborativo y Estudio de caso.</p>         <p>Ejercitación.</p>         <p>Utilización de Chat Boot para la resolución de problemas mediante programas computacionales.  </p>         <p>Editor interactivo para la resolución de problemas mediante programas computacionales. </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Guía de ejercicio</p>         <p>Entrega de caso</p>         <p>Caso Control de Flujo - técnicas de resolución de problemas y diseño.  </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Solucionario</p>         <p>Rúbrica 20%</p>         <p>La retroalimentación se entregará a través de comentarios del docente en la rúbrica.</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\">         <p>UNIDAD III: ESTRUCTURAS DE DATOS </p>         <p>AE3. Determinar la solución computacional de un problema utilizando estructuras de datos estáticas (arreglos unidireccionales y bidireccionales) y programación modular (funciones). </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>3.1 Utilizan arreglos unidireccionales y bidireccionales para almacenar y manipular los datos de manera eficiente. </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>S8</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Aprendizaje Colaborativo y Análisis de caso.</p>         <p>Ejercitación.</p>         <p>Estructuras de datos estáticas (arreglos unidireccionales y bidireccionales y programación modular).  </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Cuestionario diagnóstico</p>         <p>Guía de ejercicio</p>         <p>Creación de funciones</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Preguntas de selección</p>         <p>La retroalimentación se entregará de manera inmediata por corrección automática.</p>         <p>Solucionario</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\">         <p>3.2 Emplean arreglos unidireccionales y bidireccionales, para representar datos en dos o más dimensiones. </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>S9</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> </p>         <p>Aprendizaje Colaborativo y</p>         <p>Ejercitación.</p>         <p>Aprendizaje orientado a proyectos.</p>         <p>El concepto de modularidad.  </p>         <p>Técnicas de descomposición funcional.  </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Entrega de informe. Avance del proyecto: Los estudiantes aplican los conceptos aprendidos durante el curso a la solución de problemas reales dentro del proyecto. Resolución de problemas con estructuras de datos estáticas (arreglos unidireccionales y bidireccionales)  </p>         <p>Uso del portafolio canvas para el registro del avance del proyecto.</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Rúbrica 20%</p>         <p>La retroalimentación se entregará a través de comentarios del docente en la rúbrica.</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\">         <p>3.3 Determinan programas de registros agrupando datos relacionados y mejorando la legibilidad del código. </p>         <p>3.4 Emplean programas que agrupan datos relacionados y mejorar la legibilidad del código.</p>         <p>3.5 Estructuran programas modularizando el código y mejorando la legibilidad mantenibilidad del mismo. </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>S 10</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Ejercitación y Modelaje pedagógico. Aplicación de fórmulas.</p>         <p>Ejercitación y Modelaje pedagógico. </p>         <p>Creación de Funciones.  </p>         <p>El concepto de variable global y variable local.  </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Caso práctico con la utilización del Chat Boot para la resolución de problemas mediante programas computacionales.</p>         <p>de tarea</p>         <p>Certificación: actividad complementaria de certificación.<a href=\"#cmnt3\">[c]</a></p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>La retroalimentación se entregará a través de comentarios del docente en la rúbrica.</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\">         <p>          Solemne 2</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>S11</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Aprendizaje orientado a proyectos.</p>         <p>Aplicación de conceptos y procedimientos.</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Parte 2 del proyecto. Entrega del informe con documentación del proceso.</p>         <p>Uso del portafolio canvas para el registro del avance del proyecto.</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Solucionario y rúbrica. (30%)</p>         <p>La retroalimentación se entregará a través de comentarios del docente en la rúbrica.</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\">         <p>S12</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Ejercitación.</p>       </td>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\"></td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\">         <p>Examen</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>S13</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Aprendizaje orientado a proyectos. </p>         <p> Aplicación de conceptos y procedimientos.</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Presentación final del proyecto: Los estudiantes presentan los resultados de su proyecto. Esto incluye un informe escrito y un video con una demostración práctica.</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Rúbrica</p>         <p>30%</p>         <p>La retroalimentación se entregará a través de comentarios del docente en la rúbrica.</p>       </td>     </tr>   </table>   <p>Proceso evaluativo del curso</p>   <table>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>SEMANAS</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>TIPO</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>%</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Procedimiento</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Instrumento</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>IL asociado</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>1</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Formativa</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>0</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Cuestionario Diagnóstico</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Preguntas de selección múltiple</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>1.1</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>2</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> </p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>3</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Formativa</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>0</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Entrega de informe</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Rúbrica</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>1.1, 1.2, 1.3</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>4</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Sumativa</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>30</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Solemne 1. Parte 1 del proyecto.</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Rúbrica</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>1.1, 1.2, 1.3</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>5</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Formativa</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>0</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Cuestionario Diagnóstico</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Preguntas de selección múltiple</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> </p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>6</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Formativa</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>0</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Guía de ejercicios y casos prácticos</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Solucionario</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>2.2</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>7</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Sumativa</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>20</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Entrega de caso</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Rúbrica</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>2.1, 2.2, 2.3, 2.4</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>8</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Formativa</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>0</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Cuestionario Diagnóstico</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Preguntas de selección múltiple</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> </p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>9</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Sumativa</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>  20</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Entrega de informe avance del proyecto</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Rúbrica</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>3.1, 3.2</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>10</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> </p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>11</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Sumativa</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>30</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Solemne 2. Parte 2 del proyecto.</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Rúbrica</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>3.1, 3.2, 3.3, 3.4</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>12</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> </p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>13</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Sumativa</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>30</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Presentación final del proyecto</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Rúbrica</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Todas</p>       </td>     </tr>   </table>   <p><a href=\"#cmnt_ref1\">[a]</a>De acuerdo al modelo adaptativo, cada inicio de unidad tendrá un pequeño diagnóstico.</p>   <p><a href=\"#cmnt_ref2\">[b]</a>ok me parece bien</p>   <p><a href=\"#cmnt_ref3\">[c]</a>Debo consultar al docente como plantear esta actividad.</p> </body> </html>",
+              "type": "string"
+            },
+            {
+              "id": "2d0509ed-48f7-43e1-89a7-49592b5ae81a",
+              "name": "paradigmaFiltro",
+              "value": "CentradoEnAsignatura",
+              "type": "string"
+            },
+            {
+              "id": "5fb20ddd-60cc-4356-ab9b-9136fa013e6a",
+              "name": "terminosVocabulario",
+              "value": "resultadoAprendizaje, aprendizajeEsperado, indicadorDeLogro",
+              "type": "string"
+            },
+            {
+              "id": "4f3c71f0-fab1-40df-815c-69ef3d7e119f",
+              "name": "terminosDominio",
+              "value": "Definición de Aprendizaje Esperado, Definición de Indicador de Logro, y todos los verbos de la taxonomía UNAB",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        752
+      ],
+      "id": "bc90b06a-13d3-4bad-9e37-f902f1306765",
+      "name": "Data"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7147e811-ddf3-4d71-b569-b5b35d7a87a2",
+              "name": "htmlSimulado",
+              "value": "<!DOCTYPE html> <html> <head>   <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">   <title>New Page</title> </head> <body>   <table>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>Nombre del curso</p>       </td>       <td colspan=\"5\" rowspan=\"1\">         <p>Introducción a la Programación</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Código</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>ATDF102</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>Créditos UNAB/SCT</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>3</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>N° Semanas</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>13</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Fecha de inicio</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>29-08-2024</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Modalidad</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Full Online</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>Docente Experto Disciplinar</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Inesmar Briceño</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>DI</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Erika Offerman</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>GPO</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Erika Offerman</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Horas directas: total</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>3</p>       </td>     </tr>   </table>   <table>     <tr>       <td colspan=\"7\" rowspan=\"1\">         <p>MATRIZ DE PLANIFICACIÓN INVERSA</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>Resultado de Aprendizaje</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Aprendizaje Esperado</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Indicadores de logro</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Organización temporal</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>¿Cómo lo vamos a enseñar?</p>         <p>(debe tener oportunidades de ensayar lo que se pide.</p>         <p>(Estrategia didáctica: proyecto, trabajo cooperativo, ensayos, aplicación de fórmulas etc.)-utilización taxonomía de actividades y estrategias</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>¿Cómo lo podrá demostrar?</p>         <p>(Situación de evaluación: trabajo de investigación, presentación oral, proyecto, resolución de problemas, guías, etc.) -procedimiento</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Instrumento de evaluación</p>         <p>(Cómo recolectamos información del logro: pauta de evaluación, rúbrica, etc.)-instrumento evaluativo</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>RA2: Modelar fuentes de datos, utilizando herramientas tecnológicas que faciliten la toma de decisiones de las organizaciones.</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>UNIDAD I: FUNDAMENTOS DE LA ALGORITMIA</p>         <p>AE1. Aplicar los fundamentos de la algoritmia para utilizar el razonamiento lógico-matemático, científico y cuantitativo en el diseño de algoritmos orientados a la solución computacional de problemas.</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>1.1 Identifican las características de los algoritmos a través de ejemplos en un contexto determinado.</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>S1</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Modelaje pedagógico y ejercitación. Representación de algoritmos. </p>         <p>Concepto de algoritmo, características e importancia y/o ventajas del diseño de algoritmos.  </p>         <p>(Podría usarse Canvas estudio)</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> Cuestionario Diagnóstico</p>         <p>Guía de ejercicios</p>         <p>Instrucciones para certificación se deberían incorporar en esta semana. </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Preguntas de selección</p>         <p>La retroalimentación se entregará de manera inmediata por corrección automática.</p>         <p>Solucionario</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\">         <p>1.2 Utilizan los fundamentos de la algoritmia junto al   razonamiento lógico-matemático, científico y cuantitativo en el diseño de algoritmos orientados a la solución computacional de problemas.</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>S2</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Aprendizaje Colaborativo, Modelaje Pedagógico. Aprendizaje orientado a proyectos.</p>         <p>- Resolución de problemas representación de algoritmos.  </p>         <p>Software: Lenguaje de programación Python</p>         <p> </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Guía de ejercicio</p>         <p>Vinculación de las etapas del proyecto (detalle en pw) </p>         <p>Definición del proyecto: Se plantea un problema o una pregunta desafiante que servirá como base del proyecto sobre representación de algoritmos.  </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Solucionario</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\">         <p>1.3        Utilizan algoritmos mediante pseudocódigo y/o diagramas de flujo para la resolución de problemáticas específicas.</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>S3</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Aprendizaje Colaborativo, Modelaje Pedagógico. Aprendizaje orientado a proyectos.</p>         <p>Diseño de algoritmos empleando pseudocódigo y/o diagramas de flujo.  </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Guía de ejercicio</p>         <p>Entrega de informe. Diseño del proyecto: considerando los recursos disponibles, el tiempo y las actividades que se llevarán a cabo, definir recursos disponibles como utilización de Chat Boot para el diseño de algoritmos.  </p>         <p>Uso del portafolio canvas para el registro del avance del proyecto.</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Solucionario</p>         <p>La retroalimentación se entregará a través de comentarios del docente en la rúbrica.</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\">         <p>Solemne 1</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>S4</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Aprendizaje orientado a proyectos. </p>         <p>Aplicación de conceptos y procedimientos.</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Parte 1 del proyecto. Planteamiento de posibles soluciones: Los estudiantes generan ideas o bocetos de cómo abordar el proyecto y los pasos que tomarán.</p>         <p>Uso del portafolio canvas para el registro del avance del proyecto.</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Rúbrica. (30%)</p>         <p>La retroalimentación se entregará a través de comentarios del docente en la rúbrica.</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\">         <p>UNIDAD II: CONCEPTOS DE LA COMPUTACIÓN Y LA PROGRAMACIÓN </p>         <p>AE2. Emplear conceptos de programación tales como variable, operadores, estructuras de control y funciones para desarrollar la solución computacional de un problema. </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>2.1 Identifican los tipos de datos y operadores en un lenguaje de programación específico. </p>         <p>2.2 Distinguen estructuras de control, tales como condicionales y ciclos, en búsqueda de solución a problemas específicos.</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>S5</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Aprendizaje Colaborativo y ejercitación. Aprendizaje orientado a proyectos.</p>         <p>Ejecución de programas en un computador en lenguajes interpretados y compilados. </p>         <p> </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Cuestionario Diagnóstico<a href=\"#cmnt1\">[a]</a><a href=\"#cmnt2\">[b]</a></p>         <p>Guía de ejercicios</p>         <p>Búsqueda de información: Los estudiantes investigan y recaban información necesaria para entender mejor el problema y desarrollar una posible solución.</p>         <p>Representación de la información en un computador y el concepto de Tipo de Dato.  </p>         <p>Uso del portafolio canvas para el registro del avance del proyecto.</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Preguntas de selección</p>         <p>La retroalimentación se entregará de manera inmediata por corrección automática.</p>         <p>Solucionario</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\">         <p>2.3 Utilizan técnicas de depuración y prueba para corregir errores en el código. </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>S6</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Aprendizaje Colaborativo y ejercitación.</p>         <p>Control de Flujo - técnicas de resolución de problemas y diseño.  </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Guía de ejercicios: problemas aplicando técnicas de prueba y depuración de programas.  </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Solucionario</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\">         <p>2.4 Emplean funciones para modularizar el código y mejorar su legibilidad y mantenibilidad.  </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>S7</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Aprendizaje Colaborativo y Estudio de caso.</p>         <p>Ejercitación.</p>         <p>Utilización de Chat Boot para la resolución de problemas mediante programas computacionales.  </p>         <p>Editor interactivo para la resolución de problemas mediante programas computacionales. </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Guía de ejercicio</p>         <p>Entrega de caso</p>         <p>Caso Control de Flujo - técnicas de resolución de problemas y diseño.  </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Solucionario</p>         <p>Rúbrica 20%</p>         <p>La retroalimentación se entregará a través de comentarios del docente en la rúbrica.</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\">         <p>UNIDAD III: ESTRUCTURAS DE DATOS </p>         <p>AE3. Determinar la solución computacional de un problema utilizando estructuras de datos estáticas (arreglos unidireccionales y bidireccionales) y programación modular (funciones). </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>3.1 Utilizan arreglos unidireccionales y bidireccionales para almacenar y manipular los datos de manera eficiente. </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>S8</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Aprendizaje Colaborativo y Análisis de caso.</p>         <p>Ejercitación.</p>         <p>Estructuras de datos estáticas (arreglos unidireccionales y bidireccionales y programación modular).  </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Cuestionario diagnóstico</p>         <p>Guía de ejercicio</p>         <p>Creación de funciones</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Preguntas de selección</p>         <p>La retroalimentación se entregará de manera inmediata por corrección automática.</p>         <p>Solucionario</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\">         <p>3.2 Emplean arreglos unidireccionales y bidireccionales, para representar datos en dos o más dimensiones. </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>S9</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> </p>         <p>Aprendizaje Colaborativo y</p>         <p>Ejercitación.</p>         <p>Aprendizaje orientado a proyectos.</p>         <p>El concepto de modularidad.  </p>         <p>Técnicas de descomposición funcional.  </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Entrega de informe. Avance del proyecto: Los estudiantes aplican los conceptos aprendidos durante el curso a la solución de problemas reales dentro del proyecto. Resolución de problemas con estructuras de datos estáticas (arreglos unidireccionales y bidireccionales)  </p>         <p>Uso del portafolio canvas para el registro del avance del proyecto.</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Rúbrica 20%</p>         <p>La retroalimentación se entregará a través de comentarios del docente en la rúbrica.</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\">         <p>3.3 Determinan programas de registros agrupando datos relacionados y mejorando la legibilidad del código. </p>         <p>3.4 Emplean programas que agrupan datos relacionados y mejorar la legibilidad del código.</p>         <p>3.5 Estructuran programas modularizando el código y mejorando la legibilidad mantenibilidad del mismo. </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>S 10</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Ejercitación y Modelaje pedagógico. Aplicación de fórmulas.</p>         <p>Ejercitación y Modelaje pedagógico. </p>         <p>Creación de Funciones.  </p>         <p>El concepto de variable global y variable local.  </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Caso práctico con la utilización del Chat Boot para la resolución de problemas mediante programas computacionales.</p>         <p>de tarea</p>         <p>Certificación: actividad complementaria de certificación.<a href=\"#cmnt3\">[c]</a></p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>La retroalimentación se entregará a través de comentarios del docente en la rúbrica.</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\">         <p>          Solemne 2</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>S11</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Aprendizaje orientado a proyectos.</p>         <p>Aplicación de conceptos y procedimientos.</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Parte 2 del proyecto. Entrega del informe con documentación del proceso.</p>         <p>Uso del portafolio canvas para el registro del avance del proyecto.</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Solucionario y rúbrica. (30%)</p>         <p>La retroalimentación se entregará a través de comentarios del docente en la rúbrica.</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\">         <p>S12</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Ejercitación.</p>       </td>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\"></td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\">         <p>Examen</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>S13</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Aprendizaje orientado a proyectos. </p>         <p> Aplicación de conceptos y procedimientos.</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Presentación final del proyecto: Los estudiantes presentan los resultados de su proyecto. Esto incluye un informe escrito y un video con una demostración práctica.</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Rúbrica</p>         <p>30%</p>         <p>La retroalimentación se entregará a través de comentarios del docente en la rúbrica.</p>       </td>     </tr>   </table>   <p>Proceso evaluativo del curso</p>   <table>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>SEMANAS</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>TIPO</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>%</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Procedimiento</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Instrumento</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>IL asociado</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>1</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Formativa</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>0</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Cuestionario Diagnóstico</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Preguntas de selección múltiple</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>1.1</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>2</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> </p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>3</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Formativa</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>0</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Entrega de informe</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Rúbrica</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>1.1, 1.2, 1.3</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>4</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Sumativa</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>30</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Solemne 1. Parte 1 del proyecto.</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Rúbrica</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>1.1, 1.2, 1.3</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>5</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Formativa</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>0</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Cuestionario Diagnóstico</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Preguntas de selección múltiple</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> </p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>6</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Formativa</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>0</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Guía de ejercicios y casos prácticos</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Solucionario</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>2.2</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>7</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Sumativa</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>20</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Entrega de caso</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Rúbrica</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>2.1, 2.2, 2.3, 2.4</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>8</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Formativa</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>0</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Cuestionario Diagnóstico</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Preguntas de selección múltiple</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> </p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>9</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Sumativa</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>  20</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Entrega de informe avance del proyecto</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Rúbrica</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>3.1, 3.2</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>10</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> </p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>11</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Sumativa</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>30</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Solemne 2. Parte 2 del proyecto.</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Rúbrica</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>3.1, 3.2, 3.3, 3.4</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>12</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> </p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p> </p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>13</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Sumativa</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>30</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Presentación final del proyecto</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Rúbrica</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Todas</p>       </td>     </tr>   </table>   <p><a href=\"#cmnt_ref1\">[a]</a>De acuerdo al modelo adaptativo, cada inicio de unidad tendrá un pequeño diagnóstico.</p>   <p><a href=\"#cmnt_ref2\">[b]</a>ok me parece bien</p>   <p><a href=\"#cmnt_ref3\">[c]</a>Debo consultar al docente como plantear esta actividad.</p> </body> </html>",
+              "type": "string"
+            },
+            {
+              "id": "2d0509ed-48f7-43e1-89a7-49592b5ae81a",
+              "name": "paradigmaFiltro",
+              "value": "CentradoEnAsignatura",
+              "type": "string"
+            },
+            {
+              "id": "5fb20ddd-60cc-4356-ab9b-9136fa013e6a",
+              "name": "terminosVocabulario",
+              "value": "resultadoAprendizaje, aprendizajeEsperado, indicadorDeLogro",
+              "type": "string"
+            },
+            {
+              "id": "4f3c71f0-fab1-40df-815c-69ef3d7e119f",
+              "name": "terminosDominio",
+              "value": "Definición de Aprendizaje Esperado, Definición de Indicador de Logro, y todos los verbos de la taxonomía UNAB",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        464
+      ],
+      "id": "5a36bd75-f9ad-4dda-97c6-d1d784b7882b",
+      "name": "DI Programacion"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7147e811-ddf3-4d71-b569-b5b35d7a87a2",
+              "name": "htmlSimulado",
+              "value": "<!DOCTYPE html> <html> <head>   <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">   <title>New Page</title> </head> <body>   <table>     <tr>       <td colspan=\"6\" rowspan=\"1\">         <p>I.- IDENTIFICACIÓN</p>       </td>     </tr>     <tr>       <td colspan=\"6\" rowspan=\"1\">         <p>Carrera: Plan de Continuidad de Estudios de Ingeniería Industrial</p>         <p>Unidad responsable: Facultad de Ingeniería</p>         <p>Nombre: Planificación y Mejora de Procesos</p>         <p>Código: AIIN213</p>         <p>Periodo: Séptimo Trimestre</p>         <p>Área de Conocimiento UNESCO: Área (Ingeniería, Industria y Construcción) - Sub Área (Industria y Producción (54))</p>       </td>     </tr>     <tr>       <td colspan=\"1\" rowspan=\"1\">         <p>Requisito para cursar:</p>         <p>AIIN217 Tópicos de Especialidad</p>       </td>       <td colspan=\"3\" rowspan=\"1\">         <p>Requisitos previos: FMSA315 Taller de Métodos Cuantitativos.</p>         <p>AIIN211 Modelamiento y Diseño de Procesos.</p>       </td>       <td colspan=\"2\" rowspan=\"1\">         <p>Co - Requisitos:</p>         <p>No tiene</p>       </td>     </tr>     <tr>       <td colspan=\"6\" rowspan=\"1\">         <p>II.- CARGA ACADÉMICA</p>       </td>     </tr>     <tr>       <td colspan=\"2\" rowspan=\"2\">         <p>Tipo de Actividad</p>       </td>       <td colspan=\"4\" rowspan=\"1\">         <p>SCT (horas cronológicas)</p>       </td>     </tr>     <tr>       <td colspan=\"3\" rowspan=\"1\">         <p>Directas</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>Personal</p>       </td>     </tr>     <tr>       <td colspan=\"2\" rowspan=\"1\">         <p>Teórico</p>       </td>       <td colspan=\"3\" rowspan=\"1\">         <p>3</p>       </td>       <td colspan=\"1\" rowspan=\"1\">         <p>5</p>       </td>     </tr>     <tr>       <td colspan=\"2\" rowspan=\"1\">         <p>Ayudantía</p>       </td>       <td colspan=\"3\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\"></td>     </tr>     <tr>       <td colspan=\"2\" rowspan=\"1\">         <p>Laboratorio</p>       </td>       <td colspan=\"3\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\"></td>     </tr>     <tr>       <td colspan=\"2\" rowspan=\"1\">         <p>Taller</p>       </td>       <td colspan=\"3\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\"></td>     </tr>     <tr>       <td colspan=\"2\" rowspan=\"1\">         <p>Terreno</p>       </td>       <td colspan=\"3\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\"></td>     </tr>     <tr>       <td colspan=\"2\" rowspan=\"1\">         <p>Clínico</p>       </td>       <td colspan=\"3\" rowspan=\"1\"></td>       <td colspan=\"1\" rowspan=\"1\"></td>     </tr>     <tr>       <td colspan=\"2\" rowspan=\"1\">         <p>Total horas dedicación semanal</p>       </td>       <td colspan=\"4\" rowspan=\"1\">         <p>8</p>       </td>     </tr>     <tr>       <td colspan=\"2\" rowspan=\"1\">         <p>Créditos</p>       </td>       <td colspan=\"4\" rowspan=\"1\">         <p>3</p>       </td>     </tr>     <tr>       <td colspan=\"6\" rowspan=\"1\">         <p>III.- DESCRIPCIÓN</p>       </td>     </tr>     <tr>       <td colspan=\"6\" rowspan=\"1\">         <p>La asignatura Planificación y Mejora de Procesos contribuye al desarrollo del ámbito de acción I Dirección y Gestión de Procesos Productivos y tributa a los siguientes resultados de aprendizaje del perfil de egreso:</p>         <ul>           <li>RA1: Aplicar herramientas y metodologías de ingeniería para la organización y control de procesos productivos, logísticos y de servicios, orientadas a la generación de valor con especial atención en la calidad Total y las tendencias de la industria.</li>           <li>RA2: Evaluar alternativas de solución, coordinando equipos multidisciplinarios, de problemas de ingeniería desde el nivel táctico y operacional para el cumplimiento de los objetivos estratégicos de la organización.</li>         </ul>         <p>Al finalizar la asignatura, los estudiantes serán capaces de: Medir, evaluar, controlar y planificar los procesos dentro de las organizaciones, realizando el levantamiento y medición de estos, definiendo medidas de control estadístico de procesos, para analizar y elaborar la mejora continua. Además, podrá identificar y eliminar \"desperdicios\" en los procesos organizacionales, buscando maximizar la productividad, para contribuir al mejor funcionamiento de la empresa mediante una visión sistémica de la Gestión por Procesos.</p>       </td>     </tr>     <tr>       <td colspan=\"3\" rowspan=\"1\">         <p>IV.- APRENDIZAJES ESPERADOS</p>       </td>       <td colspan=\"3\" rowspan=\"1\">         <p>V.- CONTENIDOS</p>       </td>     </tr>     <tr>       <td colspan=\"3\" rowspan=\"1\">         <p>AE1. Aplicar las metodologías de planificación y mejora continua de procesos, para incrementar la eficiencia operacional de estos.</p>         <p>Indicadores Logro (IL) </p>         <p>1.1 Explican la evolución de las metodologías TPM, Lean Manufacturing y Six Sigma, en el contexto de la excelencia operacional.</p>         <p>1.2 Ejemplifican la aplicación de metodologías de excelencia operacional, como Lean Manufacturing y Six Sigma, en la mejora de procesos dentro de contextos organizacionales concretos.</p>         <p>1.3 Aplican metodologías de planificación y mejora continua de procesos bajo condiciones operacionales establecidas, orientando su ejecución a incrementar la eficiencia de estos.</p>         <p>AE2. Determinar mediante el uso de herramientas ingenieriles, las distintas etapas de un proceso, identificando el estado actual de estos.</p>         <p>Indicadores Logro (IL) </p>         <p>2.1 Diferencian desperdicios en un proceso productivo específico según tipo, origen y efecto en el contexto operativo, mediante el uso de herramientas Lean Manufacturing que evidencien oportunidades de mejora.</p>         <p>2.2 Relacionan componentes de mapas de procesos operativos, identificando las etapas actuales y las posibles ineficiencias en el proceso</p>         <p>2.3 Interpretan los resultados obtenidos de la medición de un proceso, reconociendo las oportunidades de mejora mediante herramientas Lean.</p>         <p>AE3. Determinar la aplicación de la mejora continua, empleando herramientas de control, comparando los resultados obtenidos a través del uso de indicadores de control.</p>         <p>Indicadores Logro (IL) </p>         <p>3.1 Examinan la calidad de un proceso mediante la descomposición del ciclo DMAIC en un caso de estudio y la aplicación de indicadores de control.</p>         <p>3.2 Diferencian la efectividad de herramientas de control (histograma, diagrama de dispersión y gráficos de control) en la detección de barreras que afectan la creación de valor en un proceso</p>         <p>3.3 Interpretan los resultados obtenidos mediante indicadores de control en un proceso Lean Six Sigma, identificando oportunidades de mejora.</p>         <p>AE4. Determinan las actividades de equipos de trabajo para el desarrollo de mejora de procesos mediante el uso de herramientas de mejora continua.</p>         <p>Indicadores Logro (IL) </p>         <p>4.1. Explican los pilares del TPM en el contexto de la mejora continua de procesos productivos.</p>         <p>4.2. Relacionan las fases de implementación del TPM en un área de trabajo específica, destacando su impacto en la eficiencia y el orden.</p>         <p>4.3. Determinan un plan de mantenimiento productivo, integrando la coordinación de actividades entre los miembros del equipo que sustenta la mejora continua.</p>       </td>       <td colspan=\"3\" rowspan=\"1\">         <p>UNIDAD I: INTRODUCCIÓN A EXCELENCIA OPERACIONAL</p>         <ul>           <li>Metodologías de desarrollo de la excelencia operacional.</li>           <li>Antecedentes: Historia y evolución de metodologías como: TPM (Total Productive Maintenance), Lean Manufacturing y Six Sigma.</li>           <li>Introducción a la mejora continua de procesos y calidad.</li>           <li>Análisis de acciones para la mejora de procesos.</li>           <li>Crear la estrategia para el desarrollo de la mejora de procesos.</li>         </ul>         <p>UNIDAD II: LEAN MANUFACTURING</p>         <ul>           <li>Antecedentes e Historia</li>           <li>Principio de Lean Manufacturing.</li>           <li>Los 7 desperdicios de Lean Manufacturing.</li>           <li>Análisis de problemas y toma de decisiones.</li>           <li>Conformación del grupo de mejora continua.</li>           <li>Herramientas Lean (Análisis de la cadena de valor, mapas SIPOC, VSM AS IS - TO BE, análisis de mudas, matriz de priorización y planes de acción (bajo concepto de A3 y QW) diagrama de causa-efecto, diagrama de Pareto, 5w + 1H, LUP, PokaYoke, TWI, Matriz ERCS, Lluvia de ideas, Gestión Visual, Modelo Integral del Cambio (MIC), Just in Time,).</li>           <li>Elaboración de indicadores de control (KPI - SLA- OEE).</li>           <li>Desarrollo de Lean Manufacturing para un proceso.</li>         </ul>         <p>UNIDAD III: LEAN SIX SIGMA</p>         <ul>           <li>Introducción y conceptos básicos de Lean Six Sigma.</li>           <li>Barreras en la ejecución de un proceso que disminuyen la creación de valor.</li>           <li>Desarrollo del Ciclo DMAIC para gestión y mejora continua de procesos.</li>           <li>Herramientas de control (Histograma, Diagrama de Dispersión y Gráficos de Control).</li>           <li>Medición de calidad en los procesos productivos y de servicio.</li>         </ul>         <p>UNIDAD IV: TOTAL PRODUCTIVE MAINTENANCE (TPM)</p>         <ul>           <li>Introducción a los conceptos, definiciones y beneficios del TPM.</li>           <li>Claves para la aplicación del TPM.</li>           <li>Fases de la implementación del TPM.</li>           <li>Los 8 pilares del TPM.</li>           <li>Descripción y desarrollo de la herramienta 5´S - SMED</li>           <li>Herramientas estadísticas para la resolución de problemas.</li>           <li>Planes de Mantenimiento productivo.</li>         </ul>       </td>     </tr>     <tr>       <td colspan=\"6\" rowspan=\"1\">         <p>VI.- HABILIDADES TRANSVERSALES</p>       </td>     </tr>     <tr>       <td colspan=\"6\" rowspan=\"1\">         <p>La asignatura tributa el desarrollo de las siguientes habilidades transversales:</p>         <p>A.- Pensamiento analítico y crítico.</p>         <p>B.- Comunicación oral y escrita.</p>         <p>C.- Responsabilidad social.</p>       </td>     </tr>     <tr>       <td colspan=\"6\" rowspan=\"1\">         <p>VII.- ESTRATEGIAS DIDÁCTICAS Y PROCEDIMIENTOS DE EVALUACIÓN</p>       </td>     </tr>     <tr>       <td colspan=\"6\" rowspan=\"1\">         <ol>           <li>Estrategias didácticas: Los estudiantes a través del análisis y discusión de casos y/o ejercicios, aprenderán a aplicar teorías y conceptos a situaciones prácticas y complejas. Lo anterior, apoyado de estrategias de modelaje pedagógico para facilitar el nivel de aprehensión de los estudiantes, mediante la entrega de ejemplos claros y concretos que estos puedan seguir, y que favorezcan la clarificación de conceptos complejos, el desarrollo de habilidades prácticas y el aprendizaje activo y reflexivo, como también uso de canvas estudio.</li>           <li>Orientaciones para el estudio autónomo: Durante las horas de estudio autónomo los estudiantes efectuarán guías de ejercitación y profundización en temáticas relevantes.</li>           <li>Procedimientos de evaluación: Para evaluar el logro de los aprendizajes esperados, se considera el desarrollo de evaluaciones sumativas y formativas mediante controles de ejercitación o quizzes, talleres, canvas studio, así como guías de aplicación e integración individuales y colaborativas. El curso considera dos evaluaciones solemnes, talleres, controles y un examen final. </li>         </ol>         <p>Para evaluar aspectos conceptuales y de ejercitación, se propone el uso de ítems de selección múltiple, en formato de bancos de preguntas, solucionarios. Para evaluar los trabajos individuales y aquellos colaborativos que se desarrollen se utilizarán rúbricas o solucionarios.</p>       </td>     </tr>     <tr>       <td colspan=\"6\" rowspan=\"1\">         <p>VIII.- CONDICIONES DE APROBACIÓN</p>       </td>     </tr>     <tr>       <td colspan=\"6\" rowspan=\"1\">         <p>Las evaluaciones se calificarán con una nota en una escala de 1.0 a 7.0, siendo necesario obtener una nota igual o superior a 4.0 para aprobar la asignatura. </p>         <p>La nota de presentación al examen, será el promedio ponderado de las calificaciones parciales. Si la nota de presentación al examen es igual o superior a 5,0 (cinco coma cero), el estudiante podrá eximirse de realizar el examen de la asignatura programado para la semana 13. </p>         <p>  </p>         <p>La calificación final se calculará como el promedio ponderado de la nota de presentación y la nota del examen, asignando un 70% de ponderación a la nota de presentación y un 30% a la nota del examen.  </p>         <p>  </p>         <p>El detalle de las calificaciones se encontrará en el syllabus de la asignatura. El incumplimiento de los procesos regulares de la asignatura impedirá al estudiante continuar con la misma y será calificado con la nota mínima de 1.0. </p>         <p>Esta asignatura no contempla el reemplazo de la nota de examen por una calificación parcial, no se aplica el artículo 35 del reglamento de pregrado. </p>       </td>     </tr>     <tr>       <td colspan=\"6\" rowspan=\"1\">         <p>IX.- BIBLIOGRAFÍA</p>       </td>     </tr>     <tr>       <td colspan=\"6\" rowspan=\"1\">         <p>Obligatoria:</p>         <p>Ballé, M. (2019). Estrategia Lean. Profit.</p>         <p>Socconini, L. (2017). Lean manufacturing: Paso a paso hacia la mejora continua. Grupo Editorial Patria.</p>         <p>Arthur, W., & Challener, D. (2015). A practical guide to TPM 2.0: Using the Trusted Platform Module in the new age of security. Apress</p>         <p>Complementaria:</p>         <p>Ortega, O. (2017). Mejoramiento continuo de procesos: Aspectos conceptuales (1ª ed.). Ediciones De La U</p>         <p>Rajadell Carreras, M. (2021). Lean manufacturing (2ª ed.). Díaz De Santos.</p>         <p>Evans, J. R., & Lindsay, W. M. (2014). An introduction to Six Sigma and process improvement (2nd ed.). Cengage Learning</p>       </td>     </tr>     <tr>       <td colspan=\"6\" rowspan=\"1\">         <p>X. CORRESPONDENCIA CRÉDITOS UNAB</p>       </td>     </tr>     <tr>       <td colspan=\"6\" rowspan=\"1\">         <p>Horas Pedagógicas:</p>         <table>           <tr>             <td colspan=\"6\" rowspan=\"1\">               <p>Presencial</p>             </td>             <td colspan=\"1\" rowspan=\"2\">               <p>Personal</p>             </td>             <td colspan=\"1\" rowspan=\"2\">               <p>Créditos UNAB</p>             </td>           </tr>           <tr>             <td colspan=\"1\" rowspan=\"1\">               <p>Teórico</p>             </td>             <td colspan=\"1\" rowspan=\"1\">               <p>Ayudantía</p>             </td>             <td colspan=\"1\" rowspan=\"1\">               <p>Laboratorio</p>             </td>             <td colspan=\"1\" rowspan=\"1\">               <p>Taller</p>             </td>             <td colspan=\"1\" rowspan=\"1\">               <p>Terreno</p>             </td>             <td colspan=\"1\" rowspan=\"1\">               <p>Clínico</p>             </td>           </tr>           <tr>             <td colspan=\"1\" rowspan=\"1\">               <p>4</p>             </td>             <td colspan=\"1\" rowspan=\"1\"></td>             <td colspan=\"1\" rowspan=\"1\"></td>             <td colspan=\"1\" rowspan=\"1\"></td>             <td colspan=\"1\" rowspan=\"1\"></td>             <td colspan=\"1\" rowspan=\"1\"></td>             <td colspan=\"1\" rowspan=\"1\">               <p>7</p>             </td>             <td colspan=\"1\" rowspan=\"1\">               <p>11</p>             </td>           </tr>         </table>       </td>     </tr>   </table>   <p>Nota importante: Los indicadores de logro o evaluación de esta asignatura, pueden mostrar cierta desalineación con los resultados de aprendizaje a los que tributa la misma, debido a ajustes realizados para reflejar de mejor forma los desempeños que se quiere muestren los estudiantes. En un futuro próximo se implementará un proceso de ajuste mayor, que incluirá una redacción mejorada de los resultados de aprendizaje, para así asegurar una mayor coherencia y efectividad en la evaluación.</p> </body> </html>",
+              "type": "string"
+            },
+            {
+              "id": "2d0509ed-48f7-43e1-89a7-49592b5ae81a",
+              "name": "paradigmaFiltro",
+              "value": "CentradoEnAsignatura",
+              "type": "string"
+            },
+            {
+              "id": "5fb20ddd-60cc-4356-ab9b-9136fa013e6a",
+              "name": "terminosVocabulario",
+              "value": "resultadoAprendizaje, aprendizajeEsperado, indicadorDeLogro",
+              "type": "string"
+            },
+            {
+              "id": "4f3c71f0-fab1-40df-815c-69ef3d7e119f",
+              "name": "terminosDominio",
+              "value": "Definición de Aprendizaje Esperado, Definición de Indicador de Logro, y todos los verbos de la taxonomía UNAB",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -16,
+        464
+      ],
+      "id": "acef8a83-2658-4ebb-bf32-c77d96eac407",
+      "name": "DI Plan y Mejora Procesos"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "HTML a JSON-LD",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "claves JSON-LD",
+            "type": "ai_embedding",
+            "index": 0
+          },
+          {
+            "node": "Recuperar Contexto",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crear Guia Estilo": {
+      "main": [
+        [
+          {
+            "node": "HTML a JSON-LD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML a JSON-LD": {
+      "main": [
+        [
+          {
+            "node": "Limpiar y Parsear JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpiar y Parsear JSON": {
+      "main": [
+        [
+          {
+            "node": "Recuperar Contexto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "claves JSON-LD": {
+      "main": [
+        [
+          {
+            "node": "Crear Guia Estilo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recuperar Contexto": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Analisis Final",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Analisis Final",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data": {
+      "main": [
+        [
+          {
+            "node": "claves JSON-LD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DI Plan y Mejora Procesos": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "7797c394-a65b-443e-98d9-04ae614dc470",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "81f9aa344da0912f901e07498089d3dd54ba6d767dbe4d581a261cb5d8886bb9"
+  },
+  "id": "e9gh6KMYyIx4lJR4",
+  "tags": []
+}

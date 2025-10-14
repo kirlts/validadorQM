@@ -1,0 +1,643 @@
+{
+  "name": "PoC - Dual RAG",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        384
+      ],
+      "id": "709ff7f7-2fad-4f43-a8e3-1f464e469b66",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "152932f8-7f1a-43f7-ada6-ae682a43dbce",
+              "name": "glosarioEntradas",
+              "value": "=[\n  { \"content\": \"Un Resultado de Aprendizaje (RA) es una declaración observable y medible de lo que un estudiante será capaz de hacer al final de un curso. Debe estar alineado con el Resultado Formativo del perfil de egreso.\", \"metadata\": { \"paradigma\": \"CentradoEnPerfil\", \"termino\": \"Resultado de Aprendizaje\" } },\n  { \"content\": \"Un Indicador de Desempeño (ID) desglosa el Resultado de Aprendizaje en acciones concretas y evaluables. Sirve como un criterio claro para medir el logro del RA.\", \"metadata\": { \"paradigma\": \"CentradoEnPerfil\", \"termino\": \"Indicador de Desempeño\" } },\n  { \"content\": \"Principio pedagógico que asegura la coherencia lógica entre los resultados de aprendizaje, las actividades de enseñanza y las estrategias de evaluación para guiar al estudiante hacia el logro de los objetivos.\", \"metadata\": { \"paradigma\": \"Universal\", \"termino\": \"Alineamiento Constructivo\" } }\n]",
+              "type": "array"
+            },
+            {
+              "id": "3ede50e7-bd45-4b8a-a735-a01521d2b1b3",
+              "name": "glosarioJsonLdEntradas",
+              "value": "=[\n  {\n    \"content\": \"resultadoDeAprendizaje\",\n    \"metadata\": {\n      \"descripcion\": \"Clave principal para un Resultado de Aprendizaje. Representa la promesa central que el curso se compromete a cumplir.\",\n      \"tipoDeDato\": \"string\",\n      \"paradigma\": \"Universal\"\n    }\n  },\n  {\n    \"content\": \"indicadorDeDesempeno\",\n    \"metadata\": {\n      \"descripcion\": \"Clave para un Indicador de Desempeño. Debe ser una acción concreta y observable que demuestre el logro del RA.\",\n      \"tipoDeDato\": \"string | array\",\n      \"paradigma\": \"Universal\"\n    }\n  },\n  {\n    \"content\": \"actividadDeAprendizaje\",\n    \"metadata\": {\n      \"descripcion\": \"Clave para una Actividad de Aprendizaje. Es la tarea que los estudiantes realizan para desarrollar las competencias.\",\n      \"tipoDeDato\": \"object | array\",\n      \"paradigma\": \"Universal\"\n    }\n  }\n]",
+              "type": "array"
+            },
+            {
+              "id": "7147e811-ddf3-4d71-b569-b5b35d7a87a2",
+              "name": "htmlSimulado",
+              "value": "<table>   <tr>     <td>Aplicar los principios de la mecánica newtoniana para resolver problemas de dinámica.</td>     <td>Modela sistemas de fuerzas aplicando las Leyes de Newton.</td>   </tr> </table>",
+              "type": "string"
+            },
+            {
+              "id": "2d0509ed-48f7-43e1-89a7-49592b5ae81a",
+              "name": "consultaInicial",
+              "value": "Extraer los conceptos pedagógicos",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        384
+      ],
+      "id": "94dbf2c3-be16-4fec-ba72-9b0ea5fcbc2d",
+      "name": "Data"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "glosario_chunks",
+          "mode": "list",
+          "cachedResultName": "glosario_chunks"
+        },
+        "options": {
+          "queryName": "match_documents"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        208,
+        -160
+      ],
+      "id": "8aeb2c87-1d8d-48b1-af25-4f45914fb5f4",
+      "name": "Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "m0DUcQthM94wIR7O",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "glosarioEntradas",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        -64
+      ],
+      "id": "93905757-b34e-492c-9a4b-b030faeb538b",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        208,
+        64
+      ],
+      "id": "cd902371-87f9-425f-b79e-1eda144672f9",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "1fRbxclakan4SB2c",
+          "name": "Api 1"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json.content }}",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "paradigma",
+                "value": "={{ $json.metadata.paradigma }}"
+              },
+              {
+                "name": "termino",
+                "value": "={{ $json.metadata.termino }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        336,
+        48
+      ],
+      "id": "bb381cd3-cde2-4528-aea6-d2d9d8a38a11",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash-lite",
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1552,
+        640
+      ],
+      "id": "aa6072ae-1a10-4233-b562-9e753d41685b",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "1fRbxclakan4SB2c",
+          "name": "Api 1"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        432,
+        576
+      ],
+      "id": "595fb27d-1d89-413d-92a4-885494e31872",
+      "name": "Embeddings Google Gemini1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "1fRbxclakan4SB2c",
+          "name": "Api 1"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres un experto en calidad instruccional de la UNAB.\n\n### CONTEXTO DEL GLOSARIO:\n{{ $json.pageContent }}\n\n### DATOS DEL DISEÑO INSTRUCCIONAL:\n{{ $('Validar y Corregir JSON-LD').item.json.output }}\n\n### TAREA:\nBasándote ESTRICTAMENTE en el contexto del glosario proporcionado, evalúa si el 'indicadorDeDesempeno' está bien alineado con el 'resultadoDeAprendizaje' en los datos del diseño. Proporciona un análisis breve de una sola frase.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        2304,
+        384
+      ],
+      "id": "407431d1-f389-4509-bbe1-fedcf8192497",
+      "name": "Analisis Final"
+    },
+    {
+      "parameters": {
+        "content": "## Vectorizar Glosario de Dominio\n",
+        "height": 448,
+        "width": 624
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        -224
+      ],
+      "id": "2e1fbb7e-4dde-4c07-8493-2fdc56fdb76b",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "vocabulario_jsonld",
+          "mode": "list",
+          "cachedResultName": "vocabulario_jsonld"
+        },
+        "options": {
+          "queryName": "match_documents"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        208,
+        -640
+      ],
+      "id": "cf7dc235-a80b-44bd-984d-a76d13d1e14c",
+      "name": "Supabase Vector Store2",
+      "credentials": {
+        "supabaseApi": {
+          "id": "m0DUcQthM94wIR7O",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "glosarioJsonLdEntradas",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        -544
+      ],
+      "id": "7006674a-cba8-417b-a28a-c95b69ea69ec",
+      "name": "Split Out1"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        208,
+        -416
+      ],
+      "id": "cb8afffa-c66f-48e6-bb88-d55f6c604d96",
+      "name": "Embeddings Google Gemini2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "1fRbxclakan4SB2c",
+          "name": "Api 1"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json.content }}",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "descripcion",
+                "value": "={{ $json.metadata.descripcion }}"
+              },
+              {
+                "name": "tipoDeDato",
+                "value": "={{ $json.metadata.tipoDeDato }}"
+              },
+              {
+                "name": "paradigma",
+                "value": "={{ $json.metadata.paradigma }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        336,
+        -432
+      ],
+      "id": "4aecf866-c6b9-4f51-b199-a0801189a42e",
+      "name": "Default Data Loader1"
+    },
+    {
+      "parameters": {
+        "content": "## Vectorizar Glosario JSON-LD\n",
+        "height": 448,
+        "width": 624
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        -704
+      ],
+      "id": "0c6a6c03-6cba-43e7-ae04-584903def230",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "mode": "load",
+        "tableName": {
+          "__rl": true,
+          "value": "glosario_chunks",
+          "mode": "list",
+          "cachedResultName": "glosario_chunks"
+        },
+        "prompt": "={{ $('Data').item.json.consultaInicial}}",
+        "topK": 10,
+        "options": {
+          "queryName": "match_glosario_chunks",
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "paradigma",
+                "value": "=CentradoEnPerfil"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        432,
+        384
+      ],
+      "id": "795a6e58-0bfe-42f4-b34f-8fad39ae9c79",
+      "name": "Identificar Conceptos Pedagógicos",
+      "credentials": {
+        "supabaseApi": {
+          "id": "m0DUcQthM94wIR7O",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "document.metadata.termino"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        752,
+        384
+      ],
+      "id": "e4b85a73-ee9f-40b9-aa75-d2bab3122040",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "mode": "load",
+        "tableName": {
+          "__rl": true,
+          "value": "vocabulario_jsonld",
+          "mode": "list",
+          "cachedResultName": "vocabulario_jsonld"
+        },
+        "prompt": "={{ JSON.stringify($json.termino) }}",
+        "topK": 10,
+        "options": {
+          "queryName": "match_vocabulario_jsonld"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        960,
+        384
+      ],
+      "id": "b7543af6-7004-4fce-8e60-3efa235208cf",
+      "name": "Recuperar Vocabulario Tecnico",
+      "credentials": {
+        "supabaseApi": {
+          "id": "m0DUcQthM94wIR7O",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nlet styleGuide = \"### GUÍA DE ESTILO DEL VOCABULARIO (Schema):\\n\";\n\n// Iteramos sobre cada ítem que nos llega\nfor (const item of items) {\n  // Verificamos que la estructura anidada exista\n  if (item.json && item.json.document && item.json.document.metadata) {\n    \n    // Usamos los paths correctos: item.json.document.pageContent\n    const clave = item.json.document.pageContent;\n    \n    // Y item.json.document.metadata.descripcion\n    const descripcion = item.json.document.metadata.descripcion || \"Sin descripción\";\n    \n    styleGuide += `- Usa la clave: \\`${clave}\\` (Descripción: ${descripcion})\\n`;\n  }\n}\n\n// Devolvemos el texto completo\nreturn { json: { style_guide_text: styleGuide } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1312,
+        384
+      ],
+      "id": "1122e14a-4246-4a77-9165-8a401e2cc452",
+      "name": "Crear Guia Estilo"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres un asistente de extracción de datos que SOLO responde con JSON.\nTu única tarea es rellenar una plantilla JSON.\n\n### 1. GUÍA DE CLAVES OBLIGATORIAS:\n{{ $json.style_guide_text }}\n\n### 2. DATOS DE ENTRADA (HTML):\n{{ $('Data').first().json.htmlSimulado }}\n\n### 3. TAREA:\nAnaliza el HTML de entrada para extraer el texto del \"Resultado de Aprendizaje\" y del \"Indicador de Desempeño\".\nLuego, genera un ÚNICO objeto JSON. Las claves de este objeto DEBEN ser las claves recuperadas en la \"GUÍA DE CLAVES\". El valor de cada clave debe ser el texto correspondiente extraído del HTML.\n\nNO incluyas @context, @type, name, description, ni ninguna otra clave que no esté explícitamente en la \"GUÍA DE CLAVES\".\nResponde SÓLO con el objeto JSON y nada más.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1552,
+        384
+      ],
+      "id": "b44f31e7-d1b5-4946-ae8d-facaeeeb77aa",
+      "name": "HTML a JSON-LD"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Obtiene la salida de texto crudo del nodo anterior\nconst rawOutput = $input.item.json.output;\n\n// Expresión regular para encontrar la primera ocurrencia de un bloque JSON\nconst jsonRegex = /\\{[\\s\\S]*\\}/;\nconst match = rawOutput.match(jsonRegex);\n\n// Si se encuentra una coincidencia, la parseamos a un objeto JSON\nif (match && match[0]) {\n  const jsonObject = JSON.parse(match[0]);\n  // Devuelve el objeto JSON limpio. N8N lo pondrá dentro de un objeto 'json'.\n  return { json: jsonObject };\n}\n\n// Si no se encuentra ningún JSON, devuelve un error para detener el flujo\nreturn { json: { error: \"No se encontró un objeto JSON válido en la salida del LLM.\" } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1888,
+        384
+      ],
+      "id": "e109d2c0-8131-40c1-abb4-7304e5a29a6f",
+      "name": "Limpiar y Parsear JSON"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data": {
+      "main": [
+        [
+          {
+            "node": "Identificar Conceptos Pedagógicos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "HTML a JSON-LD",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Analisis Final",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Identificar Conceptos Pedagógicos",
+            "type": "ai_embedding",
+            "index": 0
+          },
+          {
+            "node": "Recuperar Vocabulario Tecnico",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out1": {
+      "main": [
+        [
+          {
+            "node": "Supabase Vector Store2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini2": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store2",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader1": {
+      "ai_document": [
+        [
+          {
+            "node": "Supabase Vector Store2",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Identificar Conceptos Pedagógicos": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Recuperar Vocabulario Tecnico",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recuperar Vocabulario Tecnico": {
+      "main": [
+        [
+          {
+            "node": "Crear Guia Estilo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crear Guia Estilo": {
+      "main": [
+        [
+          {
+            "node": "HTML a JSON-LD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML a JSON-LD": {
+      "main": [
+        [
+          {
+            "node": "Limpiar y Parsear JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpiar y Parsear JSON": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1e079b1b-4899-4553-a793-3089d24d8c87",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "81f9aa344da0912f901e07498089d3dd54ba6d767dbe4d581a261cb5d8886bb9"
+  },
+  "id": "xaMpmZXsKaxZ0Dot",
+  "tags": []
+}

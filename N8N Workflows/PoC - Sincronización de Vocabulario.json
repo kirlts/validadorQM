@@ -1,0 +1,238 @@
+{
+  "name": "PoC - Sincronización de Vocabulario",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        384
+      ],
+      "id": "936cde87-496d-4eba-a269-1194d3d1ed96",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "152932f8-7f1a-43f7-ada6-ae682a43dbce",
+              "name": "vocabularioCompleto",
+              "value": "=[\n  { \"content\": \"curso\", \"metadata\": { \"descripcion\": \"Entidad contenedora principal que representa una asignatura.\", \"tipoTermino\": \"Entidad\", \"tipoDeDato\": \"object\" } },\n  { \"content\": \"actor\", \"metadata\": { \"descripcion\": \"Representa a una persona y su rol (Diseñador, Docente, etc.).\", \"tipoTermino\": \"Entidad\", \"tipoDeDato\": \"object\" } },\n  { \"content\": \"resultadoFormativo\", \"metadata\": { \"descripcion\": \"Objetivo de alto nivel articulado con el perfil de egreso.\", \"tipoTermino\": \"Entidad\", \"tipoDeDato\": \"object\" } },\n  { \"content\": \"resultadoAprendizaje\", \"metadata\": { \"descripcion\": \"Objetivo de aprendizaje de la asignatura.\", \"tipoTermino\": \"Entidad\", \"tipoDeDato\": \"object\" } },\n  { \"content\": \"indicadorDesempeno\", \"metadata\": { \"descripcion\": \"Evidencia precisa que verifica el logro de un resultadoAprendizaje.\", \"tipoTermino\": \"Entidad\", \"tipoDeDato\": \"object\" } },\n  { \"content\": \"aprendizajeEsperado\", \"metadata\": { \"descripcion\": \"Declaración de lo que se espera que los estudiantes logren en una unidad.\", \"tipoTermino\": \"Entidad\", \"tipoDeDato\": \"object\" } },\n  { \"content\": \"indicadorDeLogro\", \"metadata\": { \"descripcion\": \"Criterio observable que verifica el cumplimiento de un aprendizajeEsperado.\", \"tipoTermino\": \"Entidad\", \"tipoDeDato\": \"object\" } },\n  { \"content\": \"habilidadCognitiva\", \"metadata\": { \"descripcion\": \"Representa la complejidad cognitiva (nivel y verbo).\", \"tipoTermino\": \"Entidad\", \"tipoDeDato\": \"object\" } },\n  { \"content\": \"contenido\", \"metadata\": { \"descripcion\": \"Conjunto de saberes a ser enseñados y aprendidos.\", \"tipoTermino\": \"Entidad\", \"tipoDeDato\": \"string | array\" } },\n  { \"content\": \"narrativaPedagogica\", \"metadata\": { \"descripcion\": \"Captura la intención y el 'storytelling' de un curso o unidad.\", \"tipoTermino\": \"Entidad\", \"tipoDeDato\": \"string\" } },\n  { \"content\": \"unidadDidactica\", \"metadata\": { \"descripcion\": \"Contenedor temático principal que agrupa semanas.\", \"tipoTermino\": \"Entidad\", \"tipoDeDato\": \"object\" } },\n  { \"content\": \"semana\", \"metadata\": { \"descripcion\": \"Contenedor temporal que organiza las actividades.\", \"tipoTermino\": \"Entidad\", \"tipoDeDato\": \"object\" } },\n  { \"content\": \"actividad\", \"metadata\": { \"descripcion\": \"Experiencia de aprendizaje diseñada para el estudiante.\", \"tipoTermino\": \"Entidad\", \"tipoDeDato\": \"object\" } },\n  { \"content\": \"producto\", \"metadata\": { \"descripcion\": \"Evidencia de aprendizaje tangible y entregable.\", \"tipoTermino\": \"Entidad\", \"tipoDeDato\": \"object\" } },\n  { \"content\": \"proceso\", \"metadata\": { \"descripcion\": \"Etapas o fases de una tarea que demuestran la aplicación de habilidades.\", \"tipoTermino\": \"Entidad\", \"tipoDeDato\": \"object\" } },\n  { \"content\": \"instrumentoEvaluacion\", \"metadata\": { \"descripcion\": \"Herramienta específica para medir la calidad (Rúbrica, etc.).\", \"tipoTermino\": \"Entidad\", \"tipoDeDato\": \"string\" } },\n  { \"content\": \"retroalimentacion\", \"metadata\": { \"descripcion\": \"Proceso de devolución de información sobre el desempeño.\", \"tipoTermino\": \"Entidad\", \"tipoDeDato\": \"object\" } },\n  { \"content\": \"recursoDeAprendizaje\", \"metadata\": { \"descripcion\": \"Material didáctico para facilitar el logro de un objetivo.\", \"tipoTermino\": \"Entidad\", \"tipoDeDato\": \"object\" } },\n  { \"content\": \"criterioAccesibilidad\", \"metadata\": { \"descripcion\": \"Directriz que asegura la usabilidad de un recurso.\", \"tipoTermino\": \"Entidad\", \"tipoDeDato\": \"string\" } },\n  { \"content\": \"codigo\", \"metadata\": { \"descripcion\": \"Identificador alfanumérico único de la asignatura.\", \"tipoTermino\": \"Atributo\", \"tipoDeDato\": \"string\" } },\n  { \"content\": \"modalidad\", \"metadata\": { \"descripcion\": \"Modalidad de impartición (Online, Híbrido, Presencial).\", \"tipoTermino\": \"Atributo\", \"tipoDeDato\": \"string\" } },\n  { \"content\": \"rol\", \"metadata\": { \"descripcion\": \"Rol en el diseño (Diseñador Instruccional, Docente Experto, etc.).\", \"tipoTermino\": \"Atributo\", \"tipoDeDato\": \"string\" } },\n  { \"content\": \"introduccionMotivacional\", \"metadata\": { \"descripcion\": \"Texto que presenta el propósito y relevancia.\", \"tipoTermino\": \"Atributo\", \"tipoDeDato\": \"string\" } },\n  { \"content\": \"metodologia\", \"metadata\": { \"descripcion\": \"Enfoque pedagógico (ABP, Análisis de Caso, etc.).\", \"tipoTermino\": \"Atributo\", \"tipoDeDato\": \"string\" } },\n  { \"content\": \"propositoEvaluativo\", \"metadata\": { \"descripcion\": \"Propósito de la evaluación (Diagnóstica, Formativa, Sumativa).\", \"tipoTermino\": \"Atributo\", \"tipoDeDato\": \"string\" } },\n  { \"content\": \"ponderacion\", \"metadata\": { \"descripcion\": \"Valor numérico (0-100) para evaluaciones sumativas.\", \"tipoTermino\": \"Atributo\", \"tipoDeDato\": \"number\" } },\n  { \"content\": \"horasDedicacionEstudiante\", \"metadata\": { \"descripcion\": \"Estimación de horas cronológicas de trabajo del estudiante.\", \"tipoTermino\": \"Atributo\", \"tipoDeDato\": \"number\" } },\n  { \"content\": \"agenteEvaluador\", \"metadata\": { \"descripcion\": \"Quién evalúa (Heteroevaluación, Coevaluación, Autoevaluación).\", \"tipoTermino\": \"Atributo\", \"tipoDeDato\": \"string\" } },\n  { \"content\": \"nivelTaxonomico\", \"metadata\": { \"descripcion\": \"Nivel de complejidad cognitiva (1: Reconocer, ..., 6: Crear).\", \"tipoTermino\": \"Atributo\", \"tipoDeDato\": \"string\" } },\n  { \"content\": \"verboAccion\", \"metadata\": { \"descripcion\": \"Verbo específico validado contra el Anexo A.\", \"tipoTermino\": \"Atributo\", \"tipoDeDato\": \"string\" } },\n  { \"content\": \"formatoRetroalimentacion\", \"metadata\": { \"descripcion\": \"Formato de la retroalimentación (Escrita, Oral, etc.).\", \"tipoTermino\": \"Atributo\", \"tipoDeDato\": \"string\" } },\n  { \"content\": \"momentoRetroalimentacion\", \"metadata\": { \"descripcion\": \"Cuándo se entrega la retroalimentación (Inmediata, Diferida).\", \"tipoTermino\": \"Atributo\", \"tipoDeDato\": \"string\" } },\n  { \"content\": \"tipoRecurso\", \"metadata\": { \"descripcion\": \"Tipo de material didáctico (Lectura, Video, etc.).\", \"tipoTermino\": \"Atributo\", \"tipoDeDato\": \"string\" } },\n  { \"content\": \"url\", \"metadata\": { \"descripcion\": \"El URL que apunta al recurso digital.\", \"tipoTermino\": \"Atributo\", \"tipoDeDato\": \"string\" } },\n  { \"content\": \"esObligatorio\", \"metadata\": { \"descripcion\": \"Indica si un recurso es de consulta obligatoria (true/false).\", \"tipoTermino\": \"Atributo\", \"tipoDeDato\": \"boolean\" } },\n  { \"content\": \"descripcionAccesibilidad\", \"metadata\": { \"descripcion\": \"Describe cómo el recurso cumple con criterios de accesibilidad.\", \"tipoTermino\": \"Atributo\", \"tipoDeDato\": \"string\" } },\n  { \"content\": \"esSincronica\", \"metadata\": { \"descripcion\": \"Especifica si una actividad requiere participación simultánea (true/false).\", \"tipoTermino\": \"Atributo\", \"tipoDeDato\": \"boolean\" } },\n  { \"content\": \"paradigmaCurricular\", \"metadata\": { \"descripcion\": \"Especifica el paradigma de diseño (CentradoEnAsignatura, CentradoEnPerfil).\", \"tipoTermino\": \"Atributo\", \"tipoDeDato\": \"string\" } },\n  { \"content\": \"tipoProducto\", \"metadata\": { \"descripcion\": \"Especifica el tipo de entregable tangible (Informe, Ensayo, etc.).\", \"tipoTermino\": \"Atributo\", \"tipoDeDato\": \"string\" } },\n  { \"content\": \"tipoProceso\", \"metadata\": { \"descripcion\": \"Especifica el tipo de desempeño observable (Debate, Exposición, etc.).\", \"tipoTermino\": \"Atributo\", \"tipoDeDato\": \"string\" } },\n  { \"content\": \"periodicidadEvaluacionSumativa\", \"metadata\": { \"descripcion\": \"Describe la frecuencia esperada para las evaluaciones sumativas.\", \"tipoTermino\": \"Atributo\", \"tipoDeDato\": \"string\" } },\n  { \"content\": \"definicionVerbo\", \"metadata\": { \"descripcion\": \"Almacena la definición oficial del verboAccion, extraída del Anexo A.\", \"tipoTermino\": \"Atributo\", \"tipoDeDato\": \"string\" } },\n  { \"content\": \"ejemploDeUso\", \"metadata\": { \"descripcion\": \"Provee un ejemplo canónico de cómo el verboAccion se utiliza.\", \"tipoTermino\": \"Atributo\", \"tipoDeDato\": \"string\" } },\n  { \"content\": \"contiene\", \"metadata\": { \"descripcion\": \"Relaciona una entidad contenedora con las entidades que agrupa.\", \"tipoTermino\": \"Predicado\", \"tipoDeDato\": \"array\" } },\n  { \"content\": \"utilizaRecurso\", \"metadata\": { \"descripcion\": \"Conecta una actividad con el recursoDeAprendizaje que necesita.\", \"tipoTermino\": \"Predicado\", \"tipoDeDato\": \"array\" } },\n  { \"content\": \"incluyeRetroalimentacion\", \"metadata\": { \"descripcion\": \"Conecta una actividad evaluativa con su retroalimentacion.\", \"tipoTermino\": \"Predicado\", \"tipoDeDato\": \"object\" } },\n  { \"content\": \"esResponsable\", \"metadata\": { \"descripcion\": \"Asigna un actor a un curso.\", \"tipoTermino\": \"Predicado\", \"tipoDeDato\": \"array\" } },\n  { \"content\": \"tributaA\", \"metadata\": { \"descripcion\": \"Conecta un resultadoAprendizaje con el resultadoFormativo al que contribuye.\", \"tipoTermino\": \"Predicado\", \"tipoDeDato\": \"string\" } },\n  { \"content\": \"seDescomponeEn\", \"metadata\": { \"descripcion\": \"Relaciona una entidad de alto nivel con sus componentes de nivel inferior.\", \"tipoTermino\": \"Predicado\", \"tipoDeDato\": \"array\" } },\n  { \"content\": \"mideLogroDe\", \"metadata\": { \"descripcion\": \"Conecta una actividad evaluativa con el indicador que mide.\", \"tipoTermino\": \"Predicado\", \"tipoDeDato\": \"array\" } },\n  { \"content\": \"seDesglosaEn\", \"metadata\": { \"descripcion\": \"Relaciona un aprendizajeEsperado con sus indicadoresDeLogro.\", \"tipoTermino\": \"Predicado\", \"tipoDeDato\": \"array\" } }\n]",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        432,
+        384
+      ],
+      "id": "83ac7f65-1c4c-4bc5-8e8a-2f730493cfb2",
+      "name": "Data"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        896,
+        608
+      ],
+      "id": "f8b1e66e-256c-4faf-84df-59955ec41044",
+      "name": "Embeddings Google Gemini1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "1fRbxclakan4SB2c",
+          "name": "Api 1"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "tableId": "vocabulario_jsonld",
+        "filterType": "string",
+        "filterString": "id=not.is.null"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        208,
+        384
+      ],
+      "id": "2b78c430-c093-40ba-9fec-9956a6eb3b6f",
+      "name": "Delete a row",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "m0DUcQthM94wIR7O",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "vocabularioCompleto",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        656,
+        384
+      ],
+      "id": "aab41a72-7a4a-4098-97e1-7f63e8261e32",
+      "name": "Split Glosario"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "vocabulario_jsonld",
+          "mode": "list",
+          "cachedResultName": "vocabulario_jsonld"
+        },
+        "options": {
+          "queryName": "match_vocabulario_jsonld"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        880,
+        384
+      ],
+      "id": "c5d9a808-d452-4cb4-85c9-97be1fba60f0",
+      "name": "Insertar y Vectorizar",
+      "credentials": {
+        "supabaseApi": {
+          "id": "m0DUcQthM94wIR7O",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json.content }}",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "descripcion",
+                "value": "={{ $json.metadata.descripcion}}"
+              },
+              {
+                "name": "tipoTermino",
+                "value": "={{ $json.metadata.tipoTermino }}"
+              },
+              {
+                "name": "tipoDeDato",
+                "value": "={{ $json.metadata.tipoDeDato }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        1024,
+        608
+      ],
+      "id": "59cb3caf-e312-4f49-aa2f-724c7a987f97",
+      "name": "Default Data Loader2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Delete a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data": {
+      "main": [
+        [
+          {
+            "node": "Split Glosario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Insertar y Vectorizar",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete a row": {
+      "main": [
+        [
+          {
+            "node": "Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Glosario": {
+      "main": [
+        [
+          {
+            "node": "Insertar y Vectorizar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insertar y Vectorizar": {
+      "main": [
+        []
+      ]
+    },
+    "Default Data Loader2": {
+      "ai_document": [
+        [
+          {
+            "node": "Insertar y Vectorizar",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "21e4d2a0-f7a4-44e7-a7e8-6285389b739c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "81f9aa344da0912f901e07498089d3dd54ba6d767dbe4d581a261cb5d8886bb9"
+  },
+  "id": "lhPrFpcyvRBEYXuj",
+  "tags": []
+}

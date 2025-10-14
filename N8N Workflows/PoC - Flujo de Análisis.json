@@ -1,0 +1,463 @@
+{
+  "name": "PoC - Flujo de Análisis",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        384
+      ],
+      "id": "a54308a1-6521-41e4-b5ec-36f09441d355",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "152932f8-7f1a-43f7-ada6-ae682a43dbce",
+              "name": "glosarioEntradas",
+              "value": "=[\n  { \"content\": \"Un Resultado de Aprendizaje (RA) es una declaración observable y medible de lo que un estudiante será capaz de hacer al final de un curso. Debe estar alineado con el Resultado Formativo del perfil de egreso.\", \"metadata\": { \"paradigma\": \"CentradoEnPerfil\", \"termino\": \"Resultado de Aprendizaje\" } },\n  { \"content\": \"Un Indicador de Desempeño (ID) desglosa el Resultado de Aprendizaje en acciones concretas y evaluables. Sirve como un criterio claro para medir el logro del RA.\", \"metadata\": { \"paradigma\": \"CentradoEnPerfil\", \"termino\": \"Indicador de Desempeño\" } },\n  { \"content\": \"Principio pedagógico que asegura la coherencia lógica entre los resultados de aprendizaje, las actividades de enseñanza y las estrategias de evaluación para guiar al estudiante hacia el logro de los objetivos.\", \"metadata\": { \"paradigma\": \"Universal\", \"termino\": \"Alineamiento Constructivo\" } }\n]",
+              "type": "array"
+            },
+            {
+              "id": "7147e811-ddf3-4d71-b569-b5b35d7a87a2",
+              "name": "htmlSimulado",
+              "value": "<table>   <tr>     <td>Aplicar los principios de la mecánica newtoniana para resolver problemas de dinámica.</td>     <td>Modela sistemas de fuerzas aplicando las Leyes de Newton.</td>   </tr> </table>",
+              "type": "string"
+            },
+            {
+              "id": "2d0509ed-48f7-43e1-89a7-49592b5ae81a",
+              "name": "consultaRAG",
+              "value": "Evaluar la coherencia entre el resultado de aprendizaje y el indicador de desempeño",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        384
+      ],
+      "id": "4520614c-4e1b-4c87-bd7e-2082ffbb098b",
+      "name": "Data"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "glosario_chunks",
+          "mode": "list",
+          "cachedResultName": "glosario_chunks"
+        },
+        "options": {
+          "queryName": "match_documents"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        208,
+        -160
+      ],
+      "id": "70cd81eb-ee8e-48cc-929a-564f6689e2d1",
+      "name": "Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "m0DUcQthM94wIR7O",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "glosarioEntradas",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        -64
+      ],
+      "id": "754cd788-5240-4036-ae71-519ec6f84175",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        208,
+        64
+      ],
+      "id": "ab3e98dc-5aa7-4431-9535-aff1f4f35d9e",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "1fRbxclakan4SB2c",
+          "name": "Api 1"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json.content }}",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "paradigma",
+                "value": "={{ $json.metadata.paradigma }}"
+              },
+              {
+                "name": "termino",
+                "value": "={{ $json.metadata.termino }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        336,
+        48
+      ],
+      "id": "0dd41390-9f9f-49ff-926b-c90c21aca092",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres un servicio de conversión de datos. Tu única tarea es transformar el siguiente fragmento HTML a un objeto JSON. El JSON debe tener una clave 'resultadoDeAprendizaje' y una clave 'indicadorDeDesempeno'. No incluyas explicaciones, comentarios ni texto introductorio. Responde únicamente con el objeto JSON.\n\n\nHTML:\n{{ $('Data').item.json.htmlSimulado }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        432,
+        384
+      ],
+      "id": "e84e205f-add4-4bec-b16d-d8a57f12c0db",
+      "name": "Transformar a JSON-LD"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        512,
+        608
+      ],
+      "id": "05127036-8137-4e25-b29e-3a1a25ee78ed",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "1fRbxclakan4SB2c",
+          "name": "Api 1"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Obtiene la salida de texto crudo del nodo anterior\nconst rawOutput = $input.item.json.output;\n\n// Expresión regular para encontrar la primera ocurrencia de un bloque JSON\nconst jsonRegex = /\\{[\\s\\S]*\\}/;\nconst match = rawOutput.match(jsonRegex);\n\n// Si se encuentra una coincidencia, la parseamos a un objeto JSON\nif (match && match[0]) {\n  const jsonObject = JSON.parse(match[0]);\n  // Devuelve el objeto JSON limpio. N8N lo pondrá dentro de un objeto 'json'.\n  return { json: jsonObject };\n}\n\n// Si no se encuentra ningún JSON, devuelve un error para detener el flujo\nreturn { json: { error: \"No se encontró un objeto JSON válido en la salida del LLM.\" } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1136,
+        384
+      ],
+      "id": "592af7cc-39d8-451a-b7de-148b8147a82c",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analiza el siguiente texto. Si es un objeto JSON válido con las claves 'resultadoDeAprendizaje' y 'indicadorDeDesempeno', devuélvelo sin cambios. Si está mal formado o le faltan claves, corrígelo y devuelve SOLO el JSON corregido y válido.\n\nTexto a validar/corregir:\n{{ $json.output }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        784,
+        384
+      ],
+      "id": "a7027f10-a718-4459-b9d6-1727462557fa",
+      "name": "Validar y Corregir JSON-LD"
+    },
+    {
+      "parameters": {
+        "mode": "load",
+        "tableName": {
+          "__rl": true,
+          "value": "glosario_chunks",
+          "mode": "list",
+          "cachedResultName": "glosario_chunks"
+        },
+        "prompt": "={{ $('Data').item.json.consultaRAG }}",
+        "topK": 5,
+        "options": {
+          "queryName": "match_documents",
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "paradigma",
+                "value": "CentradoEnPerfil"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        1360,
+        384
+      ],
+      "id": "2ed290de-2fde-4045-947e-b0dee332aba9",
+      "name": "Supabase Vector Store1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "m0DUcQthM94wIR7O",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        608
+      ],
+      "id": "70ebf711-6e3f-4b2f-b3fe-1d8b8244baae",
+      "name": "Embeddings Google Gemini1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "1fRbxclakan4SB2c",
+          "name": "Api 1"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres un experto en calidad instruccional de la UNAB.\n\n### CONTEXTO DEL GLOSARIO:\n{{ $json.pageContent }}\n\n### DATOS DEL DISEÑO INSTRUCCIONAL:\n{{ $('Validar y Corregir JSON-LD').item.json.output }}\n\n### TAREA:\nBasándote ESTRICTAMENTE en el contexto del glosario proporcionado, evalúa si el 'indicadorDeDesempeno' está bien alineado con el 'resultadoDeAprendizaje' en los datos del diseño. Proporciona un análisis breve de una sola frase.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1936,
+        384
+      ],
+      "id": "f25f6ccf-c105-4b90-9e48-c63b97adb7e2",
+      "name": "Analisis Final"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "document.pageContent"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1712,
+        384
+      ],
+      "id": "80d95162-d37c-4c80-b705-088fc24c52df",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "content": "## Vectorizar datos\n",
+        "height": 448,
+        "width": 624
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        -224
+      ],
+      "id": "1835e5a8-a87b-44d7-8b23-adf3ef97c75f",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data": {
+      "main": [
+        [
+          {
+            "node": "Transformar a JSON-LD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transformar a JSON-LD": {
+      "main": [
+        [
+          {
+            "node": "Validar y Corregir JSON-LD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Transformar a JSON-LD",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Validar y Corregir JSON-LD",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Analisis Final",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar y Corregir JSON-LD": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Supabase Vector Store1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store1": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Analisis Final",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d4e15335-e5d7-4784-ae44-f6a1d1bb549e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "81f9aa344da0912f901e07498089d3dd54ba6d767dbe4d581a261cb5d8886bb9"
+  },
+  "id": "dQYzc3vRQPnvtrzR",
+  "tags": []
+}
