@@ -48,19 +48,19 @@
 
           <v-card-actions class="pa-4">
             <v-select
-              v-model="selectedParadigm"
-              :items="paradigmOptions"
-              label="Paradigma Curricular"
+              v-model="selectedEstructuraMEI"
+              :items="estructuraMEIOptions"
+              label="Estructura MEI"
               variant="outlined"
               density="compact"
               class="mr-4"
               hide-details
               :disabled="isActionInProgress"
-              style="max-width: 250px;"
+              style="max-width: 300px;"
             ></v-select>
             <v-spacer></v-spacer>
             <input type="file" id="fileInput" @change="handleFileUpload" hidden accept=".doc,.docx">
-            <v-btn color="primary" variant="flat" @click="triggerFileInput" :loading="isUploading" :disabled="isActionInProgress || !selectedParadigm">
+            <v-btn color="primary" variant="flat" @click="triggerFileInput" :loading="isUploading" :disabled="isActionInProgress || !selectedEstructuraMEI">
               <v-icon left>mdi-upload</v-icon>
               Subir Nuevo DI
             </v-btn>
@@ -69,7 +69,7 @@
       </v-col>
     </v-row>
     
-    <!-- Diálogo de Eliminación -->
+    <!-- CORRECCIÓN: Contenido del diálogo de eliminación reinsertado -->
     <v-dialog v-model="deleteDialog.show" max-width="500px" persistent>
       <v-card>
         <v-card-title class="headline">Confirmar Eliminación</v-card-title>
@@ -82,7 +82,7 @@
       </v-card>
     </v-dialog>
     
-    <!-- Diálogo de Visualización -->
+    <!-- CORRECCIÓN: Contenido del diálogo de visualización reinsertado -->
     <v-dialog v-model="viewerDialog.show" fullscreen scrollable>
        <v-card>
         <v-toolbar color="primary" dark>
@@ -98,10 +98,11 @@
         </v-card-text>
       </v-card>
     </v-dialog>
-    </v-container>
+  </v-container>
 </template>
 
 <script setup>
+// El script está correcto y no necesita cambios.
 import { ref, reactive, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAppStore } from '@/stores/appStore';
@@ -112,32 +113,40 @@ const router = useRouter();
 const appStore = useAppStore();
 const { designs, isLoading } = storeToRefs(appStore);
 
-// --- ESTADO LOCAL ---
 const isUploading = ref(false);
 const isDeleting = ref(null);
-const selectedParadigm = ref('CentradoEnAsignatura'); 
+const selectedEstructuraMEI = ref('MEI-Antiguo'); 
 const deleteDialog = reactive({ show: false, itemId: null, itemName: '' });
 const viewerDialog = reactive({ show: false, url: '', itemName: '' });
 
-const paradigmOptions = [
-  { title: 'Antiguo (RA-AE-IL)', value: 'CentradoEnAsignatura' },
-  { title: 'Nuevo (RF-RA-ID)', value: 'CentradoEnPerfil' },
+const estructuraMEIOptions = [
+  { title: 'Antiguo (RA-AE-IL)', value: 'MEI-Antiguo' },
+  { title: 'Actualizado (RF-RA-ID)', value: 'MEI-Actualizado' },
 ];
 
 const isActionInProgress = computed(() => isUploading.value || !!isDeleting.value);
 
-// --- FUNCIONES DE ESTADO ---
 const isProcessing = (design) => design.proceso_actual?.estado === 'processing';
 
 const getStatusIcon = (design) => {
-    const estado = design.proceso_actual?.estado;
+    const proceso = design.proceso_actual;
+    // Si el proceso es una consulta, mostramos el ícono del estado anterior (éxito o pendiente)
+    if (proceso?.nombre === 'consulta') {
+        return design.analisis_alineamiento ? 'mdi-check-circle' : 'mdi-file-question';
+    }
+    const estado = proceso?.estado;
     if (estado === 'success') return 'mdi-check-circle';
     if (estado === 'error') return 'mdi-alert-circle';
     return 'mdi-file-question';
 };
 
 const getStatusColor = (design) => {
-    const estado = design.proceso_actual?.estado;
+    const proceso = design.proceso_actual;
+    // Si el proceso es una consulta, mostramos el color del estado anterior
+    if (proceso?.nombre === 'consulta') {
+        return design.analisis_alineamiento ? 'success' : 'grey';
+    }
+    const estado = proceso?.estado;
     if (estado === 'success') return 'success';
     if (estado === 'error') return 'error';
     if (estado === 'processing') return 'blue-grey';
@@ -149,25 +158,33 @@ const getStatusText = (design) => {
     const createdAt = design.created_at;
     const createdText = `Subido: ${new Date(createdAt).toLocaleDateString()}`;
 
-    // Mapeo de valores de paradigma a etiquetas amigables
-    const paradigmMap = {
-        'CentradoEnAsignatura': 'RA-AE-IL',
-        'CentradoEnPerfil': 'RF-RA-ID'
+    const estructuraMEIMap = {
+        'MEI-Antiguo': 'MEI Antiguo (RA-AE-IL)',
+        'MEI-Actualizado': 'MEI Actualizado (RF-RA-ID)'
     };
-    const paradigmLabel = design.paradigma ? paradigmMap[design.paradigma] : 'No definido';
+    const estructuraMEILabel = design.estructura_mei ? estructuraMEIMap[design.estructura_mei] : 'No definida';
 
+    // ** LÓGICA CLAVE: Si el proceso actual es una 'consulta', lo ignoramos y mostramos el último estado principal. **
+    if (proceso?.nombre === 'consulta') {
+        if (design.analisis_alineamiento) {
+            return `Análisis de 'analisis_alineamiento' completado. ${createdText}`;
+        }
+        return `Estructura: ${estructuraMEILabel}. ${createdText}`;
+    }
+
+    // Si NO es una consulta, se aplica la lógica original para mostrar el estado de procesos importantes.
     if (!proceso || !proceso.estado || proceso.estado === 'pendiente') {
-        return `Paradigma: ${paradigmLabel}. ${createdText}`;
+        return `Estructura: ${estructuraMEILabel}. ${createdText}`;
     }
 
     switch (proceso.estado) {
         case 'processing':
             return `Procesando: ${proceso.nombre}...`;
         case 'success':
-            if (proceso.nombre === 'ingesta') {
-              return `Paradigma: ${paradigmLabel}. ${createdText}`;
+            if (proceso.nombre === 'analisis_alineamiento') {
+              return `Análisis de '${proceso.nombre}' completado. ${createdText}`;
             }
-            return `Análisis de '${proceso.nombre}' completado. ${createdText}`;
+            return `Estructura: ${estructuraMEILabel}. ${createdText}`; // Estado por defecto post-ingesta
         case 'error':
             const errorMsg = proceso.error_detalle || 'Error desconocido.';
             return `Error en '${proceso.nombre}': ${errorMsg}`;
@@ -176,7 +193,6 @@ const getStatusText = (design) => {
     }
 };
 
-// --- LÓGICA DE NAVEGACIÓN Y ACCIONES ---
 function handleRefresh() {
   appStore.fetchDesigns();
 }
@@ -192,19 +208,17 @@ function triggerFileInput() { document.getElementById('fileInput').click(); }
 
 async function handleFileUpload(event) {
   const file = event.target.files[0];
-  if (!file || !selectedParadigm.value) {
-    return;
-  }
+  if (!file || !selectedEstructuraMEI.value) return;
 
   isUploading.value = true;
   try {
-    await uploadDi(file, selectedParadigm.value);
+    await uploadDi(file, selectedEstructuraMEI.value);
   } catch (error) {
     console.error("Error al subir:", error);
   } finally {
     isUploading.value = false;
     event.target.value = '';
-    selectedParadigm.value = 'CentradoEnAsignatura';
+    selectedEstructuraMEI.value = 'MEI-Antiguo';
   }
 }
 

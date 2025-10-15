@@ -44,10 +44,12 @@ export function getDis() {
   return fetchWithAuth('dis');
 }
 
-export async function uploadDi(file, paradigma) {
+export async function uploadDi(file, estructuraMEI) { // <-- CAMBIO 1: Renombrar el segundo argumento para mayor claridad
   const formData = new FormData();
   formData.append('file', file);
-  formData.append('paradigma', paradigma); 
+  
+  // --- CAMBIO 2: Usar la clave correcta 'estructuraMEI' que el backend espera ---
+  formData.append('estructuraMEI', estructuraMEI); 
 
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error('No hay sesión de usuario activa.');
@@ -90,11 +92,14 @@ export function interactWithDi(diId, prompt) {
   });
 }
 
-// --- Nuevas funciones para el panel de administración ---
 export function syncDomainGlossary() {
   return fetchWithAuth('sync/domain-glossary', { method: 'POST' });
 }
 
 export function syncVocabularyGlossary() {
   return fetchWithAuth('sync/vocabulary-glossary', { method: 'POST' });
+}
+
+export function analyzeAlignment(diId) {
+  return fetchWithAuth(`dis/${diId}/analyze-alignment`, { method: 'POST' });
 }

@@ -1,0 +1,596 @@
+{
+  "name": "Alineacion AE / IL",
+  "nodes": [
+    {
+      "parameters": {
+        "modelName": "models/gemini-flash-latest",
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        992,
+        1232
+      ],
+      "id": "fd05afd7-2b5e-4541-a557-713a723ae6f2",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "1fRbxclakan4SB2c",
+          "name": "Api 1"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        496,
+        1248
+      ],
+      "id": "645cb3b7-09b7-45ab-bb91-398cce84cc4f",
+      "name": "Embeddings Google Gemini1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "1fRbxclakan4SB2c",
+          "name": "Api 1"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nlet styleGuide = \"### GUÍA DE ESTILO DEL VOCABULARIO (Schema):\\n\";\n\n// Iteramos sobre cada ítem que nos llega\nfor (const item of items) {\n  // Verificamos que la estructura anidada exista\n  if (item.json && item.json.document && item.json.document.metadata) {\n    \n    // Usamos los paths correctos: item.json.document.pageContent\n    const clave = item.json.document.pageContent;\n    \n    // Y item.json.document.metadata.descripcion\n    const descripcion = item.json.document.metadata.descripcion || \"Sin descripción\";\n    \n    styleGuide += `- Usa la clave: \\`${clave}\\` (Descripción: ${descripcion})\\n`;\n  }\n}\n\n// Devolvemos el texto completo\nreturn { json: { style_guide_text: styleGuide } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        768,
+        1024
+      ],
+      "id": "ff0f8d9f-eac3-4f7e-a585-e7be1ffbba83",
+      "name": "Crear Guia Estilo"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres un asistente de extracción de datos que SOLO responde con JSON.\nTu única tarea es rellenar una plantilla JSON.\n\n### 1. GUÍA DE CLAVES OBLIGATORIAS:\n{{ $('Crear Guia Estilo').first().json.style_guide_text }}\n\n### 2. DATOS DE ENTRADA:\n{{ $('Get DI Data').first().json.contenido_html }}\n\n### 3. TAREA:\nAnaliza los datos de entrada y extrae la siguiente información de forma separada:\n1.  **Para `descripcionCurso`**: Extrae o infiere la descripción del curso.\n2.  **Para `resultadosAprendizaje`**: Extrae **TODOS Y CADA UNO** de los ítems de la lista que comiencen explícitamente con 'RA', 'Resultado de Aprendizaje', etc. Asegúrate de incluirlos todos en el array. Pueden haber uno o más RAs.\n3.  **Para `aprendizajesEsperados`**: Extrae TODOS los 'aprendizajeEsperado' (AE) con sus 'indicadoresDeLogro' (IL) asociados.\n\nGenera un ÚNICO objeto JSON con la siguiente estructura exacta. Presta especial atención a que `resultadosAprendizaje` sea un array con MÚLTIPLES elementos si los encuentras.\n\n{\n  \"descripcionCurso\": \"El párrafo principal que describe la asignatura...\",\n  \"resultadosAprendizaje\": [\n    \"RA1: Aplicar herramientas y metodologías...\",\n    \"RA2: Evaluar alternativas de solución...\"\n  ],\n  \"aprendizajesEsperados\": [\n    {\n      \"aprendizajeEsperado\": \"El texto del AE1...\",\n      \"indicadoresDeLogro\": [ \"...\" ]\n    }\n  ]\n}\n\nResponde SÓLO con el objeto JSON y nada más.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        992,
+        1024
+      ],
+      "id": "9956f788-0eba-4202-a600-c2107237256a",
+      "name": "HTML a JSON-LD"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Obtiene la salida de texto crudo del nodo anterior\nconst rawOutput = $input.item.json.output;\n\n// Expresión regular para encontrar la primera ocurrencia de un bloque JSON\nconst jsonRegex = /\\{[\\s\\S]*\\}/;\nconst match = rawOutput.match(jsonRegex);\n\n// Si se encuentra una coincidencia, la parseamos a un objeto JSON\nif (match && match[0]) {\n  const jsonObject = JSON.parse(match[0]);\n  // Devuelve el objeto JSON limpio. N8N lo pondrá dentro de un objeto 'json'.\n  return { json: jsonObject };\n}\n\n// Si no se encuentra ningún JSON, devuelve un error para detener el flujo\nreturn { json: { error: \"No se encontró un objeto JSON válido en la salida del LLM.\" } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        1024
+      ],
+      "id": "e927f836-c64d-4389-9da2-2df6b30c666b",
+      "name": "Limpiar y Parsear JSON"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        2144,
+        1024
+      ],
+      "id": "143578d4-d045-4664-8efa-5ddfb5930433",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-flash-latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2576,
+        1280
+      ],
+      "id": "24b7fd83-d603-463e-8f7c-c3ac73869d84",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "1fRbxclakan4SB2c",
+          "name": "Api 1"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "analyze-alignment",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -32,
+        1024
+      ],
+      "id": "9b241523-d7f5-4591-93f8-f25298afcaca",
+      "name": "Webhook",
+      "webhookId": "f2643983-3ae8-4890-8551-45ae13bbab3f"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "disenos_instruccionales",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id_di",
+              "keyValue": "={{ $json.body.di_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        192,
+        1024
+      ],
+      "id": "c377aaa9-548e-44d9-9c19-7ec243bca7b0",
+      "name": "Get DI Data",
+      "credentials": {
+        "supabaseApi": {
+          "id": "m0DUcQthM94wIR7O",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "load",
+        "tableName": {
+          "__rl": true,
+          "value": "vocabulario_jsonld",
+          "mode": "list",
+          "cachedResultName": "vocabulario_jsonld"
+        },
+        "prompt": "={{ $('Webhook').item.json.body.terminosVocabulario }}",
+        "topK": 20,
+        "options": {
+          "queryName": "match_vocabulario_jsonld"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        416,
+        1024
+      ],
+      "id": "0e1befd2-2651-403a-8f74-167afba3d49d",
+      "name": "RAG Vocabulario",
+      "credentials": {
+        "supabaseApi": {
+          "id": "m0DUcQthM94wIR7O",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "load",
+        "tableName": {
+          "__rl": true,
+          "value": "glosario_chunks",
+          "mode": "list",
+          "cachedResultName": "glosario_chunks"
+        },
+        "prompt": "={{ $('Webhook').first().json.body.terminosDominio }}",
+        "topK": 100,
+        "options": {
+          "queryName": "match_glosario_chunks_by_paradigms",
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "paradigma",
+                "value": "={{ [$('Webhook').first().json.body.estructuraMEI, 'Universal', 'null'].join(',') }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        1568,
+        1024
+      ],
+      "id": "745eae93-f8aa-4d49-8602-8c8d1bf206c8",
+      "name": "RAG Dominio",
+      "credentials": {
+        "supabaseApi": {
+          "id": "m0DUcQthM94wIR7O",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "disenos_instruccionales",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id_di",
+              "condition": "eq",
+              "keyValue": "={{ $('Webhook').first().json.body.di_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "analisis_alineamiento",
+              "fieldValue": "={{ { \"resultado\": $('Limpiar Analisis JSON').first().json } }}"
+            },
+            {
+              "fieldId": "proceso_actual",
+              "fieldValue": "={{ { \"nombre\": \"analisis_alineamiento\", \"estado\": \"success\" } }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3424,
+        1024
+      ],
+      "id": "bd8b35d4-d849-4bfc-87fd-51a8e165f17c",
+      "name": "Update a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "m0DUcQthM94wIR7O",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Recibe el array completo desde el nodo Supabase Vector Store\nconst items = $input.all();\n\n// Prepara un nuevo array para guardar los resultados limpios\nconst cleanedContext = [];\n\n// Itera sobre cada documento recuperado\nfor (const item of items) {\n  // Verifica que la estructura esperada exista para evitar errores\n  if (item.json && item.json.document && item.json.document.metadata) {\n    \n    const doc = item.json.document;\n\n    // Construye un nuevo objeto solo con los campos que necesitamos\n    const cleanItem = {\n      // Mantenemos el 'pageContent' que es el texto principal\n      content: doc.pageContent,\n      \n      // Creamos un nuevo objeto 'metadata' solo con los campos útiles\n      metadata: {\n        termino: doc.metadata.termino,\n        fuente: doc.metadata.fuente,\n        paradigma: doc.metadata.paradigma,\n        tipo: doc.metadata.tipo,\n        nivelTaxonomico: doc.metadata.nivelTaxonomico,\n        definicionGeneralNivel: doc.metadata.definicionGeneralNivel\n      }\n    };\n    \n    // Agrega el objeto limpio a nuestro array de resultados\n    cleanedContext.push(cleanItem);\n  }\n}\n\n// Devuelve el array de objetos limpios.\n// El siguiente nodo recibirá esta data simplificada.\nreturn cleanedContext;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        1024
+      ],
+      "id": "12c09f87-ad2c-49c6-9975-c763f8353a9b",
+      "name": "Consolidar Contexto"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.prompt }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        2576,
+        1024
+      ],
+      "id": "4d0fd95f-c38c-4d99-8500-ac0048534623",
+      "name": "Agente Analista"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres un sistema de parseo de datos altamente preciso. Tu única función es rellenar una plantilla JSON a partir de un informe de texto que se te proporciona.\n\n### INFORME DE ANÁLISIS (Texto de Entrada):\n{{ $json.output }}\n\n### ESTRUCTURA MEI:\n{{ $('Webhook').first().json.body.estructuraMEI }}\n\n### PLANTILLA JSON DE SALIDA:\n```json\n{\n  \"resumenGeneral\": {\n    \"paradigma\": \"Extrae la estructura MEI del informe (ej. MEI-Antiguo)\",\n    \"veredictoGeneral\": \"Calcula el veredicto más frecuente de todos los objetivos (AE o RA, según corresponda) (ALINEADO, ALINEADO CON OBSERVACIONES, o NO ALINEADO)\"\n  },\n  \"descripcionCurso\": \"Extrae el párrafo de descripción del curso si lo encuentras en los datos originales.\",\n  \"analisisResultadosAprendizaje\": [\n    {\n      \"resultadoAprendizaje\": \"Texto completo del primer RA General\",\n      \"verboPrincipal\": \"Verbo extraído del primer RA\",\n      \"nivelTaxonomico\": \"Nivel taxonómico del primer RA\"\n    }\n  ],\n  \"analisisPorObjetivo\": [\n    {\n      \"objetivo\": \"Texto completo del primer AE o RA (el objetivo de nivel intermedio)\",\n      \"verboPrincipal\": \"Verbo extraído del objetivo\",\n      \"nivelTaxonomico\": \"Nivel taxonómico del objetivo\",\n      \"coherenciaConRA\": \"El análisis de coherencia con el objetivo de nivel superior (RA o RF)\",\n      \"veredicto\": \"Veredicto para este objetivo (ej. ALINEADO)\",\n      \"justificacion\": \"Justificación general para este objetivo\",\n      \"desgloseIndicadores\": [\n        {\n          \"indicador\": \"Texto completo del primer indicador\",\n          \"verbo\": \"Verbo extraído del indicador\",\n          \"nivelTaxonomico\": \"Nivel taxonómico del indicador\",\n          \"analisisSemantico\": \"Análisis de coherencia semántica\",\n          \"analisisTaxonomico\": \"Análisis de coherencia taxonómica\",\n          \"analisisSintactico\": \"El resultado del análisis de coherencia sintáctica (ej. 'PROBLEMA: ...' o 'CORRECTO')\"\n        }\n      ]\n    }\n  ]\n}\nTAREA:\nLee el \"INFORME DE ANÁLISIS\" y rellena la \"PLANTILLA JSON DE SALIDA\" con la información correspondiente.\nEn analisisResultadosAprendizaje, crea un objeto por CADA sección \"ANALISIS PARA RA...\" que encuentres.\nEn analisisPorObjetivo, crea un objeto por cada sección \"ANALISIS PARA AE...\" (o RA si es MEI-Actualizado) que encuentres.\nRellena todos los campos, incluyendo el nuevo analisisSintactico para cada indicador.\nResponde ÚNICAMENTE con el objeto JSON completo. No incluyas explicaciones, comentarios, ni \\``json`.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        2912,
+        1024
+      ],
+      "id": "9c1530c8-c552-44ff-91f2-9de31efcb0d8",
+      "name": "Agente Formateador"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash-lite",
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2912,
+        1280
+      ],
+      "id": "1798a80b-e911-45e3-b3f9-b44e203835f8",
+      "name": "Google Gemini Chat Model2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "1fRbxclakan4SB2c",
+          "name": "Api 1"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Obtener y parsear el JSON del análisis del Agente Formateador\nconst rawAnalysisOutput = $('Agente Formateador').first().json.output;\nconst jsonRegex = /\\{[\\s\\S]*\\}/;\nconst analysisMatch = rawAnalysisOutput.match(jsonRegex);\n\nif (!analysisMatch || !analysisMatch[0]) {\n  throw new Error(\"No se encontró un objeto JSON en la salida del Agente Formateador.\");\n}\n\nconst analysisJSON = JSON.parse(analysisMatch[0]);\n\n// 2. Obtener la descripción del curso del primer agente de extracción\nconst structuredData = $('Limpiar y Parsear JSON').first().json; // Este es el primer nodo de limpieza\nconst descripcionCurso = structuredData.descripcionCurso || \"No se encontró descripción del curso.\";\n\n// 3. Fusionar ambos datos en el objeto final\nanalysisJSON.descripcionCurso = descripcionCurso;\n\n// 4. Devolver el JSON completo y fusionado\nreturn { json: analysisJSON };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3232,
+        1024
+      ],
+      "id": "338bf287-e4d2-4bd6-a778-410b795d0c01",
+      "name": "Limpiar Analisis JSON"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Obtener los datos necesarios de los nodos anteriores\nconst diData = $('Get DI Data').first().json;\nconst estructuraMEI = diData.estructura_mei;\nconst datosEstructurados = $('Limpiar y Parsear JSON').first().json;\nconst contextoDominioArray = $('Aggregate').first().json.data;\n\n// --- Función para transformar el contexto en texto legible ---\nfunction formatarContexto(contextoArray) {\n  let textoFormateado = '';\n  if (!Array.isArray(contextoArray)) {\n    return 'Contexto no disponible.';\n  }\n  \n  contextoArray.forEach(item => {\n    // Extraer datos con seguridad, proveyendo valores por defecto\n    const termino = item.metadata?.termino || 'Término desconocido';\n    const content = item.content || 'Sin contenido.';\n    const fuente = item.metadata?.fuente || '';\n    const nivelTaxonomico = item.metadata?.nivelTaxonomico || '';\n\n    // Construir una línea de texto formateado para cada entrada del glosario\n    let linea = `- **${termino} (${fuente})**: ${content}`;\n    \n    // Añadir el nivel taxonómico solo si es relevante\n    if (nivelTaxonomico && nivelTaxonomico !== 'null') {\n      linea += ` (Nivel: ${nivelTaxonomico})`;\n    }\n    \n    textoFormateado += linea + '\\n';\n  });\n  \n  return textoFormateado;\n}\n\n// Transformamos el contexto JSON en texto plano y legible para el LLM\nconst contextoFormateado = formatarContexto(contextoDominioArray);\n\n\n// Base del prompt, común a ambos paradigmas\nconst promptBase = `Eres un experto en evaluación de calidad instruccional de la UNAB, riguroso, detallista y orientado a las reglas.\n\n### CONTEXTO DE DOMINIO (Fuente de Verdad):\n${contextoFormateado}\n### ESTRUCTURA MEI DEL DI:\n${estructuraMEI}\n\n### DATOS ESTRUCTURADOS DEL DI (JSON):\n${JSON.stringify(datosEstructurados)}\n\n### TAREA:\nRealiza un análisis de alineamiento exhaustivo de la jerarquía pedagógica completa. Genera un informe en TEXTO PLANO siguiendo la estructura detallada a continuación. NO uses JSON ni Markdown en tu respuesta.\n\n**Reglas de Análisis Mandatorias:**\n1.  **Verbos:** Al identificar un verbo, búscalo en el CONTEXTO. Si no lo encuentras, indícalo explícitamente y haz tu mejor estimación del nivel taxonómico basándote en la definición general de los niveles.\n2.  **Sintaxis de Indicadores:** Revisa CADA indicador. Si contiene la palabra \"para\", debes señalarlo como un PROBLEMA en el análisis de coherencia sintáctica. Esta es una regla CRÍTICA.`;\n\nlet estructuraInforme = '';\n\n// Lógica condicional para construir la parte específica del paradigma\nif (estructuraMEI === 'MEI-Antiguo') {\n  estructuraInforme = `\n**ESTRUCTURA DEL INFORME (Estructura MEI Antiguo):**\n\n**SECCIÓN RA (Repetir para CADA 'resultadoAprendizaje' en los datos):**\n1.  **Inicia una sección:** ANALISIS PARA RA: [Texto completo del RA]\n2.  **Verbo y Nivel del RA:** Analiza el verbo del RA, búscalo en el CONTEXTO y declara su nivel taxonómico.\n    - Verbo del RA: [Verbo]\n    - Nivel Taxonómico del RA: [Nivel y Definición]\n\n**SECCIÓN AE (Repetir para CADA 'aprendizajeEsperado'):**\n1.  **Inicia una sección:** ANALISIS PARA AE: [Texto completo del AE]\n2.  **Alineación con RA:** Evalúa si el AE es semántica y taxonómicamente coherente con los RAs Generales. El nivel del AE no debe superar al de los RAs.\n    - Coherencia RA-AE: [Análisis breve]\n3.  **Verbo y Nivel del AE:** Analiza el verbo del AE, búscalo en el CONTEXTO y declara su nivel taxonómico.\n    - Verbo del AE: [Verbo]\n    - Nivel Taxonómico del AE: [Nivel y Definición]\n4.  **Análisis de Indicadores:** Para CADA 'indicadorDeLogro' (IL) asociado al AE:\n    - INDICADOR: [Texto completo del IL]\n    - Verbo del IL: [Verbo]\n    - Nivel Taxonómico del IL: [Nivel y Definición]\n    - Coherencia Semántica: [Análisis breve sobre si el IL desglosa y concreta el AE.]\n    - Coherencia Taxonómica: [Análisis sobre si el nivel del IL es igual o inferior al del AE.]\n    - Coherencia Sintáctica: [Analiza si el indicador usa la palabra \"para\". Si la usa, escribe: \"PROBLEMA: El indicador contiene la palabra 'para', lo cual es incorrecto según el glosario.\" Si no, escribe: \"CORRECTO.\"]\n5.  **Conclusión para el AE:** Basado en el análisis de los indicadores y su alineación con el RA.\n    - Veredicto: [Escribe una de estas tres opciones: ALINEADO, ALINEADO CON OBSERVACIONES, NO ALINEADO]\n    - Justificación General: [Resume los hallazgos clave.]\n`;\n} else if (estructuraMEI === 'MEI-Actualizado') {\n  estructuraInforme = `\n**ESTRUCTURA DEL INFORME (Estructura MEI Actualizado):**\n\n**SECCIÓN RF (Repetir para CADA 'resultadoFormativo' en los datos):**\n1.  **Inicia una sección:** ANALISIS PARA RF: [Texto completo del RF]\n2.  **Verbo y Nivel del RF:** Analiza el verbo del RF, búscalo en el CONTEXTO y declara su nivel taxonómico.\n    - Verbo del RF: [Verbo]\n    - Nivel Taxonómico del RF: [Nivel y Definición]\n\n**SECCIÓN RA (Repetir para CADA 'resultadoAprendizaje'):**\n1.  **Inicia una sección:** ANALISIS PARA RA: [Texto completo del RA]\n2.  **Alineación con RF:** Evalúa si el RA es semántica y taxonómicamente coherente con los RFs Generales. El nivel del RA no debe superar al de los RFs.\n    - Coherencia RF-RA: [Análisis breve]\n3.  **Verbo y Nivel del RA:** Analiza el verbo del RA, búscalo en el CONTEXTO y declara su nivel taxonómico.\n    - Verbo del RA: [Verbo]\n    - Nivel Taxonómico del RA: [Nivel y Definición]\n4.  **Análisis de Indicadores:** Para CADA 'indicadorDesempeno' (ID) asociado al RA:\n    - INDICADOR: [Texto completo del ID]\n    - Verbo del ID: [Verbo]\n    - Nivel Taxonómico del ID: [Nivel y Definición]\n    - Coherencia Semántica: [Análisis breve sobre si el ID desglosa y concreta el RA.]\n    - Coherencia Taxonómica: [Análisis sobre si el nivel del ID es igual o inferior al del RA.]\n    - Coherencia Sintáctica: [Analiza si el indicador usa la palabra \"para\". Si la usa, escribe: \"PROBLEMA: El indicador contiene la palabra 'para', lo cual es incorrecto según el glosario.\" Si no, escribe: \"CORRECTO.\"]\n5.  **Conclusión para el RA:** Basado en el análisis de los indicadores y su alineación con el RF.\n    - Veredicto: [Escribe una de estas tres opciones: ALINEADO, ALINEADO CON OBSERVACIONES, NO ALINEADO]\n    - Justificación General: [Resume los hallazgos clave.]\n`;\n} else {\n  // Manejo de error si la estructura no es válida, detendrá la ejecución.\n  throw new Error(`Estructura MEI no reconocida: ${estructuraMEI}`);\n}\n\n// Unimos la base del prompt con la estructura específica del paradigma\nconst promptFinal = `${promptBase}\\n\\n${estructuraInforme}`;\n\n// Devolvemos el prompt final para que el siguiente nodo (Agente Analista) lo pueda usar\nreturn { json: { prompt: promptFinal } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2352,
+        1024
+      ],
+      "id": "ac01c08e-9b7d-453e-8ef6-5e9241140c0a",
+      "name": "Constructor de Prompt de Análisis"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n:5678",
+            "user-agent": "python-requests/2.32.5",
+            "accept-encoding": "gzip, deflate",
+            "accept": "*/*",
+            "connection": "keep-alive",
+            "content-length": "295",
+            "content-type": "application/json"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "di_id": "03d57433-cb5e-4bc1-8014-33e53bb40e87",
+            "estructuraMEI": "MEI-Antiguo",
+            "terminosVocabulario": "resultadoAprendizaje, aprendizajeEsperado, indicadorDeLogro",
+            "terminosDominio": "Definición de Aprendizaje Esperado, Indicador de Logro, y todos los verbos de la taxonomía UNAB"
+          },
+          "webhookUrl": "http://localhost:5678/webhook/analyze-alignment",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "HTML a JSON-LD",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "RAG Vocabulario",
+            "type": "ai_embedding",
+            "index": 0
+          },
+          {
+            "node": "RAG Dominio",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crear Guia Estilo": {
+      "main": [
+        [
+          {
+            "node": "HTML a JSON-LD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML a JSON-LD": {
+      "main": [
+        [
+          {
+            "node": "Limpiar y Parsear JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpiar y Parsear JSON": {
+      "main": [
+        [
+          {
+            "node": "RAG Dominio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Constructor de Prompt de Análisis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente Analista",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get DI Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get DI Data": {
+      "main": [
+        [
+          {
+            "node": "RAG Vocabulario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RAG Vocabulario": {
+      "main": [
+        [
+          {
+            "node": "Crear Guia Estilo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RAG Dominio": {
+      "main": [
+        [
+          {
+            "node": "Consolidar Contexto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consolidar Contexto": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente Analista": {
+      "main": [
+        [
+          {
+            "node": "Agente Formateador",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente Formateador": {
+      "main": [
+        [
+          {
+            "node": "Limpiar Analisis JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente Formateador",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpiar Analisis JSON": {
+      "main": [
+        [
+          {
+            "node": "Update a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Constructor de Prompt de Análisis": {
+      "main": [
+        [
+          {
+            "node": "Agente Analista",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "5d37b8b2-9954-41ba-a1bc-d5b8820b6b75",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "81f9aa344da0912f901e07498089d3dd54ba6d767dbe4d581a261cb5d8886bb9"
+  },
+  "id": "caMEGvf5lrn0kBvt",
+  "tags": []
+}

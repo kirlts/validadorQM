@@ -1,0 +1,434 @@
+[
+  {
+    "content": "curso",
+    "metadata": {
+      "descripcion": "La entidad contenedora principal que representa una asignatura. Posee metadatos administrativos.",
+      "tipoTermino": "Entidad",
+      "tipoDeDato": "object"
+    }
+  },
+  {
+    "content": "actor",
+    "metadata": {
+      "descripcion": "Representa a una persona y su rol dentro del proceso de diseño o impartición del curso. Vocabulario de Roles: Diseñador Instruccional, Docente Experto, Coordinador, Docente.",
+      "tipoTermino": "Entidad",
+      "tipoDeDato": "object"
+    }
+  },
+  {
+    "content": "resultadoFormativo",
+    "metadata": {
+      "descripcion": "Se articulan con el perfil de egreso y orientan el diseño curricular en todos sus niveles. Estructura: Verbo de alto nivel cognitivo + capacidad + contexto + finalidad profesional o formativa.",
+      "tipoTermino": "Entidad",
+      "tipoDeDato": "object"
+    }
+  },
+  {
+    "content": "resultadoAprendizaje",
+    "metadata": {
+      "descripcion": "En Estructura MEI Actualizado: Formulados para tributar a un resultadoFormativo. Orientan la elaboración de indicadoresDeDesempeno. Estructura: Verbo observable + contenido o conocimiento específico + finalidad formativa. En Estructura MEI Antiguo: Es el objetivo de más alto nivel de la asignatura, del cual se desprenden los aprendizajesEsperados.",
+      "tipoTermino": "Entidad",
+      "tipoDeDato": "object"
+    }
+  },
+  {
+    "content": "indicadorDesempeno",
+    "metadata": {
+      "descripcion": "Descripciones precisas de las evidencias que permiten verificar el logro de un resultadoAprendizaje, orientando la evaluación y la retroalimentación. Estructura: Verbo observable en infinitivo + producto o proceso + condición de calidad o contexto.",
+      "tipoTermino": "Entidad",
+      "tipoDeDato": "object"
+    }
+  },
+  {
+    "content": "aprendizajeEsperado",
+    "metadata": {
+      "descripcion": "Declaraciones claras y precisas que describen los conocimientos, habilidades, actitudes y valores que se espera que los estudiantes logren. Son la base para diseñar la evaluación. Estructura: Habilidad + Contenido + Nivel de Dominio/finalidad.",
+      "tipoTermino": "Entidad",
+      "tipoDeDato": "object"
+    }
+  },
+  {
+    "content": "indicadorDeLogro",
+    "metadata": {
+      "descripcion": "Criterios observables y medibles que permiten verificar el nivel de cumplimiento de los aprendizajesEsperados. Representan un desglose y concreción de estos.",
+      "tipoTermino": "Entidad",
+      "tipoDeDato": "object"
+    }
+  },
+  {
+    "content": "habilidadCognitiva",
+    "metadata": {
+      "descripcion": "Entidad estructurada que representa la complejidad cognitiva de un objetivo. Se compone de tres partes inseparables: el nivelTaxonomico, el verboAccion seleccionado, y la definicionVerbo canónica. Se recomienda proveer un ejemploDeUso.",
+      "tipoTermino": "Entidad",
+      "tipoDeDato": "object"
+    }
+  },
+  {
+    "content": "contenido",
+    "metadata": {
+      "descripcion": "En términos curriculares, se define como el conjunto de saberes, habilidades, actitudes y valores que se seleccionan y organizan para favorecer el logro de los objetivos de aprendizaje. Integra tres dimensiones: Contenidos conceptuales (saber), procedimentales (saber hacer) y actitudinales (saber ser y convivir).",
+      "tipoTermino": "Entidad",
+      "tipoDeDato": "object"
+    }
+  },
+  {
+    "content": "narrativaPedagogica",
+    "metadata": {
+      "descripcion": "Entidad que captura la intención y el 'storytelling' de un curso o unidadDidactica.",
+      "tipoTermino": "Entidad",
+      "tipoDeDato": "object"
+    }
+  },
+  {
+    "content": "unidadDidactica",
+    "metadata": {
+      "descripcion": "Es una estructura organizativa del proceso de enseñanza-aprendizaje que integra de manera coherente los objetivos de aprendizaje, contenidos, actividades, recursos y estrategias de evaluación.",
+      "tipoTermino": "Entidad",
+      "tipoDeDato": "object"
+    }
+  },
+  {
+    "content": "semana",
+    "metadata": {
+      "descripcion": "Contenedor temporal que organiza las actividades.",
+      "tipoTermino": "Entidad",
+      "tipoDeDato": "object"
+    }
+  },
+  {
+    "content": "actividad",
+    "metadata": {
+      "descripcion": "La unidad fundamental de la experiencia de aprendizaje. Representa cualquier tarea o evento diseñado para que el estudiante interactúe con el contenido. Se especializa en una evaluación cuando se le asignan atributos evaluativos (ej. propositoEvaluativo).",
+      "tipoTermino": "Entidad",
+      "tipoDeDato": "object"
+    }
+  },
+  {
+    "content": "producto",
+    "metadata": {
+      "descripcion": "Una evidencia de aprendizaje tangible y entregable generada por el estudiante (ej. Informe, Ensayo).",
+      "tipoTermino": "Entidad",
+      "tipoDeDato": "object"
+    }
+  },
+  {
+    "content": "proceso",
+    "metadata": {
+      "descripcion": "Etapas o fases de una tarea que permiten al estudiante demostrar la aplicación de habilidades en tiempo real (ej. participación en un debate).",
+      "tipoTermino": "Entidad",
+      "tipoDeDato": "object"
+    }
+  },
+  {
+    "content": "instrumentoEvaluacion",
+    "metadata": {
+      "descripcion": "La herramienta específica utilizada para medir la calidad de un producto o proceso. Vocabulario Controlado: Rúbrica, Escala de apreciación, Lista de cotejo, Pauta de corrección.",
+      "tipoTermino": "Entidad",
+      "tipoDeDato": "string"
+    }
+  },
+  {
+    "content": "retroalimentacion",
+    "metadata": {
+      "descripcion": "Proceso de devolución de información sobre el desempeño del estudiante. Debe estar orientada a los aprendizajes, ser oportuna, clara y fomentar la mejora.",
+      "tipoTermino": "Entidad",
+      "tipoDeDato": "object"
+    }
+  },
+  {
+    "content": "recursoDeAprendizaje",
+    "metadata": {
+      "descripcion": "Material didáctico seleccionado con la intención de facilitar el logro de un objetivo de aprendizaje. Su contribución pedagógica debe ser explícita.",
+      "tipoTermino": "Entidad",
+      "tipoDeDato": "object"
+    }
+  },
+  {
+    "content": "criterioAccesibilidad",
+    "metadata": {
+      "descripcion": "Una directriz o estándar específico que asegura que un recursoDeAprendizaje es usable por personas con diversas capacidades.",
+      "tipoTermino": "Entidad",
+      "tipoDeDato": "object"
+    }
+  },
+  {
+    "content": "codigo",
+    "metadata": {
+      "descripcion": "Identificador alfanumérico único de la asignatura.",
+      "tipoTermino": "Atributo",
+      "tipoDeDato": "string"
+    }
+  },
+  {
+    "content": "estructuraMEI",
+    "metadata": {
+      "descripcion": "Especifica la estructura de diseño bajo la cual se construyó el curso. Vocabulario: MEI-Actualizado, MEI-Antiguo.",
+      "tipoTermino": "Atributo",
+      "tipoDeDato": "string"
+    }
+  },
+  {
+    "content": "modalidad",
+    "metadata": {
+      "descripcion": "Modalidad de impartición. Vocabulario: Online, Híbrido, Presencial.",
+      "tipoTermino": "Atributo",
+      "tipoDeDato": "string"
+    }
+  },
+  {
+    "content": "rol",
+    "metadata": {
+      "descripcion": "Rol de la persona en el diseño o impartición. Vocabulario: Diseñador Instruccional, Docente Experto, Coordinador, Docente.",
+      "tipoTermino": "Atributo",
+      "tipoDeDato": "string"
+    }
+  },
+  {
+    "content": "introduccionMotivacional",
+    "metadata": {
+      "descripcion": "Texto que presenta el propósito y relevancia de la unidad o curso.",
+      "tipoTermino": "Atributo",
+      "tipoDeDato": "string"
+    }
+  },
+  {
+    "content": "metodologia",
+    "metadata": {
+      "descripcion": "Enfoque pedagógico principal. Vocabulario: Aprendizaje Basado en Proyectos (ABP), Análisis de Caso, Aprendizaje Colaborativo, etc.",
+      "tipoTermino": "Atributo",
+      "tipoDeDato": "string"
+    }
+  },
+  {
+    "content": "propositoEvaluativo",
+    "metadata": {
+      "descripcion": "Si este atributo existe, la actividad es una evaluación. Vocabulario: Diagnóstica, Formativa, Sumativa.",
+      "tipoTermino": "Atributo",
+      "tipoDeDato": "string"
+    }
+  },
+  {
+    "content": "ponderacion",
+    "metadata": {
+      "descripcion": "Valor numérico (0-100). Solo aplica si propositoEvaluativo es Sumativa.",
+      "tipoTermino": "Atributo",
+      "tipoDeDato": "number"
+    }
+  },
+  {
+    "content": "horasDedicacionEstudiante",
+    "metadata": {
+      "descripcion": "Valor numérico que representa la estimación de horas cronológicas de trabajo del estudiante.",
+      "tipoTermino": "Atributo",
+      "tipoDeDato": "number"
+    }
+  },
+  {
+    "content": "agenteEvaluador",
+    "metadata": {
+      "descripcion": "Quién evalúa. Vocabulario: Heteroevaluación, Coevaluación, Autoevaluación.",
+      "tipoTermino": "Atributo",
+      "tipoDeDato": "string"
+    }
+  },
+  {
+    "content": "nivelTaxonomico",
+    "metadata": {
+      "descripcion": "Nivel de complejidad de la habilidad. Vocabulario: 1: Reconocer, 2: Entender, 3: Aplicar, 4: Analizar, 5: Evaluar, 6: Crear.",
+      "tipoTermino": "Atributo",
+      "tipoDeDato": "string"
+    }
+  },
+  {
+    "content": "verboAccion",
+    "metadata": {
+      "descripcion": "El verbo específico que describe la acción, validado contra el Anexo A.",
+      "tipoTermino": "Atributo",
+      "tipoDeDato": "string"
+    }
+  },
+  {
+    "content": "definicionVerbo",
+    "metadata": {
+      "descripcion": "Un campo de texto que almacena la definición oficial del verboAccion seleccionado, extraída del Anexo A.",
+      "tipoTermino": "Atributo",
+      "tipoDeDato": "string"
+    }
+  },
+  {
+    "content": "ejemploDeUso",
+    "metadata": {
+      "descripcion": "Un campo de texto que provee un ejemplo canónico de cómo el verboAccion se utiliza en un enunciado instruccional, extraído del Anexo A.",
+      "tipoTermino": "Atributo",
+      "tipoDeDato": "string"
+    }
+  },
+  {
+    "content": "tipoProducto",
+    "metadata": {
+      "descripcion": "Especifica el tipo de entregable tangible. Vocabulario Sugerido: Informe, Ensayo, Mapa Conceptual, etc.",
+      "tipoTermino": "Atributo",
+      "tipoDeDato": "string"
+    }
+  },
+  {
+    "content": "tipoProceso",
+    "metadata": {
+      "descripcion": "Especifica el tipo de desempeño observable. Vocabulario Sugerido: Debate, Exposición, Foro, etc.",
+      "tipoTermino": "Atributo",
+      "tipoDeDato": "string"
+    }
+  },
+  {
+    "content": "formatoRetroalimentacion",
+    "metadata": {
+      "descripcion": "Formato en que se entrega la retroalimentación. Vocabulario: Escrita, Oral (Sincrónica), Video-grabada, Automatizada.",
+      "tipoTermino": "Atributo",
+      "tipoDeDato": "string"
+    }
+  },
+  {
+    "content": "momentoRetroalimentacion",
+    "metadata": {
+      "descripcion": "Cuándo se entrega la retroalimentación. Vocabulario: Inmediata, Diferida.",
+      "tipoTermino": "Atributo",
+      "tipoDeDato": "string"
+    }
+  },
+  {
+    "content": "tipoRecurso",
+    "metadata": {
+      "descripcion": "Tipo de material didáctico. Vocabulario Sugerido: Lectura (PDF/DOC), Video, Audio, Enlace Web, etc.",
+      "tipoTermino": "Atributo",
+      "tipoDeDato": "string"
+    }
+  },
+  {
+    "content": "url",
+    "metadata": {
+      "descripcion": "El URL que apunta al recurso digital.",
+      "tipoTermino": "Atributo",
+      "tipoDeDato": "string"
+    }
+  },
+  {
+    "content": "esObligatorio",
+    "metadata": {
+      "descripcion": "Atributo booleano (true/false) que indica si el recurso es de consulta obligatoria o complementaria.",
+      "tipoTermino": "Atributo",
+      "tipoDeDato": "boolean"
+    }
+  },
+  {
+    "content": "descripcionAccesibilidad",
+    "metadata": {
+      "descripcion": "Un campo de texto que describe cómo el recurso cumple con los criterios de accesibilidad.",
+      "tipoTermino": "Atributo",
+      "tipoDeDato": "string"
+    }
+  },
+  {
+    "content": "esSincronica",
+    "metadata": {
+      "descripcion": "Atributo booleano (true/false) que especifica si la actividad requiere la participación simultánea de los estudiantes y/o el docente.",
+      "tipoTermino": "Atributo",
+      "tipoDeDato": "boolean"
+    }
+  },
+  {
+    "content": "periodicidadEvaluacionSumativa",
+    "metadata": {
+      "descripcion": "Describe la frecuencia esperada para las evaluaciones sumativas. Es un campo de texto descriptivo (ej. 'Quincenal', 'Al cierre de cada unidad').",
+      "tipoTermino": "Atributo",
+      "tipoDeDato": "string"
+    }
+  },
+  {
+    "content": "contiene",
+    "metadata": {
+      "descripcion": "Relaciona una entidad contenedora con las entidades que agrupa.",
+      "tipoTermino": "Predicado",
+      "tipoDeDato": "array"
+    }
+  },
+  {
+    "content": "abordaContenido",
+    "metadata": {
+      "descripcion": "Conecta una actividad con el contenido que se trabaja en ella.",
+      "tipoTermino": "Predicado",
+      "tipoDeDato": "array"
+    }
+  },
+  {
+    "content": "utilizaRecurso",
+    "metadata": {
+      "descripcion": "Conecta una actividad con el recursoDeAprendizaje que contribuye a su ejecución.",
+      "tipoTermino": "Predicado",
+      "tipoDeDato": "array"
+    }
+  },
+  {
+    "content": "incluyeRetroalimentacion",
+    "metadata": {
+      "descripcion": "Conecta una actividad evaluativa con su retroalimentacion.",
+      "tipoTermino": "Predicado",
+      "tipoDeDato": "object"
+    }
+  },
+  {
+    "content": "esResponsable",
+    "metadata": {
+      "descripcion": "Asigna un actor a un curso.",
+      "tipoTermino": "Predicado",
+      "tipoDeDato": "array"
+    }
+  },
+  {
+    "content": "dependeDe",
+    "metadata": {
+      "descripcion": "Relaciona una actividad con otra que debe ser completada previamente.",
+      "tipoTermino": "Predicado",
+      "tipoDeDato": "array"
+    }
+  },
+  {
+    "content": "cumpleCriterio",
+    "metadata": {
+      "descripcion": "Conecta un recursoDeAprendizaje con el criterioAccesibilidad que satisface.",
+      "tipoTermino": "Predicado",
+      "tipoDeDato": "array"
+    }
+  },
+  {
+    "content": "tributaA",
+    "metadata": {
+      "descripcion": "Conecta un resultadoAprendizaje de asignatura con el resultadoFormativo al que contribuye. (Estructura MEI Actualizado).",
+      "tipoTermino": "Predicado",
+      "tipoDeDato": "array"
+    }
+  },
+  {
+    "content": "seDescomponeEn",
+    "metadata": {
+      "descripcion": "Relaciona un resultadoAprendizaje con sus indicadoresDeDesempeno. (Estructura MEI Actualizado).",
+      "tipoTermino": "Predicado",
+      "tipoDeDato": "array"
+    }
+  },
+  {
+    "content": "mideLogroDe",
+    "metadata": {
+      "descripcion": "Conecta una actividad evaluativa con el indicadorDeDesempeno o indicadorDeLogro que mide, según la estructura MEI correspondiente.",
+      "tipoTermino": "Predicado",
+      "tipoDeDato": "array"
+    }
+  },
+  {
+    "content": "seDesglosaEn",
+    "metadata": {
+      "descripcion": "Relaciona un aprendizajeEsperado con sus indicadoresDeLogro. (Estructura MEI Antiguo).",
+      "tipoTermino": "Predicado",
+      "tipoDeDato": "array"
+    }
+  }
+]

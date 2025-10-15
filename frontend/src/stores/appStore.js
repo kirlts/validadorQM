@@ -90,7 +90,7 @@ export const useAppStore = defineStore('app', {
               case 'UPDATE':
                 const index = this.designs.findIndex(d => d.id_di === payload.new.id_di);
                 if (index !== -1) {
-                  this.designs[index] = { ...this.designs[index], ...payload.new };
+                  this.designs[index] = payload.new;
                 }
                 break;
               case 'DELETE':

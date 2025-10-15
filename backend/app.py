@@ -103,9 +103,9 @@ def get_all_dis():
 def upload_di():
     if 'file' not in request.files: return jsonify({'message': 'No se encontró el archivo.'}), 400
     
-    # --- NUEVO: Obtener paradigma del formulario ---
-    paradigma = request.form.get('paradigma')
-    if not paradigma: return jsonify({'message': 'El paradigma curricular es requerido.'}), 400
+    # --- CAMBIO: Esperar 'estructuraMEI' en lugar de 'paradigma' ---
+    estructura_mei = request.form.get('estructuraMEI')
+    if not estructura_mei: return jsonify({'message': 'La Estructura MEI es requerida.'}), 400
 
     file = request.files['file']
     if file.filename == '': return jsonify({'message': 'No se seleccionó ningún archivo.'}), 400
@@ -113,29 +113,26 @@ def upload_di():
     file_path = f"{g.user_id}/{file.filename}"
     
     try:
-        # 1. Subir a Storage
         file_content = file.read()
         g.supabase.storage.from_('di-bucket').upload(file=file_content, path=file_path, file_options={"content-type": file.content_type})
         
-        # 2. Crear registro inicial en la DB, AHORA con paradigma
+        # --- CAMBIO: Guardar en la columna 'estructura_mei' ---
         new_di_record = {
             'id_usuario': g.user_id, 
             'nombre_archivo': file.filename,
-            'paradigma': paradigma
+            'estructura_mei': estructura_mei
         }
         insert_result = g.supabase.table('disenos_instruccionales').insert(new_di_record).execute()
         created_di = insert_result.data[0]
 
-        # 3. Actualizar estado a "processing" para feedback inmediato
         proceso_inicial = {"nombre": "ingesta", "estado": "processing"}
         update_result = g.supabase.table('disenos_instruccionales').update({'proceso_actual': proceso_inicial}).eq('id_di', created_di['id_di']).execute()
         di_para_broadcast = update_result.data[0]
 
-        # 4. Notificar al frontend
         broadcast_change("INSERT", new_data=di_para_broadcast)
         
-        # 5. Disparar el workflow de ingesta en N8N
-        trigger_n8n_webhook('N8N_WEBHOOK_URL_INGESTA_DI', {"di_id": str(created_di['id_di']), "paradigma": paradigma})
+        # --- CAMBIO: Enviar 'estructuraMEI' al webhook de n8n ---
+        trigger_n8n_webhook('N8N_WEBHOOK_URL_INGESTA_DI', {"di_id": str(created_di['id_di']), "estructuraMEI": estructura_mei})
 
         return jsonify(created_di), 201
         
@@ -254,6 +251,57 @@ def sync_vocabulary_glossary():
     trigger_n8n_webhook('N8N_WEBHOOK_URL_SYNC_VOCABULARY', {})
     return jsonify({'message': 'Proceso de sincronización del vocabulario técnico iniciado.'}), 202
 
+@app.route('/api/dis/<uuid:di_id>/analyze-alignment', methods=['POST'])
+@token_required
+def trigger_alignment_analysis(di_id):
+    # Primero, verificamos la propiedad del DI
+    di_info = check_di_ownership(di_id)
+    if not di_info: 
+        return jsonify({'message': 'Acción no autorizada.'}), 403
+    
+    try:
+        # Leemos el registro completo del DI para obtener la estructura MEI
+        di_record = g.supabase.table('disenos_instruccionales').select('estructura_mei').eq('id_di', str(di_id)).single().execute().data
+        if not di_record:
+            return jsonify({'message': 'DI no encontrado.'}), 404
+        
+        estructura_mei = di_record['estructura_mei']
+        
+        # --- CAMBIO: Lógica basada en la nueva terminología ---
+        if estructura_mei == 'MEI-Antiguo':
+            terminos_vocabulario = "resultadoAprendizaje, aprendizajeEsperado, indicadorDeLogro"
+            terminos_dominio = "Definición de Aprendizaje Esperado, Indicador de Logro, y todos los verbos de la taxonomía UNAB"
+        elif estructura_mei == 'MEI-Actualizado':
+            terminos_vocabulario = "resultadoFormativo, resultadoAprendizaje, indicadorDesempeno"
+            terminos_dominio = "Definición de Resultado Formativo, Resultado de Aprendizaje, Indicador de Desempeño, y todos los verbos de la taxonomía UNAB"
+        else:
+            return jsonify({'message': f'Estructura MEI desconocida: {estructura_mei}'}), 400
+
+        # --- CAMBIO: Enviar 'estructuraMEI' en el payload de n8n ---
+        n8n_payload = {
+            "di_id": str(di_id),
+            "estructuraMEI": estructura_mei,
+            "terminosVocabulario": terminos_vocabulario,
+            "terminosDominio": terminos_dominio
+        }
+        
+        proceso = {"nombre": "analisis_alineamiento", "estado": "processing"}
+       
+        update_result = g.supabase.table('disenos_instruccionales').update({'proceso_actual': proceso,'analisis_alineamiento': None}).eq('id_di', str(di_id)).execute()
+        
+        broadcast_change("UPDATE", new_data=update_result.data[0])
+        
+        trigger_n8n_webhook('N8N_WEBHOOK_URL_ANALYZE_ALIGNMENT', n8n_payload)
+        
+        return jsonify({'message': 'El análisis de alineamiento ha comenzado.'}), 202
+    
+    except Exception as e:
+        app.logger.error(f"Error al iniciar análisis de alineamiento: {str(e)}")
+        proceso_error = {"nombre": "analisis_alineamiento", "estado": "error", "error_detalle": "No se pudo iniciar el proceso."}
+        error_update = g.supabase.table('disenos_instruccionales').update({'proceso_actual': proceso_error}).eq('id_di', str(di_id)).execute()
+        if error_update.data:
+            broadcast_change("UPDATE", new_data=error_update.data[0])
+        return jsonify({'message': f'No se pudo iniciar el análisis: {str(e)}'}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
