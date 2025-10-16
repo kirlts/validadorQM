@@ -103,3 +103,25 @@ export function syncVocabularyGlossary() {
 export function analyzeAlignment(diId) {
   return fetchWithAuth(`dis/${diId}/analyze-alignment`, { method: 'POST' });
 }
+
+export function generateIndicators(payload) {
+  return fetchWithAuth('generate/indicators', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function getGenerations() {
+    return fetchWithAuth('generations');
+}
+
+export function deleteGeneration(generationId) {
+    return fetchWithAuth(`generations/${generationId}`, { method: 'DELETE' });
+}
+
+export function renameGeneration(generationId, newName) {
+  return fetchWithAuth(`generations/${generationId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ nombre_generacion: newName }),
+  });
+}

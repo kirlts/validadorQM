@@ -303,5 +303,114 @@ def trigger_alignment_analysis(di_id):
             broadcast_change("UPDATE", new_data=error_update.data[0])
         return jsonify({'message': f'No se pudo iniciar el análisis: {str(e)}'}), 500
 
+@app.route('/api/generate/indicators', methods=['POST'])
+@token_required
+def generate_indicators():
+    """
+    Endpoint para generar indicadores pedagógicos de forma síncrona.
+    """
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No se proporcionaron datos"}), 400
+
+    # 1. Validación básica del payload de entrada
+    required_fields = ['estructuraMEI']
+    if not all(field in data for field in required_fields):
+        return jsonify({"error": "Faltan campos requeridos en el payload"}), 400
+
+    # 2. Llamada síncrona al webhook de n8n
+    n8n_webhook_url = os.environ.get('N8N_GENERATE_INDICATORS_URL')
+    if not n8n_webhook_url:
+        return jsonify({"error": "La URL del webhook no está configurada en el servidor"}), 500
+
+    try:
+        # Aumentamos el timeout para dar tiempo al workflow a ejecutarse
+        response = requests.post(n8n_webhook_url, json=data, timeout=120) 
+        response.raise_for_status()  # Lanza una excepción para códigos de error HTTP (4xx o 5xx)
+        
+        output_data = response.json()
+
+        # 3. Guardar la entrada y la salida en la nueva tabla de Supabase
+        try:
+            g.supabase.table('generaciones_ia').insert({
+                'user_id': g.user_id,
+                'input_data': data,
+                'output_data': output_data
+            }).execute()
+        except Exception as e:
+            # Si falla la inserción en DB, no detenemos el flujo.
+            # Es más importante devolver el resultado al usuario.
+            # Se loggea el error para monitoreo.
+            app.logger.warning(f"ADVERTENCIA: No se pudo guardar la generación en la DB: {e}")
+
+        # 4. Devolver la respuesta de n8n al frontend
+        return jsonify(output_data), 200
+
+    except requests.exceptions.Timeout:
+        return jsonify({"error": "La solicitud al motor de generación tardó demasiado en responder"}), 504
+    except requests.exceptions.RequestException as e:
+        # Captura errores de red, HTTP, etc.
+        error_message = f"Error al comunicarse con el motor de generación: {e}"
+        if e.response is not None:
+            try:
+                n8n_error = e.response.json()
+                return jsonify(n8n_error), e.response.status_code
+            except:
+                 return jsonify({"error": error_message, "details": e.response.text}), 500
+        return jsonify({"error": error_message}), 500
+
+@app.route('/api/generations', methods=['GET'])
+@token_required
+def get_user_generations(): # Se elimina 'current_user'
+    """
+    Obtiene todas las generaciones de IA del usuario actual.
+    """
+    try:
+        response = g.supabase.table('generaciones_ia').select('*').eq('user_id', g.user_id).order('created_at', desc=True).execute()
+        return jsonify(response.data), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/generations/<uuid:generation_id>', methods=['DELETE'])
+@token_required
+def delete_user_generation(generation_id): # Se elimina 'current_user'
+    """
+    Elimina una generación de IA específica del usuario actual.
+    """
+    try:
+        g.supabase.table('generaciones_ia').delete().match({'id': str(generation_id), 'user_id': g.user_id}).execute()
+        return jsonify({"message": "Generación eliminada correctamente"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/generations/<uuid:generation_id>', methods=['PATCH'])
+@token_required
+def rename_user_generation(generation_id):
+    """
+    Renombra una generación de IA específica del usuario actual.
+    """
+    data = request.get_json()
+    new_name = data.get('nombre_generacion')
+
+    if not new_name or not new_name.strip():
+        return jsonify({"error": "El nombre no puede estar vacío"}), 400
+
+    try:
+        response = g.supabase.table('generaciones_ia').update({
+            'nombre_generacion': new_name.strip()
+        }).match({
+            'id': str(generation_id),
+            'user_id': g.user_id
+        }).execute()
+
+        if not response.data:
+            return jsonify({"error": "Generación no encontrada o no tienes permiso para modificarla"}), 404
+
+        return jsonify(response.data[0]), 200
+        
+    except Exception as e:
+        app.logger.error(f"!!! ERROR en rename_user_generation: {e}")
+        return jsonify({"error": "Ocurrió un error interno en el servidor al intentar renombrar."}), 500
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

@@ -1,5 +1,5 @@
 {
-  "name": "PoC - Generar Indicadores",
+  "name": "Generar Indicadores",
   "nodes": [
     {
       "parameters": {
@@ -22,7 +22,7 @@
         880,
         1232
       ],
-      "id": "8af1d101-fbee-4796-b665-c0bc4f5b6dec",
+      "id": "c479768a-ccb9-4322-9b3f-9c177794df10",
       "name": "RAG de Dominio",
       "credentials": {
         "supabaseApi": {
@@ -43,7 +43,7 @@
         1680,
         1232
       ],
-      "id": "2a73c043-b90f-43dd-b1be-433c80d2f6e7",
+      "id": "3332adbf-83dd-424b-b82f-9dc9f0b2aec5",
       "name": "Agente Generador"
     },
     {
@@ -54,7 +54,7 @@
         880,
         1408
       ],
-      "id": "bd849a75-df93-4958-9ce9-91d3b4ccd975",
+      "id": "f1a56211-8269-40e9-9835-8e39b151901f",
       "name": "Embeddings Google Gemini",
       "credentials": {
         "googlePalmApi": {
@@ -76,7 +76,7 @@
         1760,
         1456
       ],
-      "id": "7bb0770b-8b7c-44f5-8fad-bd1ff75d7fb4",
+      "id": "5367768d-96e8-4c35-8d2c-350a9f17f62e",
       "name": "Google Gemini Chat Model",
       "credentials": {
         "googlePalmApi": {
@@ -95,13 +95,13 @@
         1456,
         1232
       ],
-      "id": "a626a2b2-7736-4fdc-8744-9e50b9c20cc5",
+      "id": "6d1dd585-7e33-4f18-b6a4-ef782a125ff3",
       "name": "Constructor de Prompt Dinámico"
     },
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "0c4d508b-1a17-4944-9a98-7a51d0b31701",
+        "path": "0b0f8ddd-f0bb-476b-ac21-9e81f74f2c6c",
         "responseMode": "responseNode",
         "options": {}
       },
@@ -111,24 +111,13 @@
         -128,
         1024
       ],
-      "id": "5c73d173-c297-4fc0-9e31-366ed5d118d0",
+      "id": "a051ebfe-8956-4ec4-8fc8-f1ea3a75465f",
       "name": "Webhook",
-      "webhookId": "0c4d508b-1a17-4944-9a98-7a51d0b31701"
-    },
-    {
-      "parameters": {},
-      "type": "n8n-nodes-base.manualTrigger",
-      "typeVersion": 1,
-      "position": [
-        -128,
-        1216
-      ],
-      "id": "ac132855-7f5f-4ff7-8c00-ea121e7605db",
-      "name": "When clicking ‘Execute workflow’"
+      "webhookId": "0b0f8ddd-f0bb-476b-ac21-9e81f74f2c6c"
     },
     {
       "parameters": {
-        "jsCode": "// --- CONFIGURACIÓN DE LA PRUEBA ---\n// Este payload está diseñado para probar la nueva regla taxonómica inflexible.\n// El AE-2 (\"Relacionar...\") es la trampa principal, ya que una forma natural de\n// evidenciar esa relación es a través de una \"Argumentación\" (nivel superior).\n// El objetivo es ver si el sistema se restringe a sí mismo y genera indicadores\n// de nivel 4 o inferior, cumpliendo la nueva orden.\nconst testCase = 'MEI-Antiguo-InflexibleRuleTest';\n// ---------------------------------\n\nlet payload = {};\n\nif (testCase === 'MEI-Antiguo-InflexibleRuleTest') {\n  payload = {\n    \"estructuraMEI\": \"MEI-Antiguo\",\n    \"resultadosAprendizaje\": [\n      {\n        \"id\": \"RA-1\",\n        \"texto\": \"Analizar textos narrativos complejos, aplicando marcos teóricos de la crítica literaria para interpretar su estructura, estilo y significado.\"\n      }\n    ],\n    \"aprendizajesEsperados\": [\n      {\n        \"id\": \"AE-1\",\n        \"tributaA\": [\"RA-1\"],\n        \"texto\": \"Analizar la función del narrador en la construcción del punto de vista de una novela.\"\n      },\n      {\n        \"id\": \"AE-2\", // LA TRAMPA PRINCIPAL\n        \"tributaA\": [\"RA-1\"],\n        \"texto\": \"Relacionar un texto literario con su contexto histórico y cultural para identificar posibles influencias y diálogos intertextuales.\"\n      },\n      {\n        \"id\": \"AE-3\",\n        \"tributaA\": [\"RA-1\"],\n        \"texto\": \"Aplicar un marco teórico específico (ej. estructuralismo) para interpretar la estructura de un cuento.\"\n      }\n    ]\n  };\n} else {\n  // Mantener otros casos para facilidad de prueba\n  payload = { \"estructuraMEI\": \"Otro\" };\n}\n\nreturn { json: { body: payload } };"
+        "jsCode": "// --- CONFIGURACIÓN DE LA PRUEBA ---\n// Cambia este valor para probar los diferentes escenarios.\n// Opciones disponibles:\n// 1. 'MEI-Actualizado-Simple'   (Un solo RA)\n// 2. 'MEI-Actualizado-Complejo'  (Múltiples RAs, con contenido/metodología)\n// 3. 'MEI-Antiguo-Simple'       (Un solo AE)\n// 4. 'MEI-Antiguo-Complejo'     (Múltiples AEs)\nconst testCase = 'MEI-Antiguo-Complejo';\n// ---------------------------------\n\nlet payload = {};\n\nswitch (testCase) {\n    case 'MEI-Actualizado-Simple':\n        payload = {\n            \"estructuraMEI\": \"MEI-Actualizado\",\n            \"resultadosFormativos\": [\n                { \"id\": \"RF-1\", \"texto\": \"Diseñar soluciones de software escalables y seguras aplicando principios de ingeniería y estándares de la industria.\" }\n            ],\n            \"resultadosAprendizaje\": [\n                {\n                    \"id\": \"RA-1-Simple\",\n                    \"tributaA\": [\"RF-1\"],\n                    \"texto\": \"Aplicar patrones de diseño creacionales para la construcción de objetos en un sistema de gestión de transacciones bancarias.\"\n                }\n            ]\n        };\n        break;\n\n    case 'MEI-Actualizado-Complejo':\n        payload = {\n            \"estructuraMEI\": \"MEI-Actualizado\",\n            \"resultadosFormativos\": [\n                { \"id\": \"RF-1\", \"texto\": \"Diseñar sistemas de software robustos y escalables aplicando patrones de arquitectura para satisfacer requisitos complejos.\" },\n                { \"id\": \"RF-2\", \"texto\": \"Comunicar soluciones técnicas de manera efectiva a audiencias diversas.\" }\n            ],\n            \"resultadosAprendizaje\": [\n                {\n                    \"id\": \"RA-1-Complejo\",\n                    \"tributaA\": [\"RF-1\"],\n                    \"texto\": \"Implementar un sistema de microservicios que se comunican de forma asíncrona utilizando un bus de mensajes.\",\n                    \"contenido\": \"Patrón de arquitectura de microservicios, Docker, RabbitMQ (Message Broker), consistencia eventual.\",\n                    \"metodologia\": \"Aprendizaje Basado en Problemas (ABP).\"\n                },\n                {\n                    \"id\": \"RA-2-Complejo\",\n                    \"tributaA\": [\"RF-1\", \"RF-2\"],\n                    \"texto\": \"Argumentar las decisiones de diseño arquitectónico tomadas, justificando la elección de patrones frente a alternativas.\",\n                    \"contenido\": \"Documentos de Decisión de Arquitectura (ADR), diagramas C4 Model, comparación de patrones.\",\n                    \"metodologia\": \"Análisis de Caso y Debate.\"\n                }\n            ]\n        };\n        break;\n\n    case 'MEI-Antiguo-Simple':\n        payload = {\n            \"estructuraMEI\": \"MEI-Antiguo\",\n            \"resultadosAprendizaje\": [\n                { \"id\": \"RA-1\", \"texto\": \"Analizar los principios fundamentales del marketing digital.\" }\n            ],\n            \"aprendizajesEsperados\": [\n                {\n                    \"id\": \"AE-1-Simple\",\n                    \"tributaA\": [\"RA-1\"],\n                    \"texto\": \"Diferenciar las métricas clave (KPIs) utilizadas en campañas de redes sociales para evaluar su efectividad.\"\n                }\n            ]\n        };\n        break;\n\n    case 'MEI-Antiguo-Complejo':\n        payload = {\n            \"estructuraMEI\": \"MEI-Antiguo\",\n            \"resultadosAprendizaje\": [\n                { \"id\": \"RA-1\", \"texto\": \"Diseñar planes de proyecto integrales, aplicando metodologías ágiles y predictivas.\" },\n                { \"id\": \"RA-2\", \"texto\": \"Gestionar la ejecución y el control de proyectos, evaluando el desempeño.\" }\n            ],\n            \"aprendizajesEsperados\": [\n                {\n                    \"id\": \"AE-1-Complejo\",\n                    \"tributaA\": [\"RA-1\"],\n                    \"texto\": \"Elaborar la Estructura de Desglose del Trabajo (EDT) de un proyecto para definir el alcance total del mismo.\"\n                },\n                {\n                    \"id\": \"AE-2-Complejo\",\n                    \"tributaA\": [\"RA-2\"],\n                    \"texto\": \"Analizar el desempeño del proyecto utilizando métricas de la Gestión del Valor Ganado (EVM) para evaluar desviaciones.\"\n                }\n            ]\n        };\n        break;\n\n    default:\n        payload = { \"error\": \"testCase no válido\" };\n}\n\nreturn { json: { body: payload } };"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -136,7 +125,7 @@
         96,
         1216
       ],
-      "id": "940ec7aa-5728-4d2e-a1d9-93cbe0e04dc1",
+      "id": "87e7aa89-1f9c-4b06-bf3e-8bbe21db8649",
       "name": "Set Test Payload"
     },
     {
@@ -170,7 +159,7 @@
         1456,
         816
       ],
-      "id": "7bd5ea08-4b9e-4ce5-a9fd-839974b9529a",
+      "id": "1cdf1ea1-ac35-43a1-85a2-4151133e92b2",
       "name": "Json Valido?"
     },
     {
@@ -187,7 +176,7 @@
         1744,
         720
       ],
-      "id": "e31f6739-d107-4efd-af42-78fd567d8c97",
+      "id": "e317bab9-00c6-4eb8-8bb3-3380649b39de",
       "name": "Respuesta Exitosa (200)"
     },
     {
@@ -204,7 +193,7 @@
         1744,
         912
       ],
-      "id": "4fb977bb-607a-4fc5-854f-08370ba1c200",
+      "id": "d7779147-ceac-40cc-b005-8576dc6a4654",
       "name": "Respuesta de Error (500)"
     },
     {
@@ -217,7 +206,7 @@
         2032,
         1360
       ],
-      "id": "8364d0d8-e6f1-4d5f-a468-1f0d9cc979da",
+      "id": "2615684f-adea-4a7a-ae64-a654ad1df034",
       "name": "Validar y Extraer Indicadores"
     },
     {
@@ -230,7 +219,7 @@
         320,
         1216
       ],
-      "id": "3947d045-846b-4519-9f5d-35114fa3fbb5",
+      "id": "8af13527-364b-4a8a-a708-2ce020ccde37",
       "name": "Desglosar Objetivos en Items"
     },
     {
@@ -243,7 +232,7 @@
         656,
         1216
       ],
-      "id": "adf596c6-2646-4815-84b6-2f07f050e457",
+      "id": "f5d10970-61cb-4e10-957f-66a7ab8e6722",
       "name": "Procesar Uno por Uno"
     },
     {
@@ -257,7 +246,7 @@
         944,
         816
       ],
-      "id": "e4eb8bf7-8031-4625-a7cd-f7aea7696649",
+      "id": "8460b90d-af4e-4330-85cb-d6fbce45e98d",
       "name": "Aggregate"
     },
     {
@@ -270,7 +259,7 @@
         1232,
         816
       ],
-      "id": "e9a68461-8a18-46c8-8dc8-68c357c4516a",
+      "id": "772a0a0b-d827-4142-b78e-4b020c9a0a5e",
       "name": "Formatear Salida Final"
     },
     {
@@ -283,8 +272,19 @@
         1232,
         1232
       ],
-      "id": "bd2ce984-7951-4c5e-9fd7-3a741aa2e79d",
+      "id": "83c8dbe7-5ae8-4c89-8f0d-d8f643d3ab34",
       "name": "Consolidar Contexto"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -128,
+        1216
+      ],
+      "id": "8a85cd41-3e0a-4860-8e0f-bdd6e88124b6",
+      "name": "When clicking ‘Execute workflow’"
     }
   ],
   "pinData": {},
@@ -347,17 +347,6 @@
     "Webhook": {
       "main": [
         []
-      ]
-    },
-    "When clicking ‘Execute workflow’": {
-      "main": [
-        [
-          {
-            "node": "Set Test Payload",
-            "type": "main",
-            "index": 0
-          }
-        ]
       ]
     },
     "Set Test Payload": {
@@ -461,17 +450,28 @@
           }
         ]
       ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Set Test Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "d6dfc690-ebde-43df-a383-89d88bd2f741",
+  "versionId": "9474ce09-be6c-493c-844c-eb7f8d0b4e33",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "81f9aa344da0912f901e07498089d3dd54ba6d767dbe4d581a261cb5d8886bb9"
   },
-  "id": "tBdyxp5TOSZkhffK",
+  "id": "ChIBB6KiCNlHa36x",
   "tags": []
 }
