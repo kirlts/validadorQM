@@ -1,0 +1,243 @@
+{
+  "name": "Sincronización de Vocabulario",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "152932f8-7f1a-43f7-ada6-ae682a43dbce",
+              "name": "vocabularioCompleto",
+              "value": "=[\n  {\n    \"content\": \"curso\",\n    \"metadata\": {\n      \"descripcion\": \"La entidad contenedora principal que representa una asignatura. Posee metadatos administrativos.\",\n      \"tipoTermino\": \"Entidad\",\n      \"tipoDeDato\": \"object\"\n    }\n  },\n  {\n    \"content\": \"actor\",\n    \"metadata\": {\n      \"descripcion\": \"Representa a una persona y su rol dentro del proceso de diseño o impartición del curso. Vocabulario de Roles: Diseñador Instruccional, Docente Experto, Coordinador, Docente.\",\n      \"tipoTermino\": \"Entidad\",\n      \"tipoDeDato\": \"object\"\n    }\n  },\n  {\n    \"content\": \"resultadoFormativo\",\n    \"metadata\": {\n      \"descripcion\": \"Se articulan con el perfil de egreso y orientan el diseño curricular en todos sus niveles. Estructura: Verbo de alto nivel cognitivo + capacidad + contexto + finalidad profesional o formativa.\",\n      \"tipoTermino\": \"Entidad\",\n      \"tipoDeDato\": \"object\"\n    }\n  },\n  {\n    \"content\": \"resultadoAprendizaje\",\n    \"metadata\": {\n      \"descripcion\": \"En Estructura MEI Actualizado: Formulados para tributar a un resultadoFormativo. Orientan la elaboración de indicadoresDeDesempeno. Estructura: Verbo observable + contenido o conocimiento específico + finalidad formativa. En Estructura MEI Antiguo: Es el objetivo de más alto nivel de la asignatura, del cual se desprenden los aprendizajesEsperados.\",\n      \"tipoTermino\": \"Entidad\",\n      \"tipoDeDato\": \"object\"\n    }\n  },\n  {\n    \"content\": \"indicadorDesempeno\",\n    \"metadata\": {\n      \"descripcion\": \"Descripciones precisas de las evidencias que permiten verificar el logro de un resultadoAprendizaje, orientando la evaluación y la retroalimentación. Estructura: Verbo observable en infinitivo + producto o proceso + condición de calidad o contexto.\",\n      \"tipoTermino\": \"Entidad\",\n      \"tipoDeDato\": \"object\"\n    }\n  },\n  {\n    \"content\": \"aprendizajeEsperado\",\n    \"metadata\": {\n      \"descripcion\": \"Declaraciones claras y precisas que describen los conocimientos, habilidades, actitudes y valores que se espera que los estudiantes logren. Son la base para diseñar la evaluación. Estructura: Habilidad + Contenido + Nivel de Dominio/finalidad.\",\n      \"tipoTermino\": \"Entidad\",\n      \"tipoDeDato\": \"object\"\n    }\n  },\n  {\n    \"content\": \"indicadorDeLogro\",\n    \"metadata\": {\n      \"descripcion\": \"Criterios observables y medibles que permiten verificar el nivel de cumplimiento de los aprendizajesEsperados. Representan un desglose y concreción de estos.\",\n      \"tipoTermino\": \"Entidad\",\n      \"tipoDeDato\": \"object\"\n    }\n  },\n  {\n    \"content\": \"habilidadCognitiva\",\n    \"metadata\": {\n      \"descripcion\": \"Entidad estructurada que representa la complejidad cognitiva de un objetivo. Se compone de tres partes inseparables: el nivelTaxonomico, el verboAccion seleccionado, y la definicionVerbo canónica. Se recomienda proveer un ejemploDeUso.\",\n      \"tipoTermino\": \"Entidad\",\n      \"tipoDeDato\": \"object\"\n    }\n  },\n  {\n    \"content\": \"contenido\",\n    \"metadata\": {\n      \"descripcion\": \"En términos curriculares, se define como el conjunto de saberes, habilidades, actitudes y valores que se seleccionan y organizan para favorecer el logro de los objetivos de aprendizaje. Integra tres dimensiones: Contenidos conceptuales (saber), procedimentales (saber hacer) y actitudinales (saber ser y convivir).\",\n      \"tipoTermino\": \"Entidad\",\n      \"tipoDeDato\": \"object\"\n    }\n  },\n  {\n    \"content\": \"narrativaPedagogica\",\n    \"metadata\": {\n      \"descripcion\": \"Entidad que captura la intención y el 'storytelling' de un curso o unidadDidactica.\",\n      \"tipoTermino\": \"Entidad\",\n      \"tipoDeDato\": \"object\"\n    }\n  },\n  {\n    \"content\": \"unidadDidactica\",\n    \"metadata\": {\n      \"descripcion\": \"Es una estructura organizativa del proceso de enseñanza-aprendizaje que integra de manera coherente los objetivos de aprendizaje, contenidos, actividades, recursos y estrategias de evaluación.\",\n      \"tipoTermino\": \"Entidad\",\n      \"tipoDeDato\": \"object\"\n    }\n  },\n  {\n    \"content\": \"semana\",\n    \"metadata\": {\n      \"descripcion\": \"Contenedor temporal que organiza las actividades.\",\n      \"tipoTermino\": \"Entidad\",\n      \"tipoDeDato\": \"object\"\n    }\n  },\n  {\n    \"content\": \"actividad\",\n    \"metadata\": {\n      \"descripcion\": \"La unidad fundamental de la experiencia de aprendizaje. Representa cualquier tarea o evento diseñado para que el estudiante interactúe con el contenido. Se especializa en una evaluación cuando se le asignan atributos evaluativos (ej. propositoEvaluativo).\",\n      \"tipoTermino\": \"Entidad\",\n      \"tipoDeDato\": \"object\"\n    }\n  },\n  {\n    \"content\": \"producto\",\n    \"metadata\": {\n      \"descripcion\": \"Una evidencia de aprendizaje tangible y entregable generada por el estudiante (ej. Informe, Ensayo).\",\n      \"tipoTermino\": \"Entidad\",\n      \"tipoDeDato\": \"object\"\n    }\n  },\n  {\n    \"content\": \"proceso\",\n    \"metadata\": {\n      \"descripcion\": \"Etapas o fases de una tarea que permiten al estudiante demostrar la aplicación de habilidades en tiempo real (ej. participación en un debate).\",\n      \"tipoTermino\": \"Entidad\",\n      \"tipoDeDato\": \"object\"\n    }\n  },\n  {\n    \"content\": \"instrumentoEvaluacion\",\n    \"metadata\": {\n      \"descripcion\": \"La herramienta específica utilizada para medir la calidad de un producto o proceso. Vocabulario Controlado: Rúbrica, Escala de apreciación, Lista de cotejo, Pauta de corrección.\",\n      \"tipoTermino\": \"Entidad\",\n      \"tipoDeDato\": \"string\"\n    }\n  },\n  {\n    \"content\": \"retroalimentacion\",\n    \"metadata\": {\n      \"descripcion\": \"Proceso de devolución de información sobre el desempeño del estudiante. Debe estar orientada a los aprendizajes, ser oportuna, clara y fomentar la mejora.\",\n      \"tipoTermino\": \"Entidad\",\n      \"tipoDeDato\": \"object\"\n    }\n  },\n  {\n    \"content\": \"recursoDeAprendizaje\",\n    \"metadata\": {\n      \"descripcion\": \"Material didáctico seleccionado con la intención de facilitar el logro de un objetivo de aprendizaje. Su contribución pedagógica debe ser explícita.\",\n      \"tipoTermino\": \"Entidad\",\n      \"tipoDeDato\": \"object\"\n    }\n  },\n  {\n    \"content\": \"criterioAccesibilidad\",\n    \"metadata\": {\n      \"descripcion\": \"Una directriz o estándar específico que asegura que un recursoDeAprendizaje es usable por personas con diversas capacidades.\",\n      \"tipoTermino\": \"Entidad\",\n      \"tipoDeDato\": \"object\"\n    }\n  },\n  {\n    \"content\": \"codigo\",\n    \"metadata\": {\n      \"descripcion\": \"Identificador alfanumérico único de la asignatura.\",\n      \"tipoTermino\": \"Atributo\",\n      \"tipoDeDato\": \"string\"\n    }\n  },\n  {\n    \"content\": \"estructuraMEI\",\n    \"metadata\": {\n      \"descripcion\": \"Especifica la estructura de diseño bajo la cual se construyó el curso. Vocabulario: MEI-Actualizado, MEI-Antiguo.\",\n      \"tipoTermino\": \"Atributo\",\n      \"tipoDeDato\": \"string\"\n    }\n  },\n  {\n    \"content\": \"modalidad\",\n    \"metadata\": {\n      \"descripcion\": \"Modalidad de impartición. Vocabulario: Online, Híbrido, Presencial.\",\n      \"tipoTermino\": \"Atributo\",\n      \"tipoDeDato\": \"string\"\n    }\n  },\n  {\n    \"content\": \"rol\",\n    \"metadata\": {\n      \"descripcion\": \"Rol de la persona en el diseño o impartición. Vocabulario: Diseñador Instruccional, Docente Experto, Coordinador, Docente.\",\n      \"tipoTermino\": \"Atributo\",\n      \"tipoDeDato\": \"string\"\n    }\n  },\n  {\n    \"content\": \"introduccionMotivacional\",\n    \"metadata\": {\n      \"descripcion\": \"Texto que presenta el propósito y relevancia de la unidad o curso.\",\n      \"tipoTermino\": \"Atributo\",\n      \"tipoDeDato\": \"string\"\n    }\n  },\n  {\n    \"content\": \"metodologia\",\n    \"metadata\": {\n      \"descripcion\": \"Enfoque pedagógico principal. Vocabulario: Aprendizaje Basado en Proyectos (ABP), Análisis de Caso, Aprendizaje Colaborativo, etc.\",\n      \"tipoTermino\": \"Atributo\",\n      \"tipoDeDato\": \"string\"\n    }\n  },\n  {\n    \"content\": \"propositoEvaluativo\",\n    \"metadata\": {\n      \"descripcion\": \"Si este atributo existe, la actividad es una evaluación. Vocabulario: Diagnóstica, Formativa, Sumativa.\",\n      \"tipoTermino\": \"Atributo\",\n      \"tipoDeDato\": \"string\"\n    }\n  },\n  {\n    \"content\": \"ponderacion\",\n    \"metadata\": {\n      \"descripcion\": \"Valor numérico (0-100). Solo aplica si propositoEvaluativo es Sumativa.\",\n      \"tipoTermino\": \"Atributo\",\n      \"tipoDeDato\": \"number\"\n    }\n  },\n  {\n    \"content\": \"horasDedicacionEstudiante\",\n    \"metadata\": {\n      \"descripcion\": \"Valor numérico que representa la estimación de horas cronológicas de trabajo del estudiante.\",\n      \"tipoTermino\": \"Atributo\",\n      \"tipoDeDato\": \"number\"\n    }\n  },\n  {\n    \"content\": \"agenteEvaluador\",\n    \"metadata\": {\n      \"descripcion\": \"Quién evalúa. Vocabulario: Heteroevaluación, Coevaluación, Autoevaluación.\",\n      \"tipoTermino\": \"Atributo\",\n      \"tipoDeDato\": \"string\"\n    }\n  },\n  {\n    \"content\": \"nivelTaxonomico\",\n    \"metadata\": {\n      \"descripcion\": \"Nivel de complejidad de la habilidad. Vocabulario: 1: Reconocer, 2: Entender, 3: Aplicar, 4: Analizar, 5: Evaluar, 6: Crear.\",\n      \"tipoTermino\": \"Atributo\",\n      \"tipoDeDato\": \"string\"\n    }\n  },\n  {\n    \"content\": \"verboAccion\",\n    \"metadata\": {\n      \"descripcion\": \"El verbo específico que describe la acción, validado contra el Anexo A.\",\n      \"tipoTermino\": \"Atributo\",\n      \"tipoDeDato\": \"string\"\n    }\n  },\n  {\n    \"content\": \"definicionVerbo\",\n    \"metadata\": {\n      \"descripcion\": \"Un campo de texto que almacena la definición oficial del verboAccion seleccionado, extraída del Anexo A.\",\n      \"tipoTermino\": \"Atributo\",\n      \"tipoDeDato\": \"string\"\n    }\n  },\n  {\n    \"content\": \"ejemploDeUso\",\n    \"metadata\": {\n      \"descripcion\": \"Un campo de texto que provee un ejemplo canónico de cómo el verboAccion se utiliza en un enunciado instruccional, extraído del Anexo A.\",\n      \"tipoTermino\": \"Atributo\",\n      \"tipoDeDato\": \"string\"\n    }\n  },\n  {\n    \"content\": \"tipoProducto\",\n    \"metadata\": {\n      \"descripcion\": \"Especifica el tipo de entregable tangible. Vocabulario Sugerido: Informe, Ensayo, Mapa Conceptual, etc.\",\n      \"tipoTermino\": \"Atributo\",\n      \"tipoDeDato\": \"string\"\n    }\n  },\n  {\n    \"content\": \"tipoProceso\",\n    \"metadata\": {\n      \"descripcion\": \"Especifica el tipo de desempeño observable. Vocabulario Sugerido: Debate, Exposición, Foro, etc.\",\n      \"tipoTermino\": \"Atributo\",\n      \"tipoDeDato\": \"string\"\n    }\n  },\n  {\n    \"content\": \"formatoRetroalimentacion\",\n    \"metadata\": {\n      \"descripcion\": \"Formato en que se entrega la retroalimentación. Vocabulario: Escrita, Oral (Sincrónica), Video-grabada, Automatizada.\",\n      \"tipoTermino\": \"Atributo\",\n      \"tipoDeDato\": \"string\"\n    }\n  },\n  {\n    \"content\": \"momentoRetroalimentacion\",\n    \"metadata\": {\n      \"descripcion\": \"Cuándo se entrega la retroalimentación. Vocabulario: Inmediata, Diferida.\",\n      \"tipoTermino\": \"Atributo\",\n      \"tipoDeDato\": \"string\"\n    }\n  },\n  {\n    \"content\": \"tipoRecurso\",\n    \"metadata\": {\n      \"descripcion\": \"Tipo de material didáctico. Vocabulario Sugerido: Lectura (PDF/DOC), Video, Audio, Enlace Web, etc.\",\n      \"tipoTermino\": \"Atributo\",\n      \"tipoDeDato\": \"string\"\n    }\n  },\n  {\n    \"content\": \"url\",\n    \"metadata\": {\n      \"descripcion\": \"El URL que apunta al recurso digital.\",\n      \"tipoTermino\": \"Atributo\",\n      \"tipoDeDato\": \"string\"\n    }\n  },\n  {\n    \"content\": \"esObligatorio\",\n    \"metadata\": {\n      \"descripcion\": \"Atributo booleano (true/false) que indica si el recurso es de consulta obligatoria o complementaria.\",\n      \"tipoTermino\": \"Atributo\",\n      \"tipoDeDato\": \"boolean\"\n    }\n  },\n  {\n    \"content\": \"descripcionAccesibilidad\",\n    \"metadata\": {\n      \"descripcion\": \"Un campo de texto que describe cómo el recurso cumple con los criterios de accesibilidad.\",\n      \"tipoTermino\": \"Atributo\",\n      \"tipoDeDato\": \"string\"\n    }\n  },\n  {\n    \"content\": \"esSincronica\",\n    \"metadata\": {\n      \"descripcion\": \"Atributo booleano (true/false) que especifica si la actividad requiere la participación simultánea de los estudiantes y/o el docente.\",\n      \"tipoTermino\": \"Atributo\",\n      \"tipoDeDato\": \"boolean\"\n    }\n  },\n  {\n    \"content\": \"periodicidadEvaluacionSumativa\",\n    \"metadata\": {\n      \"descripcion\": \"Describe la frecuencia esperada para las evaluaciones sumativas. Es un campo de texto descriptivo (ej. 'Quincenal', 'Al cierre de cada unidad').\",\n      \"tipoTermino\": \"Atributo\",\n      \"tipoDeDato\": \"string\"\n    }\n  },\n  {\n    \"content\": \"contiene\",\n    \"metadata\": {\n      \"descripcion\": \"Relaciona una entidad contenedora con las entidades que agrupa.\",\n      \"tipoTermino\": \"Predicado\",\n      \"tipoDeDato\": \"array\"\n    }\n  },\n  {\n    \"content\": \"abordaContenido\",\n    \"metadata\": {\n      \"descripcion\": \"Conecta una actividad con el contenido que se trabaja en ella.\",\n      \"tipoTermino\": \"Predicado\",\n      \"tipoDeDato\": \"array\"\n    }\n  },\n  {\n    \"content\": \"utilizaRecurso\",\n    \"metadata\": {\n      \"descripcion\": \"Conecta una actividad con el recursoDeAprendizaje que contribuye a su ejecución.\",\n      \"tipoTermino\": \"Predicado\",\n      \"tipoDeDato\": \"array\"\n    }\n  },\n  {\n    \"content\": \"incluyeRetroalimentacion\",\n    \"metadata\": {\n      \"descripcion\": \"Conecta una actividad evaluativa con su retroalimentacion.\",\n      \"tipoTermino\": \"Predicado\",\n      \"tipoDeDato\": \"object\"\n    }\n  },\n  {\n    \"content\": \"esResponsable\",\n    \"metadata\": {\n      \"descripcion\": \"Asigna un actor a un curso.\",\n      \"tipoTermino\": \"Predicado\",\n      \"tipoDeDato\": \"array\"\n    }\n  },\n  {\n    \"content\": \"dependeDe\",\n    \"metadata\": {\n      \"descripcion\": \"Relaciona una actividad con otra que debe ser completada previamente.\",\n      \"tipoTermino\": \"Predicado\",\n      \"tipoDeDato\": \"array\"\n    }\n  },\n  {\n    \"content\": \"cumpleCriterio\",\n    \"metadata\": {\n      \"descripcion\": \"Conecta un recursoDeAprendizaje con el criterioAccesibilidad que satisface.\",\n      \"tipoTermino\": \"Predicado\",\n      \"tipoDeDato\": \"array\"\n    }\n  },\n  {\n    \"content\": \"tributaA\",\n    \"metadata\": {\n      \"descripcion\": \"Conecta un resultadoAprendizaje de asignatura con el resultadoFormativo al que contribuye. (Estructura MEI Actualizado).\",\n      \"tipoTermino\": \"Predicado\",\n      \"tipoDeDato\": \"array\"\n    }\n  },\n  {\n    \"content\": \"seDescomponeEn\",\n    \"metadata\": {\n      \"descripcion\": \"Relaciona un resultadoAprendizaje con sus indicadoresDeDesempeno. (Estructura MEI Actualizado).\",\n      \"tipoTermino\": \"Predicado\",\n      \"tipoDeDato\": \"array\"\n    }\n  },\n  {\n    \"content\": \"mideLogroDe\",\n    \"metadata\": {\n      \"descripcion\": \"Conecta una actividad evaluativa con el indicadorDeDesempeno o indicadorDeLogro que mide, según la estructura MEI correspondiente.\",\n      \"tipoTermino\": \"Predicado\",\n      \"tipoDeDato\": \"array\"\n    }\n  },\n  {\n    \"content\": \"seDesglosaEn\",\n    \"metadata\": {\n      \"descripcion\": \"Relaciona un aprendizajeEsperado con sus indicadoresDeLogro. (Estructura MEI Antiguo).\",\n      \"tipoTermino\": \"Predicado\",\n      \"tipoDeDato\": \"array\"\n    }\n  }\n]",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        432,
+        384
+      ],
+      "id": "d66db2ab-94cc-40b6-a58a-789acf9be39b",
+      "name": "Data"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        896,
+        608
+      ],
+      "id": "6ac41b58-e684-48f2-9627-11dd6046b146",
+      "name": "Embeddings Google Gemini1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "1fRbxclakan4SB2c",
+          "name": "Api 1"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "tableId": "vocabulario_jsonld",
+        "filterType": "string",
+        "filterString": "id=not.is.null"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        208,
+        384
+      ],
+      "id": "f985f4ee-93bc-4db8-a22a-98674178d4e2",
+      "name": "Delete a row",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "m0DUcQthM94wIR7O",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "vocabularioCompleto",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        656,
+        384
+      ],
+      "id": "7203875d-bf96-40aa-abb2-30a3502c6e3b",
+      "name": "Split Glosario"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "vocabulario_jsonld",
+          "mode": "list",
+          "cachedResultName": "vocabulario_jsonld"
+        },
+        "options": {
+          "queryName": "match_vocabulario_jsonld"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        880,
+        384
+      ],
+      "id": "dfa852d5-5476-49b8-afea-e62f0e7ea35a",
+      "name": "Insertar y Vectorizar",
+      "credentials": {
+        "supabaseApi": {
+          "id": "m0DUcQthM94wIR7O",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json.content }}",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "descripcion",
+                "value": "={{ $json.metadata.descripcion}}"
+              },
+              {
+                "name": "tipoTermino",
+                "value": "={{ $json.metadata.tipoTermino }}"
+              },
+              {
+                "name": "tipoDeDato",
+                "value": "={{ $json.metadata.tipoDeDato }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        1024,
+        608
+      ],
+      "id": "3bbb649f-e4b2-46e5-99f1-0223612bac98",
+      "name": "Default Data Loader2"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "05d8e5ac-06be-444d-b096-49b43efa55be",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        384
+      ],
+      "id": "e13177df-0574-40bb-94e7-5f346f768226",
+      "name": "Webhook",
+      "webhookId": "05d8e5ac-06be-444d-b096-49b43efa55be"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Data": {
+      "main": [
+        [
+          {
+            "node": "Split Glosario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Insertar y Vectorizar",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete a row": {
+      "main": [
+        [
+          {
+            "node": "Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Glosario": {
+      "main": [
+        [
+          {
+            "node": "Insertar y Vectorizar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insertar y Vectorizar": {
+      "main": [
+        []
+      ]
+    },
+    "Default Data Loader2": {
+      "ai_document": [
+        [
+          {
+            "node": "Insertar y Vectorizar",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Delete a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "6e4cdd43-b97a-4f8f-b00d-05d8f78e09a2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "81f9aa344da0912f901e07498089d3dd54ba6d767dbe4d581a261cb5d8886bb9"
+  },
+  "id": "Yf3Eamo4APhd1K6G",
+  "tags": []
+}

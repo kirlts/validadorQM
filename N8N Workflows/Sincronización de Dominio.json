@@ -1,0 +1,362 @@
+{
+  "name": "Sincronización de Dominio",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "152932f8-7f1a-43f7-ada6-ae682a43dbce",
+              "name": "glosarioCompleto",
+              "value": "=<!DOCTYPE html>\n<html>\n<head>\n  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\n  <title>Glosario de Dominio UNAB</title>\n</head>\n<body>\n  <h1>Glosario de Dominio UNAB</h1>\n  <p>Fecha: 09-10-2025</p>\n  <p>Autor: Martín Gil</p>\n  <h2>1. Introducción y Propósito</h2>\n  <p>Este documento constituye la especificación formal y la única fuente de verdad (single source of truth) para el modelo de datos y la lógica de negocio del sistema \"Validador QM\". Su propósito es traducir el complejo dominio del diseño instruccional y el aseguramiento de la calidad de la Universidad Andrés Bello (UNAB) a un modelo computacional no ambiguo, robusto y verificable.</p>\n  <p>Toda entidad, atributo, relación y regla definida aquí sirve como el \"contrato semántico\" que gobierna la ingesta, el almacenamiento, el análisis y la presentación de datos dentro del sistema. La adherencia estricta a este glosario es mandatoria para garantizar la integridad, consistencia y fidelidad del sistema al modelo pedagógico que busca servir.</p>\n  <h2>Contexto Pedagógico: Sobre la Naturaleza No Lineal de los Indicadores</h2>\n  <p>Los indicadores de logro o de desempeño expresan las evidencias observables que permiten valorar el grado de avance de los estudiantes en relación con los aprendizajes esperados o resultados de aprendizaje, según corresponda. Tradicionalmente, estos indicadores se asocian a niveles progresivos de complejidad cognitiva.</p>\n  <p>Sin embargo, es importante comprender que el aprendizaje no es un proceso lineal, sino recursivo y dinámico. Un estudiante puede moverse entre distintos niveles cognitivos de manera flexible. Desde esta perspectiva, los indicadores deben concebirse como orientaciones flexibles y contextuales, no como una secuencia rígida. Su valor reside en permitir evidenciar el aprendizaje significativo, considerando que la construcción del conocimiento implica avanzar, retroceder, revisar y profundizar continuamente.</p>\n  <p><strong>Nota importante sobre la sintaxis de los indicadores:</strong> Los indicadores no deben incorporar la palabra \"para\" ni expresar finalidades, porque no describen un propósito, sino una evidencia de desempeño. La finalidad ya está contenida en el resultado o aprendizaje esperado en sus respectivas estructuras.</p>\n  <h2>2. Principios Fundamentales del Modelo</h2>\n  <p>El dominio se rige por los siguientes principios axiomáticos, derivados del análisis de la documentación oficial de UNAB:</p>\n  <ul>\n    <li>\n      <strong>Principio de Jerarquía de Aprendizaje Explícita:</strong> El sistema reconoce dos estructuras jerárquicas válidas para el conocimiento:\n      <ul>\n        <li><strong>Estructura MEI Actualizado (RF-RA-ID):</strong> Un resultadoFormativo de alto nivel se descompone en resultadosAprendizaje específicos de una asignatura, los cuales se desglosan en indicadoresDeDesempeno.</li>\n        <li><strong>Estructura MEI Antiguo (RA-AE-IL):</strong> Un resultadoDeAprendizaje de asignatura se descompone en aprendizajesEsperados a nivel de unidad, los cuales se desglosan en indicadoresDeLogro.</li>\n      </ul>\n    </li>\n    <li><strong>Principio de Alineamiento Constructivo Riguroso:</strong> Cada componente del diseño instruccional debe estar explícitamente alineado. Las actividades y evaluaciones deben medir directamente el logro de los indicadoresDeDesempeno o indicadoresDeLogro, y a su vez ser coherentes con la metodología declarada, asegurando una cadena de coherencia ininterrumpida hasta el objetivo de aprendizaje de mayor nivel correspondiente a su estructura.</li>\n    <li><strong>Principio de Evaluación Basada en Evidencia Pertinente:</strong> La evaluación es un medio para recolectar evidencia del logro del aprendizaje. Toda evaluación debe ser <strong>pertinente a los objetivos de aprendizaje</strong> y estar <strong>alineada a la metodología o estrategia didáctica</strong> utilizada para enseñarlos.</li>\n    <li><strong>Principio de Desambiguación Taxonómica:</strong> Para prevenir la confusión entre niveles de habilidad cognitiva, el sistema no solo se rige por la Taxonomía UNAB, sino que utiliza activamente las <strong>definiciones y ejemplos canónicos del Anexo A</strong> como patrones de referencia para validar y desambiguar la clasificación de la complejidad de un objetivo.</li>\n    <li><strong>Principio de Coherencia Narrativa y Didáctica:</strong> El diseño instruccional debe constituir una narrativa coherente que conecte el \"porqué\" del curso con el \"cómo\" de sus componentes, utilizando la <strong>didáctica</strong> como herramienta para fomentar el <strong>compromiso (engagement)</strong> y la motivación del estudiante..</li>\n  </ul>\n  <h2>3. Glosario de Entidades</h2>\n  <table>\n    <tr>\n      <th>\n        <p><strong>Término (JSON-LD)</strong></p>\n      </th>\n      <th>\n        <p><strong>Tipo de Entidad</strong></p>\n      </th>\n      <th>\n        <p><strong>Definición Canónica</strong></p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>curso</p>\n      </th>\n      <th>\n        <p>Estructural</p>\n      </th>\n      <th>\n        <p>La entidad contenedora principal que representa una asignatura. Posee metadatos administrativos.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>actor</p>\n      </th>\n      <th>\n        <p>Estructural</p>\n      </th>\n      <th>\n        <p>Representa a una persona y su rol dentro del proceso de diseño o impartición del curso. Vocabulario de Roles: Diseñador Instruccional, Docente Experto, Coordinador, Docente.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>resultadoFormativo</p>\n      </th>\n      <th>\n        <p>Nuclear (Estructura MEI Actualizado)</p>\n      </th>\n      <th>\n        <p>Se articulan con el perfil de egreso y orientan el diseño curricular en todos sus niveles. Estructura: Verbo de alto nivel cognitivo + capacidad + contexto + finalidad profesional o formativa.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>resultadoAprendizaje</p>\n      </th>\n      <th>\n        <p>Nuclear</p>\n      </th>\n      <th>\n        <p>En Estructura MEI Actualizado: Formulados para tributar a un resultadoFormativo. Orientan la elaboración de indicadoresDeDesempeno. Estructura: Verbo observable + contenido o conocimiento específico + finalidad formativa.</p>\n        <p>En Estructura MEI Antiguo: Es el objetivo de más alto nivel de la asignatura, del cual se desprenden los aprendizajesEsperados.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>indicadorDesempeno</p>\n      </th>\n      <th>\n        <p>Nuclear (Estructura MEI Actualizado)</p>\n      </th>\n      <th>\n        <p>Descripciones precisas de las evidencias que permiten verificar el logro de un resultadoAprendizaje, orientando la evaluación y la retroalimentación. Estructura: Verbo observable en infinitivo + producto o proceso + condición de calidad o contexto.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>aprendizajeEsperado</p>\n      </th>\n      <th>\n        <p>Nuclear (Estructura MEI Antiguo)</p>\n      </th>\n      <th>\n        <p>Declaraciones claras y precisas que describen los conocimientos, habilidades, actitudes y valores que se espera que los estudiantes logren. Son la base para diseñar la evaluación. Estructura: Habilidad + Contenido + Nivel de Dominio/finalidad.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>indicadorDeLogro</p>\n      </th>\n      <th>\n        <p>Nuclear (Estructura MEI Antiguo)</p>\n      </th>\n      <th>\n        <p>Criterios observables y medibles que permiten verificar el nivel de cumplimiento de los aprendizajesEsperados. Representan un desglose y concreción de estos.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>habilidadCognitiva</p>\n      </th>\n      <th>\n        <p>Nuclear</p>\n      </th>\n      <th>\n        <p>Representa la complejidad cognitiva de un objetivo y se compone de la combinación de un nivelTaxonomico y un verboAccion, validados contra el Anexo A.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>contenido</p>\n      </th>\n      <th>\n        <p>Nuclear</p>\n      </th>\n      <th>\n        <p>En términos curriculares, un contenido se define como el conjunto de saberes, habilidades, actitudes y valores que se seleccionan y organizan de manera intencionada para favorecer el logro de los aprendizajes esperados o resultados de aprendizaje. Constituyen el \"qué se enseña y aprende\" e integran tres dimensiones: Contenidos conceptuales (saber), Contenidos procedimentales (saber hacer) y Contenidos actitudinales (saber ser y convivir).</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>narrativaPedagogica</p>\n      </th>\n      <th>\n        <p>Nuclear</p>\n      </th>\n      <th>\n        <p>Entidad que captura la intención y el \"storytelling\" de un curso o unidadDidactica.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>unidadDidactica</p>\n      </th>\n      <th>\n        <p>Estructural</p>\n      </th>\n      <th>\n        <p>Es una estructura organizativa del proceso de enseñanza-aprendizaje que integra de manera coherente los objetivos de aprendizaje (según corresponda a la estructura MEI), contenidos, actividades, recursos y estrategias de evaluación.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>semana</p>\n      </th>\n      <th>\n        <p>Estructural</p>\n      </th>\n      <th>\n        <p>Contenedor temporal que organiza las actividades.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>actividad</p>\n      </th>\n      <th>\n        <p>De Proceso</p>\n      </th>\n      <th>\n        <p>Experiencia de aprendizaje (concreta, intencionada y sistemática) diseñada para que el estudiante desarrolle un aprendizaje. Debe estar alineada a un indicadorDeDesempeno o indicadorDeLogro y ser coherente con la metodologia del curso.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>producto</p>\n      </th>\n      <th>\n        <p>De Proceso</p>\n      </th>\n      <th>\n        <p>Una evidencia de aprendizaje tangible y entregable generada por el estudiante (ej. Informe, Ensayo).</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>proceso</p>\n      </th>\n      <th>\n        <p>De Proceso</p>\n      </th>\n      <th>\n        <p>Etapas o fases de una tarea que permiten al estudiante demostrar la aplicación de habilidades y conocimientos en tiempo real (ej. participación en un debate).</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>instrumentoEvaluacion</p>\n      </th>\n      <th>\n        <p>De Proceso</p>\n      </th>\n      <th>\n        <p>La herramienta específica utilizada para medir la calidad de un producto o proceso.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>retroalimentacion</p>\n      </th>\n      <th>\n        <p>De Proceso</p>\n      </th>\n      <th>\n        <p>Proceso de devolución de información sobre el desempeño del estudiante. Debe estar orientada a los aprendizajes e indicadores, ser oportuna, clara y fomentar la mejora.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>recursoDeAprendizaje</p>\n      </th>\n      <th>\n        <p>De Proceso</p>\n      </th>\n      <th>\n        <p>Material didáctico seleccionado con la intención de facilitar el logro de un objetivo de aprendizaje. Su contribución pedagógica debe ser explícita.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>criterioAccesibilidad</p>\n      </th>\n      <th>\n        <p>De Proceso</p>\n      </th>\n      <th>\n        <p>Una directriz o estándar específico que asegura que un recursoDeAprendizaje es usable por personas con diversas capacidades.</p>\n      </th>\n    </tr>\n  </table>\n  <h2>4. Glosario de Atributos y Vocabularios Controlados</h2>\n  <table>\n    <tr>\n      <th>\n        <p><strong>Atributo (JSON-LD)</strong></p>\n      </th>\n      <th>\n        <p><strong>Entidad Asociada</strong></p>\n      </th>\n      <th>\n        <p><strong>Definición y Vocabulario Controlado</strong></p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>codigo</p>\n      </th>\n      <th>\n        <p>curso</p>\n      </th>\n      <th>\n        <p>Identificador alfanumérico único de la asignatura (ej. \"AIIN213\").</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>modalidad</p>\n      </th>\n      <th>\n        <p>curso</p>\n      </th>\n      <th>\n        <p>Modalidad de impartición. <strong>Vocabulario:</strong> Online, Híbrido, Presencial.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>rol</p>\n      </th>\n      <th>\n        <p>actor</p>\n      </th>\n      <th>\n        <p>Rol en el diseño. <strong>Vocabulario:</strong> Diseñador Instruccional, Docente Experto, Coordinador.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>introduccionMotivacional</p>\n      </th>\n      <th>\n        <p>narrativaPedagogica</p>\n      </th>\n      <th>\n        <p>Texto que presenta el propósito y relevancia de la unidad o curso.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>metodologia</p>\n      </th>\n      <th>\n        <p>actividad</p>\n      </th>\n      <th>\n        <p>Enfoque pedagógico. <strong>Vocabulario:</strong> Aprendizaje Basado en Proyectos (ABP), Análisis de Caso, Aprendizaje Colaborativo.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>propositoEvaluativo</p>\n      </th>\n      <th>\n        <p>actividad</p>\n      </th>\n      <th>\n        <p>Si este atributo existe, la actividad es una evaluación. <strong>Vocabulario:</strong> Diagnóstica, Formativa, Sumativa.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>ponderacion</p>\n      </th>\n      <th>\n        <p>actividad</p>\n      </th>\n      <th>\n        <p>Valor numérico (0-100). Solo aplica si propositoEvaluativo es Sumativa.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>horasDedicacionEstudiante</p>\n      </th>\n      <th>\n        <p>actividad</p>\n      </th>\n      <th>\n        <p>Valor numérico que representa la estimación de horas cronológicas de trabajo que un estudiante debe dedicar para completar la actividad.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>agenteEvaluador</p>\n      </th>\n      <th>\n        <p>actividad</p>\n      </th>\n      <th>\n        <p>Quién evalúa. <strong>Vocabulario:</strong> Heteroevaluación, Coevaluación, Autoevaluación.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>nivelTaxonomico</p>\n      </th>\n      <th>\n        <p>habilidadCognitiva</p>\n      </th>\n      <th>\n        <p><strong>Vocabulario:</strong> 1: Reconocer, 2: Entender, 3: Aplicar, 4: Analizar, 5: Evaluar, 6: Crear.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>verboAccion</p>\n      </th>\n      <th>\n        <p>habilidadCognitiva</p>\n      </th>\n      <th>\n        <p>Verbo específico validado contra el Anexo A.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>formatoRetroalimentacion</p>\n      </th>\n      <th>\n        <p>retroalimentacion</p>\n      </th>\n      <th>\n        <p><strong>Vocabulario:</strong> Escrita, Oral (Sincrónica), Video-grabada, Automatizada.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>momentoRetroalimentacion</p>\n      </th>\n      <th>\n        <p>retroalimentacion</p>\n      </th>\n      <th>\n        <p><strong>Vocabulario:</strong> Inmediata, Diferida.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>tipoRecurso</p>\n      </th>\n      <th>\n        <p>recursoDeAprendizaje</p>\n      </th>\n      <th>\n        <p><strong>Vocabulario:</strong> Lectura (PDF/DOC), Video, Audio, Enlace Web.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>url</p>\n      </th>\n      <th>\n        <p>recursoDeAprendizaje</p>\n      </th>\n      <th>\n        <p>El URL que apunta al recurso digital.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>esObligatorio</p>\n      </th>\n      <th>\n        <p>recursoDeAprendizaje</p>\n      </th>\n      <th>\n        <p>Atributo booleano (true/false) que indica si el recurso es de consulta obligatoria o complementaria para el estudiante.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>descripcionAccesibilidad</p>\n      </th>\n      <th>\n        <p>recursoDeAprendizaje</p>\n      </th>\n      <th>\n        <p>Un campo de texto que describe cómo el recurso cumple con los criterios de accesibilidad (ej. \"Todas las imágenes contienen texto alternativo descriptivo\").</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>esSincronica</p>\n      </th>\n      <th>\n        <p>actividad</p>\n      </th>\n      <th>\n        <p>Atributo booleano (true/false) que especifica si la actividad requiere la participación simultánea de los estudiantes y/o el docente.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>estructuraMEI</p>\n      </th>\n      <th>\n        <p>curso</p>\n      </th>\n      <th>\n        <p>Especifica la estructura de diseño bajo la cual se construyó el curso. Vocabulario: MEI-Antiguo, MEI-Actualizado.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>tipoProducto</p>\n      </th>\n      <th>\n        <p>producto</p>\n      </th>\n      <th>\n        <p>Especifica el tipo de entregable tangible. <strong>Vocabulario Sugerido</strong>: Informe, Ensayo, Mapa Conceptual, Análisis de Caso, Portafolio, Infografía, etc.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>tipoProceso</p>\n      </th>\n      <th>\n        <p>proceso</p>\n      </th>\n      <th>\n        <p>Especifica el tipo de desempeño observable. <strong>Vocabulario Sugerido:</strong> Debate, Exposición, Foro, Simulación, Resolución de Ejercicios.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>periodicidadEvaluacionSumativa</p>\n      </th>\n      <th>\n        <p>curso</p>\n      </th>\n      <th>\n        <p>Describe la frecuencia esperada para las evaluaciones sumativas, sirviendo como una guía para la distribución de la carga evaluativa. Es un campo de texto descriptivo (ej. \"Quincenal\", \"Mensual\", \"Al cierre de cada unidad\").</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>definicionVerbo</p>\n      </th>\n      <th>\n        <p>habilidadCognitiva</p>\n      </th>\n      <th>\n        <p>Un campo de texto que almacena la definición oficial del verboAccion seleccionado, extraída directamente del Anexo A. Este atributo asegura que el significado de la habilidad sea explícito y auto-contenido dentro del modelo de datos.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>ejemploDeUso</p>\n      </th>\n      <th>\n        <p>habilidadCognitiva</p>\n      </th>\n      <th>\n        <p>Un campo de texto que provee un ejemplo canónico de cómo el verboAccion se utiliza en un enunciado instruccional, extraído del Anexo A. Este atributo es clave para la desambiguación semántica.</p>\n      </th>\n    </tr>\n  </table>\n  <h2>5. Modelo de Relaciones (Predicados)</h2>\n  <h2>A continuación, se definen las relaciones lógicas entre entidades, separadas por la estructura MEI a la que aplican.</h2>\n  <h4>Relaciones Comunes a Ambos Paradigmas</h4>\n  <table>\n    <tr>\n      <th>\n        <p><strong>Predicado (JSON-LD)</strong></p>\n      </th>\n      <th>\n        <p><strong>Definición</strong></p>\n      </th>\n      <th>\n        <p><strong>Dominio (Sujeto)</strong></p>\n      </th>\n      <th>\n        <p><strong>Rango (Objeto)</strong></p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>contiene</p>\n      </th>\n      <th>\n        <p>Relaciona una entidad contenedora con las entidades que agrupa.</p>\n      </th>\n      <th>\n        <p>curso, unidadDidactica, semana</p>\n      </th>\n      <th>\n        <p>unidadDidactica, semana, actividad</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>abordaContenido</p>\n      </th>\n      <th>\n        <p>Conecta una actividad con el contenido que se trabaja en ella.</p>\n      </th>\n      <th>\n        <p>actividad</p>\n      </th>\n      <th>\n        <p>contenido</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>utilizaRecurso</p>\n      </th>\n      <th>\n        <p>Conecta una actividad con el recursoDeAprendizaje que contribuye a su ejecución.</p>\n      </th>\n      <th>\n        <p>actividad</p>\n      </th>\n      <th>\n        <p>recursoDeAprendizaje</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>incluyeRetroalimentacion</p>\n      </th>\n      <th>\n        <p>Conecta una actividad evaluativa con su retroalimentacion.</p>\n      </th>\n      <th>\n        <p>actividad</p>\n      </th>\n      <th>\n        <p>retroalimentacion</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>esResponsable</p>\n      </th>\n      <th>\n        <p>Asigna un actor a un curso.</p>\n      </th>\n      <th>\n        <p>curso</p>\n      </th>\n      <th>\n        <p>actor</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>dependeDe</p>\n      </th>\n      <th>\n        <p>Relaciona una actividad con otra que debe ser completada previamente.</p>\n      </th>\n      <th>\n        <p>actividad</p>\n      </th>\n      <th>\n        <p>actividad</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>cumpleCriterio</p>\n      </th>\n      <th>\n        <p>Conecta un recursoDeAprendizaje con el criterioAccesibilidad que satisface.</p>\n      </th>\n      <th>\n        <p>recursoDeAprendizaje</p>\n      </th>\n      <th>\n        <p>criterioAccesibilidad</p>\n      </th>\n    </tr>\n  </table>\n  <h4>Relaciones de la Estructura MEI Actualizado (Nuevo)</h4>\n  <table>\n    <tr>\n      <th>\n        <p><strong>Predicado (JSON-LD)</strong></p>\n      </th>\n      <th>\n        <p><strong>Definición</strong></p>\n      </th>\n      <th>\n        <p><strong>Dominio (Sujeto)</strong></p>\n      </th>\n      <th>\n        <p><strong>Rango (Objeto)</strong></p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>tributaA</p>\n      </th>\n      <th>\n        <p>Conecta un resultadoAprendizaje de asignatura con el resultadoFormativo al que contribuye.</p>\n      </th>\n      <th>\n        <p>resultadoAprendizaje</p>\n      </th>\n      <th>\n        <p>resultadoFormativo</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>seDescomponeEn</p>\n      </th>\n      <th>\n        <p>Relaciona un resultadoAprendizaje con sus indicadoresDeDesempeno.</p>\n      </th>\n      <th>\n        <p>resultadoAprendizaje</p>\n      </th>\n      <th>\n        <p>indicadorDesempeno</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>mideLogroDe</p>\n      </th>\n      <th>\n        <p>Conecta una actividad evaluativa con el indicadorDeDesempeno que mide.</p>\n      </th>\n      <th>\n        <p>actividad</p>\n      </th>\n      <th>\n        <p>indicadorDesempeno</p>\n      </th>\n    </tr>\n  </table>\n  <h4>Relaciones de la Estructura MEI Antiguo</h4>\n  <table>\n    <tr>\n      <th>\n        <p>Predicado (JSON-LD)</p>\n      </th>\n      <th>\n        <p>Definición</p>\n      </th>\n      <th>\n        <p>Dominio (Sujeto)</p>\n      </th>\n      <th>\n        <p>Rango (Objeto)</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>seDesglosaEn</p>\n      </th>\n      <th>\n        <p>Relaciona un aprendizajeEsperado con sus indicadoresDeLogro.</p>\n      </th>\n      <th>\n        <p>aprendizajeEsperado</p>\n      </th>\n      <th>\n        <p>indicadorDeLogro</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>mideLogroDe</p>\n      </th>\n      <th>\n        <p>Conecta una actividad evaluativa con el indicadorDeLogro que mide.</p>\n      </th>\n      <th>\n        <p>actividad</p>\n      </th>\n      <th>\n        <p>indicadorDeLogro</p>\n      </th>\n    </tr>\n  </table>\n  <h2>6. Reglas de Dominio Mandatorias</h2>\n  <p>Las siguientes reglas se aplican de forma condicional según la estructuraMEI del curso.</p>\n  <h4>Reglas para la Estructura MEI Actualizado (Nuevo)</h4>\n  <ol>\n    <li><strong>Jerarquía RF-RA-ID:</strong> Un curso debe tributar a un RF; cada RA debe descomponerse en uno o más ID.</li>\n    <li><strong>Alineamiento Evaluativo ID:</strong> Toda actividad sumativa debe medir (mideLogroDe) uno o más ID.</li>\n    <li><strong>Coherencia Taxonómica RA-ID:</strong> El nivel taxonómico de un ID no puede superar el del RA del que depende.</li>\n  </ol>\n  <h4>Reglas para la Estructura MEI Antiguo</h4>\n  <ol>\n    <li><strong>Jerarquía RA-AE-IL:</strong> Un curso debe contener AE; cada AE debe desglosarse (seDesglosaEn) en uno o más IL.</li>\n    <li><strong>Alineamiento Evaluativo IL:</strong> Toda actividad sumativa debe medir (mideLogroDe) uno o más IL.</li>\n    <li><strong>Coherencia Taxonómica AE-IL:</strong> El nivel taxonómico de un IL no puede superar el del AE del que depende.</li>\n  </ol>\n  <h4>Reglas Comunes a Ambas Estructuras</h4>\n  <ol>\n    <li><strong>Andamiaje Formativo:</strong> Para cada ID o IL medido en una actividad sumativa, debe existir al menos una actividad formativa que lo aborde.</li>\n    <li><strong>Completitud de la Ponderación:</strong> La suma de ponderacion de todas las actividades sumativas de un curso debe ser 100.</li>\n    <li><strong>Cobertura de Indicadores:</strong> Todo ID o IL debe ser objeto de al menos una relación mideLogroDe y una preparaPara.</li>\n    <li><strong>Contención Estructural:</strong> Toda actividad debe estar en una semana, y toda semana en una unidadDidactica.</li>\n    <li><strong>Disponibilidad de Recursos:</strong> Todo recursoDeAprendizaje debe tener un url válido y accesible.</li>\n    <li><strong>Retroalimentación Obligatoria:</strong> Toda actividad sumativa debe tener asociada una retroalimentacion.</li>\n    <li><strong>Diversidad de Instrumentos y Metodologías:</strong> Un curso no debe utilizar un único tipo de instrumentoEvaluacion o metodologia para todas sus actividades sumativas.</li>\n    <li><strong>Secuenciación Lógica:</strong> Si una actividad B dependeDe una actividad A, la semana que contiene a B debe tener un número igual o superior a la semana que contiene a A.</li>\n    <li><strong>Alineamiento Contenido-Evaluación:</strong> El contenido abordado en una actividad sumativa debe ser un subconjunto del contenido asociado al ID o IL que dicha actividad mide.</li>\n    <li><strong>Coherencia Metodológica:</strong> Todas las actividades deben ser coherentes con la metodologia declarada.</li>\n    <li><strong>Cobertura de Contenidos:</strong> Todo contenido definido debe ser abordado por al menos una actividad.</li>\n  </ol>\n  <h2>7. Restricciones de Integridad del Modelo (Constraints)</h2>\n  <p>Esta sección formaliza las reglas de cardinalidad (constraints) para la construcción del grafo de conocimiento, asegurando la integridad estructural del modelo. Las restricciones se aplican de forma condicional según la estructuraMEI del curso.</p>\n  <h4>Constraints Comunes a Ambas Estructures</h4>\n  <table>\n    <tr>\n      <th>\n        <p>Relación</p>\n      </th>\n      <th>\n        <p>Dominio (Sujeto)</p>\n      </th>\n      <th>\n        <p>Predicado</p>\n      </th>\n      <th>\n        <p>Rango (Objeto)</p>\n      </th>\n      <th>\n        <p>Constraint</p>\n      </th>\n      <th>\n        <p>Descripción</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>Contención de Unidad</p>\n      </th>\n      <th>\n        <p>curso</p>\n      </th>\n      <th>\n        <p>contiene</p>\n      </th>\n      <th>\n        <p>unidadDidactica</p>\n      </th>\n      <th>\n        <p>[1..*]</p>\n      </th>\n      <th>\n        <p>Un curso debe tener una o más unidades.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>Contención de Semana</p>\n      </th>\n      <th>\n        <p>unidadDidactica</p>\n      </th>\n      <th>\n        <p>contiene</p>\n      </th>\n      <th>\n        <p>semana</p>\n      </th>\n      <th>\n        <p>[1..*]</p>\n      </th>\n      <th>\n        <p>Una unidad debe tener una o más semanas.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>Contención de Actividad</p>\n      </th>\n      <th>\n        <p>semana</p>\n      </th>\n      <th>\n        <p>contiene</p>\n      </th>\n      <th>\n        <p>actividad</p>\n      </th>\n      <th>\n        <p>[0..*]</p>\n      </th>\n      <th>\n        <p>Una semana puede tener cero o más actividades.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>Cobertura de Contenido</p>\n      </th>\n      <th>\n        <p>actividad</p>\n      </th>\n      <th>\n        <p>abordaContenido</p>\n      </th>\n      <th>\n        <p>contenido</p>\n      </th>\n      <th>\n        <p>[1..*]</p>\n      </th>\n      <th>\n        <p>Toda actividad debe abordar al menos un contenido.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>Uso de Recursos</p>\n      </th>\n      <th>\n        <p>actividad</p>\n      </th>\n      <th>\n        <p>utilizaRecurso</p>\n      </th>\n      <th>\n        <p>recursoDeAprendizaje</p>\n      </th>\n      <th>\n        <p>[0..*]</p>\n      </th>\n      <th>\n        <p>Una actividad puede utilizar cero o más recursos.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>Dependencia</p>\n      </th>\n      <th>\n        <p>actividad</p>\n      </th>\n      <th>\n        <p>dependeDe</p>\n      </th>\n      <th>\n        <p>actividad</p>\n      </th>\n      <th>\n        <p>[0..*]</p>\n      </th>\n      <th>\n        <p>Una actividad puede tener cero o más prerrequisitos.</p>\n      </th>\n    </tr>\n  </table>\n  <h4>Constraints de la Estructura MEI Actualizado (Nuevo)</h4>\n  <table>\n    <tr>\n      <th>\n        <p>Relación</p>\n      </th>\n      <th>\n        <p>Dominio (Sujeto)</p>\n      </th>\n      <th>\n        <p>Predicado</p>\n      </th>\n      <th>\n        <p>Rango (Objeto)</p>\n      </th>\n      <th>\n        <p>Constraint</p>\n      </th>\n      <th>\n        <p>Descripción</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>Tributación a RF</p>\n      </th>\n      <th>\n        <p>resultadoAprendizaje</p>\n      </th>\n      <th>\n        <p>tributaA</p>\n      </th>\n      <th>\n        <p>resultadoFormativo</p>\n      </th>\n      <th>\n        <p>[1..*]</p>\n      </th>\n      <th>\n        <p>Un RA debe tributar a uno o más RF.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>Jerarquía RA-ID</p>\n      </th>\n      <th>\n        <p>resultadoAprendizaje</p>\n      </th>\n      <th>\n        <p>seDescomponeEn</p>\n      </th>\n      <th>\n        <p>indicadorDesempeno</p>\n      </th>\n      <th>\n        <p>[1..*]</p>\n      </th>\n      <th>\n        <p>Un RA debe descomponerse en uno o más ID.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>Alineamiento Evaluativo</p>\n      </th>\n      <th>\n        <p>actividad (sumativa)</p>\n      </th>\n      <th>\n        <p>mideLogroDe</p>\n      </th>\n      <th>\n        <p>indicadorDesempeno</p>\n      </th>\n      <th>\n        <p>[1..*]</p>\n      </th>\n      <th>\n        <p>Una actividad sumativa debe medir al menos un ID.</p>\n      </th>\n    </tr>\n  </table>\n  <h4>Constraints de la Estructura MEI Antiguo</h4>\n  <table>\n    <tr>\n      <th>\n        <p>Relación</p>\n      </th>\n      <th>\n        <p>Dominio (Sujeto)</p>\n      </th>\n      <th>\n        <p>Predicado</p>\n      </th>\n      <th>\n        <p>Rango (Objeto)</p>\n      </th>\n      <th>\n        <p>Constraint</p>\n      </th>\n      <th>\n        <p>Descripción</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>Jerarquía AE-IL</p>\n      </th>\n      <th>\n        <p>aprendizajeEsperado</p>\n      </th>\n      <th>\n        <p>seDesglosaEn</p>\n      </th>\n      <th>\n        <p>indicadorDeLogro</p>\n      </th>\n      <th>\n        <p>[1..*]</p>\n      </th>\n      <th>\n        <p>Un AE debe desglosarse en uno o más IL.</p>\n      </th>\n    </tr>\n    <tr>\n      <th>\n        <p>Alineamiento Evaluativo</p>\n      </th>\n      <th>\n        <p>actividad (sumativa)</p>\n      </th>\n      <th>\n        <p>mideLogroDe</p>\n      </th>\n      <th>\n        <p>indicadorDeLogro</p>\n      </th>\n      <th>\n        <p>[1..*]</p>\n      </th>\n      <th>\n        <p>Una actividad sumativa debe medir al menos un IL.</p>\n      </th>\n    </tr>\n  </table>\n  <h2>Anexo A: Modelo Detallado de la Taxonomía de Habilidades Cognitivas UNAB</h2>\n  <h3>Nivel 1: Reconocer</h3>\n  <ul>\n    <li><strong>Definición General:</strong> Recuperar información relevante desde la memoria a largo plazo.</li>\n    <li>\n      <strong>Verbos de Acción y Ejemplos:</strong>\n      <ul>\n        <li>Definir: \"Defina qué es el aprendizaje basado en problemas.\"</li>\n        <li>Identificar: \"De la lista de alimentos que se presenta, identifique cuáles corresponden a carbohidratos.\"</li>\n        <li>Listar: \"Liste los componentes de la célula animal.\"</li>\n        <li>Nombrar: \"Nombre las fases del ciclo de vida del software.\"</li>\n        <li>Repetir: \"Repita la primera Ley de Newton.\"</li>\n      </ul>\n    </li>\n  </ul>\n  <h3>Nivel 2: Entender</h3>\n  <ul>\n    <li><strong>Definición General:</strong> Construir significado a partir de material educativo.</li>\n    <li>\n      <strong>Verbos de Acción y Ejemplos:</strong>\n      <ul>\n        <li>Clasificar: \"Clasifique los siguientes triángulos según la medida de sus ángulos.\"</li>\n        <li>Comparar: \"Compare las ventajas y desventajas de las metodologías ágiles y en cascada.\"</li>\n        <li>Ejemplificar: \"Ejemplifique un uso correcto de la recursividad en programación.\"</li>\n        <li>Explicar: \"Explique el impacto de la inflación en el poder adquisitivo.\"</li>\n        <li>Inferir: \"A partir del gráfico de ventas, infiera la tendencia del mercado para el próximo trimestre.\"</li>\n        <li>Interpretar: \"Interprete los resultados de la encuesta de satisfacción del cliente.\"</li>\n        <li>Resumir: \"Resuma en un párrafo el argumento central del autor.\"</li>\n      </ul>\n    </li>\n  </ul>\n  <h3>Nivel 3: Aplicar</h3>\n  <ul>\n    <li><strong>Definición General:</strong> Utilizar un procedimiento en una situación determinada.</li>\n    <li>\n      <strong>Verbos de Acción y Ejemplos:</strong>\n      <ul>\n        <li>Ejecutar: \"Ejecute el script de instalación siguiendo las instrucciones.\"</li>\n        <li>Implementar: \"Implemente una estrategia de marketing de contenidos para un nuevo producto.\"</li>\n        <li>Resolver: \"Resuelva la siguiente ecuación diferencial.\"</li>\n        <li>Usar: \"Use la herramienta de análisis FODA para evaluar la situación de la empresa.\"</li>\n      </ul>\n    </li>\n  </ul>\n  <h3>Nivel 4: Analizar</h3>\n  <ul>\n    <li><strong>Definición General:</strong> Descomponer el material en sus partes constituyentes y determinar cómo se relacionan.</li>\n    <li>\n      <strong>Verbos de Acción y Ejemplos:</strong>\n      <ul>\n        <li>Atribuir: \"Atribuya la perspectiva teórica del autor en el texto analizado.\"</li>\n        <li>Diferenciar: \"Diferencie entre las causas estructurales y coyunturales de la crisis.\"</li>\n        <li>Examinar: \"Examine la estructura de costos de la empresa e identifique áreas de mejora.\"</li>\n        <li>Organizar: \"Organice los datos de la investigación en un marco conceptual lógico.\"</li>\n        <li>Relacionar: \"Relacione los principios de la termodinámica con el funcionamiento de un motor de combustión.\"</li>\n      </ul>\n    </li>\n  </ul>\n  <h3>Nivel 5: Evaluar</h3>\n  <ul>\n    <li><strong>Definición General:</strong> Realizar juicios basados en criterios y estándares.</li>\n    <li>\n      <strong>Verbos de Acción y Ejemplos:</strong>\n      <ul>\n        <li>Argumentar: \"Argumente a favor o en contra de la propuesta, utilizando al menos tres fuentes académicas.\"</li>\n        <li>Criticar: \"Critique la validez metodológica del estudio presentado.\"</li>\n        <li>Fundamentar: \"Fundamente su elección de diseño basándose en los principios de usabilidad.\"</li>\n        <li>Valorar: \"Valore el impacto ético de la implementación de esta tecnología.\"</li>\n      </ul>\n    </li>\n  </ul>\n  <h3>Nivel 6: Crear</h3>\n  <ul>\n    <li><strong>Definición General:</strong> Juntar elementos para formar un todo coherente o funcional.</li>\n    <li>\n      <strong>Verbos de Acción y Ejemplos:</strong>\n      <ul>\n        <li>Construir: \"Construya un modelo 3D del sistema solar a escala.\"</li>\n        <li>Diseñar: \"Diseñe una interfaz de usuario para una aplicación móvil de gestión de tareas.\"</li>\n        <li>Elaborar: \"Elabore un plan de negocios para una nueva empresa de tecnología.\"</li>\n        <li>Formular: \"Formule una hipótesis de investigación para explicar el fenómeno observado.\"</li>\n      </ul>\n    </li>\n  </ul>\n  <h2>Anexo B: Ejemplos de Modelado Canónico</h2>\n  <p>Esta sección provee ejemplos simplificados para ilustrar cómo las entidades, atributos y relaciones del glosario se aplican a casos de uso concretos. Su propósito es servir como guía de referencia para la implementación técnica.</p>\n  <h3>B.1: Modelado bajo el Paradigma CentradoEnAsignatura (Antiguo)</h3>\n  <p>Este ejemplo modela una evaluación simple en un curso que sigue la jerarquía antigua.</p>\n  <ul>\n    <li><strong>Curso:</strong> AIIN213 - Planificación y Mejora de Procesos (paradigmaCurricular: CentradoEnAsignatura)</li>\n    <li><strong>Aprendizaje Esperado (AE):</strong> \"Aplicar herramientas de Lean Manufacturing para la optimización de procesos.\"</li>\n    <li><strong>Indicador de Logro (IL):</strong> \"Identifica los 7 desperdicios del Lean Manufacturing en un caso de estudio proporcionado.\"</li>\n    <li><strong>Actividad (Evaluación Sumativa):</strong> Un análisis de caso donde el estudiante debe identificar desperdicios en un proceso ficticio.</li>\n  </ul>\n  <h3>B.2: Modelado bajo el Paradigma CentradoEnPerfil (Nuevo)</h3>\n  <p>Este ejemplo modela una actividad en un curso del nuevo paradigma, mostrando la trazabilidad completa desde el Resultado Formativo.</p>\n  <ul>\n    <li><strong>Resultado Formativo (RF):</strong> \"Diseñar estrategias pedagógicas inclusivas...\"</li>\n    <li><strong>Curso:</strong> CFSA3220 - Mecánica (paradigmaCurricular: CentradoEnPerfil)</li>\n    <li><strong>Resultado de Aprendizaje (RA):</strong> \"Aplicar los principios de la mecánica newtoniana para resolver problemas de dinámica en sistemas de partículas.\"</li>\n    <li><strong>Indicador de Desempeño (ID):</strong> \"Modela sistemas de fuerzas aplicando las Leyes de Newton para determinar la aceleración de un objeto en un plano inclinado.\"</li>\n    <li><strong>Actividad (Evaluación Formativa):</strong> Una simulación interactiva con ejercicios de aplicación.</li>\n  </ul>\n</body>\n</html>",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        384
+      ],
+      "id": "282e4f8a-0042-430c-8878-b8ed413868c6",
+      "name": "Data"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1696,
+        608
+      ],
+      "id": "61099af0-5561-40f1-b049-aa3804ae8711",
+      "name": "Embeddings Google Gemini1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "1fRbxclakan4SB2c",
+          "name": "Api 1"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const rawOutput = $json.output;\nconst jsonRegex = /\\[[\\s\\S]*\\]/; // Busca un array JSON\nconst match = rawOutput.match(jsonRegex);\n\nif (match && match[0]) {\n  const jsonArray = JSON.parse(match[0]);\n  // Devuelve el array parseado\n  return { json: { glosarioParseado: jsonArray } };\n}\nreturn { json: { error: \"No se encontró un array JSON válido en la salida del LLM.\" } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1232,
+        384
+      ],
+      "id": "ac7ad324-694b-4c83-93ae-87cda68d8b51",
+      "name": "Limpiar y Parsear JSON"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "tableId": "glosario_chunks",
+        "filterType": "string",
+        "filterString": "id=not.is.null"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        432,
+        384
+      ],
+      "id": "193b1a98-597a-4d2b-8469-6a8e1e462d4b",
+      "name": "Delete a row",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "m0DUcQthM94wIR7O",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres un motor de parseo de documentos experto en el dominio pedagógico. Tu tarea es leer el siguiente \"Glosario de Dominio UNAB\" y convertirlo en un único array JSON.\n\nLa estructura de salida debe ser:\n[{ \"content\": \"El texto a vectorizar\", \"metadata\": { \"termino\": \"...\", \"fuente\": \"...\", \"estructuraMEI\": \"...\", ... } }, ...]\n\nDebes seguir estas reglas ESTRICTAMENTE:\n\n1.  **Limpieza General:** Ignora el texto introductorio (Sección 1), las notas al pie de página (ej. `[a]`, `[b]`) y cualquier texto que no corresponda a las definiciones de las secciones especificadas a continuación.\n\n2.  **Secciones 3, 4 y 5 (Entidades, Atributos, Predicados):** Crea un objeto JSON por cada fila de las tablas.\n    *   `content`: Debe ser el texto de la columna \"Definición Canónica\" o \"Definición y Vocabulario Controlado\".\n    *   `metadata.termino`: El \"Término (JSON-LD)\" o \"Atributo (JSON-LD)\".\n    *   `metadata.tipo`: \"Entidad\", \"Atributo\" o \"Predicado\".\n    *   `metadata.estructuraMEI`: Si la columna 'Tipo de Entidad' contiene \"(Estructura MEI Antiguo)\", el valor debe ser \"MEI-Antiguo\". Si contiene \"(Estructura MEI Actualizado)\", el valor debe ser \"MEI-Actualizado\". Si no se especifica, omite este campo.\n    *   `metadata.fuente`: \"Glosario de Entidades\", \"Glosario de Atributos\" o \"Glosario de Predicados\".\n\n3.  **Anexo A (Taxonomía):** Esta es la parte más IMPORTANTE. Debes crear un objeto JSON separado para CADA VERBO DE ACCIÓN.\n    *   `content`: Debe ser la concatenación de la \"Definición General\" del nivel y el \"Ejemplo\" específico del verbo. Por ejemplo, para \"Definir\": \"Recuperar información relevante desde la memoria a largo plazo. Ejemplo: 'Defina qué es el aprendizaje basado en problemas.'\".\n    *   `metadata.termino`: El verbo en infinitivo (ej. \"Definir\", \"Identificar\").\n    *   `metadata.nivelTaxonomico`: El nivel al que pertenece (ej. \"Nivel 1: Reconocer\").\n    *   `metadata.fuente`: \"Anexo A: Taxonomía\".\n\n4.  **Sección 2 (Principios Fundamentales):** Crea un objeto JSON por cada principio (ej. \"Principio de Alineamiento Constructivo Riguroso\").\n    *   `content`: El texto completo del principio.\n    *   `metadata.termino`: El nombre del principio.\n    *   `metadata.fuente`: \"Principios Fundamentales\".\n\nResponde ÚNICAMENTE con el array JSON completo y nada más.\n\n**** DOCUMENTO A PARSEAR: ****\n\n{{ $('Data').first().json.glosarioCompleto }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        384
+      ],
+      "id": "e9567630-6eda-432c-83e8-e6504d64b137",
+      "name": "Parsear Glosario a JSON"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-pro",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        960,
+        608
+      ],
+      "id": "31535944-52af-4100-874b-ace2a1ca866b",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "1fRbxclakan4SB2c",
+          "name": "Api 1"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "glosarioParseado",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1456,
+        384
+      ],
+      "id": "8f316931-4174-4f52-95b3-5764ffacd4ee",
+      "name": "Split Glosario"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "glosario_chunks",
+          "mode": "list",
+          "cachedResultName": "glosario_chunks"
+        },
+        "options": {
+          "queryName": "match_glosario_chunks"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        1680,
+        384
+      ],
+      "id": "7b7ae9a1-7b2f-4725-b77a-58e6e4cd54d4",
+      "name": "Insertar y Vectorizar",
+      "credentials": {
+        "supabaseApi": {
+          "id": "m0DUcQthM94wIR7O",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json.content }}",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "termino",
+                "value": "={{ $json.metadata.termino || \"null\" }}"
+              },
+              {
+                "name": "fuente",
+                "value": "={{ $json.metadata.fuente || \"null\" }}"
+              },
+              {
+                "name": "paradigma",
+                "value": "={{ $json.metadata.paradigma || \"null\" }}"
+              },
+              {
+                "name": "tipo",
+                "value": "={{ $json.metadata.tipo || \"null\" }}"
+              },
+              {
+                "name": "nivelTaxonomico",
+                "value": "={{ $json.metadata.nivelTaxonomico || \"null\" }}"
+              },
+              {
+                "name": "definicionGeneralNivel",
+                "value": "={{ $json.metadata.definicionGeneralNivel || \"null\" }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        1824,
+        608
+      ],
+      "id": "0cc9c72f-1966-4939-92b6-3c0a2f35a370",
+      "name": "Default Data Loader2"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        656,
+        384
+      ],
+      "id": "c0d52af7-cb74-4155-99f1-15456a6474cc",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "0a8dc9cd-15c3-4da8-b780-03f3cd9953e5",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -16,
+        384
+      ],
+      "id": "7c084bdf-bf4a-47f4-b908-daf24f63341f",
+      "name": "Webhook",
+      "webhookId": "0a8dc9cd-15c3-4da8-b780-03f3cd9953e5"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Data": {
+      "main": [
+        [
+          {
+            "node": "Delete a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Insertar y Vectorizar",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpiar y Parsear JSON": {
+      "main": [
+        [
+          {
+            "node": "Split Glosario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete a row": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parsear Glosario a JSON": {
+      "main": [
+        [
+          {
+            "node": "Limpiar y Parsear JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Parsear Glosario a JSON",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Glosario": {
+      "main": [
+        [
+          {
+            "node": "Insertar y Vectorizar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insertar y Vectorizar": {
+      "main": [
+        []
+      ]
+    },
+    "Default Data Loader2": {
+      "ai_document": [
+        [
+          {
+            "node": "Insertar y Vectorizar",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Parsear Glosario a JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "9be2a76f-d2d9-4c68-b07c-a3635e53c53a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "81f9aa344da0912f901e07498089d3dd54ba6d767dbe4d581a261cb5d8886bb9"
+  },
+  "id": "QW6PU1gau3zdu8ul",
+  "tags": []
+}

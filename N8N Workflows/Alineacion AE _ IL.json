@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "modelName": "models/gemini-flash-latest",
+        "modelName": "models/gemini-flash-lite-latest",
         "options": {
           "temperature": 0.2
         }
@@ -11,8 +11,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        992,
-        1232
+        1072,
+        1088
       ],
       "id": "fd05afd7-2b5e-4541-a557-713a723ae6f2",
       "name": "Google Gemini Chat Model",
@@ -28,8 +28,8 @@
       "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
       "typeVersion": 1,
       "position": [
-        496,
-        1248
+        2080,
+        1344
       ],
       "id": "645cb3b7-09b7-45ab-bb91-398cce84cc4f",
       "name": "Embeddings Google Gemini1",
@@ -48,39 +48,10 @@
       "typeVersion": 2,
       "position": [
         768,
-        1024
+        1120
       ],
       "id": "ff0f8d9f-eac3-4f7e-a585-e7be1ffbba83",
       "name": "Crear Guia Estilo"
-    },
-    {
-      "parameters": {
-        "promptType": "define",
-        "text": "=Eres un asistente de extracción de datos que SOLO responde con JSON.\nTu única tarea es rellenar una plantilla JSON.\n\n### 1. GUÍA DE CLAVES OBLIGATORIAS:\n{{ $('Crear Guia Estilo').first().json.style_guide_text }}\n\n### 2. DATOS DE ENTRADA:\n{{ $('Get DI Data').first().json.contenido_html }}\n\n### 3. TAREA:\nAnaliza los datos de entrada y extrae la siguiente información de forma separada:\n1.  **Para `descripcionCurso`**: Extrae o infiere la descripción del curso.\n2.  **Para `resultadosAprendizaje`**: Extrae **TODOS Y CADA UNO** de los ítems de la lista que comiencen explícitamente con 'RA', 'Resultado de Aprendizaje', etc. Asegúrate de incluirlos todos en el array. Pueden haber uno o más RAs.\n3.  **Para `aprendizajesEsperados`**: Extrae TODOS los 'aprendizajeEsperado' (AE) con sus 'indicadoresDeLogro' (IL) asociados.\n\nGenera un ÚNICO objeto JSON con la siguiente estructura exacta. Presta especial atención a que `resultadosAprendizaje` sea un array con MÚLTIPLES elementos si los encuentras.\n\n{\n  \"descripcionCurso\": \"El párrafo principal que describe la asignatura...\",\n  \"resultadosAprendizaje\": [\n    \"RA1: Aplicar herramientas y metodologías...\",\n    \"RA2: Evaluar alternativas de solución...\"\n  ],\n  \"aprendizajesEsperados\": [\n    {\n      \"aprendizajeEsperado\": \"El texto del AE1...\",\n      \"indicadoresDeLogro\": [ \"...\" ]\n    }\n  ]\n}\n\nResponde SÓLO con el objeto JSON y nada más.",
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 2.2,
-      "position": [
-        992,
-        1024
-      ],
-      "id": "9956f788-0eba-4202-a600-c2107237256a",
-      "name": "HTML a JSON-LD"
-    },
-    {
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "// Obtiene la salida de texto crudo del nodo anterior\nconst rawOutput = $input.item.json.output;\n\n// Expresión regular para encontrar la primera ocurrencia de un bloque JSON\nconst jsonRegex = /\\{[\\s\\S]*\\}/;\nconst match = rawOutput.match(jsonRegex);\n\n// Si se encuentra una coincidencia, la parseamos a un objeto JSON\nif (match && match[0]) {\n  const jsonObject = JSON.parse(match[0]);\n  // Devuelve el objeto JSON limpio. N8N lo pondrá dentro de un objeto 'json'.\n  return { json: jsonObject };\n}\n\n// Si no se encuentra ningún JSON, devuelve un error para detener el flujo\nreturn { json: { error: \"No se encontró un objeto JSON válido en la salida del LLM.\" } };"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1344,
-        1024
-      ],
-      "id": "e927f836-c64d-4389-9da2-2df6b30c666b",
-      "name": "Limpiar y Parsear JSON"
     },
     {
       "parameters": {
@@ -90,8 +61,8 @@
       "type": "n8n-nodes-base.aggregate",
       "typeVersion": 1,
       "position": [
-        2144,
-        1024
+        2576,
+        1120
       ],
       "id": "143578d4-d045-4664-8efa-5ddfb5930433",
       "name": "Aggregate"
@@ -104,8 +75,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        2576,
-        1280
+        3104,
+        1344
       ],
       "id": "24b7fd83-d603-463e-8f7c-c3ac73869d84",
       "name": "Google Gemini Chat Model1",
@@ -126,7 +97,7 @@
       "typeVersion": 2.1,
       "position": [
         -32,
-        1024
+        1120
       ],
       "id": "9b241523-d7f5-4591-93f8-f25298afcaca",
       "name": "Webhook",
@@ -149,7 +120,7 @@
       "typeVersion": 1,
       "position": [
         192,
-        1024
+        1120
       ],
       "id": "c377aaa9-548e-44d9-9c19-7ec243bca7b0",
       "name": "Get DI Data",
@@ -179,7 +150,7 @@
       "typeVersion": 1.3,
       "position": [
         416,
-        1024
+        1120
       ],
       "id": "0e1befd2-2651-403a-8f74-167afba3d49d",
       "name": "RAG Vocabulario",
@@ -216,8 +187,8 @@
       "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
       "typeVersion": 1.3,
       "position": [
-        1568,
-        1024
+        2000,
+        1120
       ],
       "id": "745eae93-f8aa-4d49-8602-8c8d1bf206c8",
       "name": "RAG Dominio",
@@ -257,8 +228,8 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        3424,
-        1024
+        3952,
+        1120
       ],
       "id": "bd8b35d4-d849-4bfc-87fd-51a8e165f17c",
       "name": "Update a row",
@@ -276,8 +247,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1920,
-        1024
+        2352,
+        1120
       ],
       "id": "12c09f87-ad2c-49c6-9975-c763f8353a9b",
       "name": "Consolidar Contexto"
@@ -291,8 +262,8 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 2.2,
       "position": [
-        2576,
-        1024
+        3024,
+        1120
       ],
       "id": "4d0fd95f-c38c-4d99-8500-ac0048534623",
       "name": "Agente Analista"
@@ -306,8 +277,8 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 2.2,
       "position": [
-        2912,
-        1024
+        3376,
+        1120
       ],
       "id": "9c1530c8-c552-44ff-91f2-9de31efcb0d8",
       "name": "Agente Formateador"
@@ -322,8 +293,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        2912,
-        1280
+        3456,
+        1344
       ],
       "id": "1798a80b-e911-45e3-b3f9-b44e203835f8",
       "name": "Google Gemini Chat Model2",
@@ -336,29 +307,111 @@
     },
     {
       "parameters": {
-        "jsCode": "// 1. Obtener y parsear el JSON del análisis del Agente Formateador\nconst rawAnalysisOutput = $('Agente Formateador').first().json.output;\nconst jsonRegex = /\\{[\\s\\S]*\\}/;\nconst analysisMatch = rawAnalysisOutput.match(jsonRegex);\n\nif (!analysisMatch || !analysisMatch[0]) {\n  throw new Error(\"No se encontró un objeto JSON en la salida del Agente Formateador.\");\n}\n\nconst analysisJSON = JSON.parse(analysisMatch[0]);\n\n// 2. Obtener la descripción del curso del primer agente de extracción\nconst structuredData = $('Limpiar y Parsear JSON').first().json; // Este es el primer nodo de limpieza\nconst descripcionCurso = structuredData.descripcionCurso || \"No se encontró descripción del curso.\";\n\n// 3. Fusionar ambos datos en el objeto final\nanalysisJSON.descripcionCurso = descripcionCurso;\n\n// 4. Devolver el JSON completo y fusionado\nreturn { json: analysisJSON };"
+        "jsCode": "// 1. Obtener y parsear el JSON del análisis del Agente Formateador\nconst rawAnalysisOutput = $('Agente Formateador').first().json.output;\nconst jsonRegex = /\\{[\\s\\S]*\\}/;\nconst analysisMatch = rawAnalysisOutput.match(jsonRegex);\n\nif (!analysisMatch || !analysisMatch[0]) {\n  throw new Error(\"No se encontró un objeto JSON en la salida del Agente Formateador.\");\n}\n\nconst analysisJSON = JSON.parse(analysisMatch[0]);\n\n// 2. Obtener la descripción del curso del primer agente de extracción\nconst structuredData = $('Validar JSON de RAs').first().json; // Este es el primer nodo de limpieza\nconst descripcionCurso = structuredData.descripcionCurso || \"No se encontró descripción del curso.\";\n\n// 3. Fusionar ambos datos en el objeto final\nanalysisJSON.descripcionCurso = descripcionCurso;\n\n// 4. Devolver el JSON completo y fusionado\nreturn { json: analysisJSON };"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3232,
-        1024
+        3728,
+        1120
       ],
       "id": "338bf287-e4d2-4bd6-a778-410b795d0c01",
       "name": "Limpiar Analisis JSON"
     },
     {
       "parameters": {
-        "jsCode": "// Obtener los datos necesarios de los nodos anteriores\nconst diData = $('Get DI Data').first().json;\nconst estructuraMEI = diData.estructura_mei;\nconst datosEstructurados = $('Limpiar y Parsear JSON').first().json;\nconst contextoDominioArray = $('Aggregate').first().json.data;\n\n// --- Función para transformar el contexto en texto legible ---\nfunction formatarContexto(contextoArray) {\n  let textoFormateado = '';\n  if (!Array.isArray(contextoArray)) {\n    return 'Contexto no disponible.';\n  }\n  \n  contextoArray.forEach(item => {\n    // Extraer datos con seguridad, proveyendo valores por defecto\n    const termino = item.metadata?.termino || 'Término desconocido';\n    const content = item.content || 'Sin contenido.';\n    const fuente = item.metadata?.fuente || '';\n    const nivelTaxonomico = item.metadata?.nivelTaxonomico || '';\n\n    // Construir una línea de texto formateado para cada entrada del glosario\n    let linea = `- **${termino} (${fuente})**: ${content}`;\n    \n    // Añadir el nivel taxonómico solo si es relevante\n    if (nivelTaxonomico && nivelTaxonomico !== 'null') {\n      linea += ` (Nivel: ${nivelTaxonomico})`;\n    }\n    \n    textoFormateado += linea + '\\n';\n  });\n  \n  return textoFormateado;\n}\n\n// Transformamos el contexto JSON en texto plano y legible para el LLM\nconst contextoFormateado = formatarContexto(contextoDominioArray);\n\n\n// Base del prompt, común a ambos paradigmas\nconst promptBase = `Eres un experto en evaluación de calidad instruccional de la UNAB, riguroso, detallista y orientado a las reglas.\n\n### CONTEXTO DE DOMINIO (Fuente de Verdad):\n${contextoFormateado}\n### ESTRUCTURA MEI DEL DI:\n${estructuraMEI}\n\n### DATOS ESTRUCTURADOS DEL DI (JSON):\n${JSON.stringify(datosEstructurados)}\n\n### TAREA:\nRealiza un análisis de alineamiento exhaustivo de la jerarquía pedagógica completa. Genera un informe en TEXTO PLANO siguiendo la estructura detallada a continuación. NO uses JSON ni Markdown en tu respuesta.\n\n**Reglas de Análisis Mandatorias:**\n1.  **Verbos:** Al identificar un verbo, búscalo en el CONTEXTO. Si no lo encuentras, indícalo explícitamente y haz tu mejor estimación del nivel taxonómico basándote en la definición general de los niveles.\n2.  **Sintaxis de Indicadores:** Revisa CADA indicador. Si contiene la palabra \"para\", debes señalarlo como un PROBLEMA en el análisis de coherencia sintáctica. Esta es una regla CRÍTICA.`;\n\nlet estructuraInforme = '';\n\n// Lógica condicional para construir la parte específica del paradigma\nif (estructuraMEI === 'MEI-Antiguo') {\n  estructuraInforme = `\n**ESTRUCTURA DEL INFORME (Estructura MEI Antiguo):**\n\n**SECCIÓN RA (Repetir para CADA 'resultadoAprendizaje' en los datos):**\n1.  **Inicia una sección:** ANALISIS PARA RA: [Texto completo del RA]\n2.  **Verbo y Nivel del RA:** Analiza el verbo del RA, búscalo en el CONTEXTO y declara su nivel taxonómico.\n    - Verbo del RA: [Verbo]\n    - Nivel Taxonómico del RA: [Nivel y Definición]\n\n**SECCIÓN AE (Repetir para CADA 'aprendizajeEsperado'):**\n1.  **Inicia una sección:** ANALISIS PARA AE: [Texto completo del AE]\n2.  **Alineación con RA:** Evalúa si el AE es semántica y taxonómicamente coherente con los RAs Generales. El nivel del AE no debe superar al de los RAs.\n    - Coherencia RA-AE: [Análisis breve]\n3.  **Verbo y Nivel del AE:** Analiza el verbo del AE, búscalo en el CONTEXTO y declara su nivel taxonómico.\n    - Verbo del AE: [Verbo]\n    - Nivel Taxonómico del AE: [Nivel y Definición]\n4.  **Análisis de Indicadores:** Para CADA 'indicadorDeLogro' (IL) asociado al AE:\n    - INDICADOR: [Texto completo del IL]\n    - Verbo del IL: [Verbo]\n    - Nivel Taxonómico del IL: [Nivel y Definición]\n    - Coherencia Semántica: [Análisis breve sobre si el IL desglosa y concreta el AE.]\n    - Coherencia Taxonómica: [Análisis sobre si el nivel del IL es igual o inferior al del AE.]\n    - Coherencia Sintáctica: [Analiza si el indicador usa la palabra \"para\". Si la usa, escribe: \"PROBLEMA: El indicador contiene la palabra 'para', lo cual es incorrecto según el glosario.\" Si no, escribe: \"CORRECTO.\"]\n5.  **Conclusión para el AE:** Basado en el análisis de los indicadores y su alineación con el RA.\n    - Veredicto: [Escribe una de estas tres opciones: ALINEADO, ALINEADO CON OBSERVACIONES, NO ALINEADO]\n    - Justificación General: [Resume los hallazgos clave.]\n`;\n} else if (estructuraMEI === 'MEI-Actualizado') {\n  estructuraInforme = `\n**ESTRUCTURA DEL INFORME (Estructura MEI Actualizado):**\n\n**SECCIÓN RF (Repetir para CADA 'resultadoFormativo' en los datos):**\n1.  **Inicia una sección:** ANALISIS PARA RF: [Texto completo del RF]\n2.  **Verbo y Nivel del RF:** Analiza el verbo del RF, búscalo en el CONTEXTO y declara su nivel taxonómico.\n    - Verbo del RF: [Verbo]\n    - Nivel Taxonómico del RF: [Nivel y Definición]\n\n**SECCIÓN RA (Repetir para CADA 'resultadoAprendizaje'):**\n1.  **Inicia una sección:** ANALISIS PARA RA: [Texto completo del RA]\n2.  **Alineación con RF:** Evalúa si el RA es semántica y taxonómicamente coherente con los RFs Generales. El nivel del RA no debe superar al de los RFs.\n    - Coherencia RF-RA: [Análisis breve]\n3.  **Verbo y Nivel del RA:** Analiza el verbo del RA, búscalo en el CONTEXTO y declara su nivel taxonómico.\n    - Verbo del RA: [Verbo]\n    - Nivel Taxonómico del RA: [Nivel y Definición]\n4.  **Análisis de Indicadores:** Para CADA 'indicadorDesempeno' (ID) asociado al RA:\n    - INDICADOR: [Texto completo del ID]\n    - Verbo del ID: [Verbo]\n    - Nivel Taxonómico del ID: [Nivel y Definición]\n    - Coherencia Semántica: [Análisis breve sobre si el ID desglosa y concreta el RA.]\n    - Coherencia Taxonómica: [Análisis sobre si el nivel del ID es igual o inferior al del RA.]\n    - Coherencia Sintáctica: [Analiza si el indicador usa la palabra \"para\". Si la usa, escribe: \"PROBLEMA: El indicador contiene la palabra 'para', lo cual es incorrecto según el glosario.\" Si no, escribe: \"CORRECTO.\"]\n5.  **Conclusión para el RA:** Basado en el análisis de los indicadores y su alineación con el RF.\n    - Veredicto: [Escribe una de estas tres opciones: ALINEADO, ALINEADO CON OBSERVACIONES, NO ALINEADO]\n    - Justificación General: [Resume los hallazgos clave.]\n`;\n} else {\n  // Manejo de error si la estructura no es válida, detendrá la ejecución.\n  throw new Error(`Estructura MEI no reconocida: ${estructuraMEI}`);\n}\n\n// Unimos la base del prompt con la estructura específica del paradigma\nconst promptFinal = `${promptBase}\\n\\n${estructuraInforme}`;\n\n// Devolvemos el prompt final para que el siguiente nodo (Agente Analista) lo pueda usar\nreturn { json: { prompt: promptFinal } };"
+        "jsCode": "// Obtener los datos necesarios de los nodos anteriores\nconst diData = $('Get DI Data').first().json;\nconst estructuraMEI = diData.estructura_mei;\n\n// --- CORRECCIÓN CRÍTICA ---\n// Debemos tomar los datos del nodo que ensambla los resultados de AMBAS ramas de extracción.\nconst datosEstructurados = $('Ensamblar JSON Estructurado').first().json;\n\nconst contextoDominioArray = $('Aggregate').first().json.data;\n\n// --- Función para transformar el contexto en texto legible ---\nfunction formatarContexto(contextoArray) {\n  let textoFormateado = '';\n  if (!Array.isArray(contextoArray)) {\n    return 'Contexto no disponible.';\n  }\n  \n  contextoArray.forEach(item => {\n    // Extraer datos con seguridad, proveyendo valores por defecto\n    const termino = item.metadata?.termino || 'Término desconocido';\n    const content = item.content || 'Sin contenido.';\n    const fuente = item.metadata?.fuente || '';\n    const nivelTaxonomico = item.metadata?.nivelTaxonomico || '';\n\n    // Construir una línea de texto formateado para cada entrada del glosario\n    let linea = `- **${termino} (${fuente})**: ${content}`;\n    \n    // Añadir el nivel taxonómico solo si es relevante\n    if (nivelTaxonomico && nivelTaxonomico !== 'null') {\n      linea += ` (Nivel: ${nivelTaxonomico})`;\n    }\n    \n    textoFormateado += linea + '\\n';\n  });\n  \n  return textoFormateado;\n}\n\n// Transformamos el contexto JSON en texto plano y legible para el LLM\nconst contextoFormateado = formatarContexto(contextoDominioArray);\n\n\n// Base del prompt, común a ambos paradigmas\nconst promptBase = `Eres un experto en evaluación de calidad instruccional de la UNAB, riguroso, detallista y orientado a las reglas.\n\n### CONTEXTO DE DOMINIO (Fuente de Verdad):\n${contextoFormateado}\n### ESTRUCTURA MEI DEL DI:\n${estructuraMEI}\n\n### DATOS ESTRUCTURADOS DEL DI (JSON):\n${JSON.stringify(datosEstructurados)}\n\n### TAREA:\nRealiza un análisis de alineamiento exhaustivo de la jerarquía pedagógica completa. Genera un informe en TEXTO PLANO siguiendo la estructura detallada a continuación. NO uses JSON ni Markdown en tu respuesta.\n\n**Reglas de Análisis Mandatorias:**\n1.  **Verbos:** Al identificar un verbo, búscalo en el CONTEXTO. Si no lo encuentras, indícalo explícitamente y haz tu mejor estimación del nivel taxonómico basándote en la definición general de los niveles.\n2.  **Sintaxis de Indicadores:** Revisa CADA indicador. Si contiene la palabra \"para\", debes señalarlo como un PROBLEMA en el análisis de coherencia sintáctica. Esta es una regla CRÍTICA.\n3.  **CONSISTENCIA TAXONÓMICA:** Si estimas el nivel de un verbo una vez (ej. 'Determinar' como Nivel 4), DEBES USAR ESA MISMA ESTIMACIÓN (Nivel 4) para todas las demás apariciones del verbo 'Determinar' en todo el análisis. Sé consistente.`;\n\nlet estructuraInforme = '';\n\n// Lógica condicional para construir la parte específica del paradigma\nif (estructuraMEI === 'MEI-Antiguo') {\n  estructuraInforme = `\n**ESTRUCTURA DEL INFORME (Estructura MEI Antiguo):**\n\n**SECCIÓN RA (Repetir para CADA 'resultadoAprendizaje' en los datos):**\n1.  **Inicia una sección:** ANALISIS PARA RA: [Texto completo del RA]\n2.  **Verbo y Nivel del RA:** Analiza el verbo del RA, búscalo en el CONTEXTO y declara su nivel taxonómico.\n    - Verbo del RA: [Verbo]\n    - Nivel Taxonómico del RA: [Nivel y Definición]\n\n**SECCIÓN AE (Repetir para CADA 'aprendizajeEsperado'):**\n1.  **Inicia una sección:** ANALISIS PARA AE: [Texto completo del AE]\n2.  **Alineación con RA:** Evalúa si el AE es semántica y taxonómicamente coherente con los RAs Generales. El nivel del AE no debe superar al de los RAs.\n    - Coherencia RA-AE: [Análisis breve]\n3.  **Verbo y Nivel del AE:** Analiza el verbo del AE, búscalo en el CONTEXTO y declara su nivel taxonómico.\n    - Verbo del AE: [Verbo]\n    - Nivel Taxonómico del AE: [Nivel y Definición]\n4.  **Análisis de Indicadores:** Para CADA 'indicadorDeLogro' (IL) asociado al AE:\n    - INDICADOR: [Texto completo del IL]\n    - Verbo del IL: [Verbo]\n    - Nivel Taxonómico del IL: [Nivel y Definición]\n    - Coherencia Semántica: [Análisis breve sobre si el IL desglosa y concreta el AE.]\n    - Coherencia Taxonómica: [Análisis sobre si el nivel del IL es igual o inferior al del AE.]\n    - Coherencia Sintáctica: [Analiza si el indicador usa la palabra \"para\". Si la usa, escribe: \"PROBLEMA: El indicador contiene la palabra 'para', lo cual es incorrecto según el glosario.\" Si no, escribe: \"CORRECTO.\"]\n5.  **Conclusión para el AE:** Basado en el análisis de los indicadores y su alineación con el RA.\n    - Veredicto: [Escribe una de estas tres opciones: ALINEADO, ALINEADO CON OBSERVACIONES, NO ALINEADO]\n    - Justificación General: [Resume los hallazgos clave.]\n`;\n} else if (estructuraMEI === 'MEI-Actualizado') {\n  estructuraInforme = `\n**ESTRUCTURA DEL INFORME (Estructura MEI Actualizado):**\n\n**SECCIÓN RF (Repetir para CADA 'resultadoFormativo' en los datos):**\n1.  **Inicia una sección:** ANALISIS PARA RF: [Texto completo del RF]\n2.  **Verbo y Nivel del RF:** Analiza el verbo del RF, búscalo en el CONTEXTO y declara su nivel taxonómico.\n    - Verbo del RF: [Verbo]\n    - Nivel Taxonómico del RF: [Nivel y Definición]\n\n**SECCIÓN RA (Repetir para CADA 'resultadoAprendizaje'):**\n1.  **Inicia una sección:** ANALISIS PARA RA: [Texto completo del RA]\n2.  **Alineación con RF:** Evalúa si el RA es semántica y taxonómicamente coherente con los RFs Generales. El nivel del RA no debe superar al de los RFs.\n    - Coherencia RF-RA: [Análisis breve]\n3.  **Verbo y Nivel del RA:** Analiza el verbo del RA, búscalo en el CONTEXTO y declara su nivel taxonómico.\n    - Verbo del RA: [Verbo]\n    - Nivel Taxonómico del RA: [Nivel y Definición]\n4.  **Análisis de Indicadores:** Para CADA 'indicadorDesempeno' (ID) asociado al RA:\n    - INDICADOR: [Texto completo del ID]\n    - Verbo del ID: [Verbo]\n    - Nivel Taxonómico del ID: [Nivel y Definición]\n    - Coherencia Semántica: [Análisis breve sobre si el ID desglosa y concreta el RA.]\n    - Coherencia Taxonómica: [Análisis sobre si el nivel del ID es igual o inferior al del RA.]\n    - Coherencia Sintáctica: [Analiza si el indicador usa la palabra \"para\". Si la usa, escribe: \"PROBLEMA: El indicador contiene la palabra 'para', lo cual es incorrecto según el glosario.\" Si no, escribe: \"CORRECTO.\"]\n5.  **Conclusión para el RA:** Basado en el análisis de los indicadores y su alineación con el RF.\n    - Veredicto: [Escribe una de estas tres opciones: ALINEADO, ALINEADO CON OBSERVACIONES, NO ALINEADO]\n    - Justificación General: [Resume los hallazgos clave.]\n`;\n} else {\n  // Manejo de error si la estructura no es válida, detendrá la ejecución.\n  throw new Error(`Estructura MEI no reconocida: ${estructuraMEI}`);\n}\n\n// Unimos la base del prompt con la estructura específica del paradigma\nconst promptFinal = `${promptBase}\\n\\n${estructuraInforme}`;\n\n// Devolvemos el prompt final para que el siguiente nodo (Agente Analista) lo pueda usar\nreturn { json: { prompt: promptFinal } };"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2352,
-        1024
+        2800,
+        1120
       ],
       "id": "ac01c08e-9b7d-453e-8ef6-5e9241140c0a",
       "name": "Constructor de Prompt de Análisis"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres un sistema de extracción de datos que SOLO responde con JSON. Tu tarea es extraer la descripción del curso y los Resultados de Aprendizaje.\n\n### GUÍA DE CLAVES:\n- Usa la clave: `descripcionCurso`\n- Usa la clave: `resultadosAprendizaje`\n\n### DATOS DE ENTRADA:\n{{ $('Get DI Data').first().json.contenido_html }}\n\n### TAREA:\n1. En \"DATOS DE ENTRADA\", busca la descripción (o infierela si no es explícita) y asígnalo a `descripcionCurso`.\n2. En \"DATOS DE ENTRADA\", busca la lista que comienza con \"RA1:\", \"RA2:\", etc., y extrae TODOS sus ítems en un array para `resultadosAprendizaje`.\n\nGenera un ÚNICO objeto JSON con la estructura:\n{\n  \"descripcionCurso\": \"...\",\n  \"resultadosAprendizaje\": [ \"RA1: ...\", \"RA2: ...\", ... ]\n}\n\nResponde SÓLO con el JSON.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        992,
+        864
+      ],
+      "id": "9956f788-0eba-4202-a600-c2107237256a",
+      "name": "Agente Extractor de RAs"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const rawOutput = $input.item.json.output;\nconst jsonRegex = /\\{[\\s\\S]*\\}/;\nconst match = rawOutput.match(jsonRegex);\n\nif (!match || !match[0]) {\n  throw new Error(\"Agente Extractor de RAs no generó un JSON válido.\");\n}\n\nconst data = JSON.parse(match[0]);\n\nif (!data.resultadosAprendizaje || !Array.isArray(data.resultadosAprendizaje)) {\n  throw new Error(\"El JSON de RAs no contiene un array 'resultadosAprendizaje' válido.\");\n}\n\nreturn { json: data };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        976
+      ],
+      "id": "e927f836-c64d-4389-9da2-2df6b30c666b",
+      "name": "Validar JSON de RAs"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres un sistema de extracción de datos que SOLO responde con JSON. Tu tarea es extraer la estructura de Aprendizajes Esperados (AE) y sus Indicadores de Logro (IL).\n\n### GUÍA DE CLAVES:\n- Usa la clave: `aprendizajesEsperados`\n- Usa la clave: `aprendizajeEsperado`\n- Usa la clave: `indicadoresDeLogro`\n\n### DATOS DE ENTRADA:\n{{ $('Get DI Data').first().json.contenido_html }}\n\n### TAREA:\nEn \"DATOS DE ENTRADA\", busca y extrae TODOS los AE con sus respectivos ILs.\n\nGenera un ÚNICO objeto JSON con la estructura:\n{\n  \"aprendizajesEsperados\": [\n    {\n      \"aprendizajeEsperado\": \"Texto del AE1...\",\n      \"indicadoresDeLogro\": [ \"Texto del IL 1.1...\", \"Texto del IL 1.2...\" ]\n    },\n    {\n      \"aprendizajeEsperado\": \"Texto del AE2...\",\n      \"indicadoresDeLogro\": [ \"Texto del IL 2.1...\", \"...\" ]\n    }\n  ]\n}\n\nResponde SÓLO con el JSON.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        992,
+        1264
+      ],
+      "id": "b815919e-229f-43f8-963b-7331b47dd1e9",
+      "name": "Agente Extractor de AEs"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1568,
+        1120
+      ],
+      "id": "345d3742-0d3b-4c4f-9bef-497b61fe8c6a",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const rawOutput = $input.item.json.output;\nconst jsonRegex = /\\{[\\s\\S]*\\}/;\nconst match = rawOutput.match(jsonRegex);\n\nif (!match || !match[0]) {\n  throw new Error(\"Agente Extractor de AEs no generó un JSON válido.\");\n}\n\nconst data = JSON.parse(match[0]);\n\nif (!data.aprendizajesEsperados || !Array.isArray(data.aprendizajesEsperados)) {\n  throw new Error(\"El JSON de AEs no contiene un array 'aprendizajesEsperados' válido.\");\n}\n\nreturn { json: data };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        1264
+      ],
+      "id": "eef97c59-3ce2-4e50-a60b-ec7e350a0679",
+      "name": "Validar JSON de AEs"
+    },
+    {
+      "parameters": {
+        "jsCode": "// El nodo Merge nos entrega un array con los resultados de las dos ramas.\nconst inputs = $input.all();\n\n// Extraemos los datos de cada rama\nconst dataRAs = inputs.find(item => item.json.resultadosAprendizaje).json;\nconst dataAEs = inputs.find(item => item.json.aprendizajesEsperados).json;\n\nif (!dataRAs || !dataAEs) {\n  throw new Error(\"Faltan datos de una de las ramas de extracción para ensamblar el JSON final.\");\n}\n\n// Creamos el objeto JSON final combinando las propiedades de ambos\nconst finalJSON = {\n  ...dataRAs,\n  ...dataAEs\n};\n\nreturn { json: finalJSON };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1776,
+        1120
+      ],
+      "id": "40c20a75-c45c-47b0-b507-84d07890de63",
+      "name": "Ensamblar JSON Estructurado"
     }
   ],
   "pinData": {
@@ -377,7 +430,7 @@
           "params": {},
           "query": {},
           "body": {
-            "di_id": "03d57433-cb5e-4bc1-8014-33e53bb40e87",
+            "di_id": "71d4cfb0-6759-46e4-a086-f854ebf7c247",
             "estructuraMEI": "MEI-Antiguo",
             "terminosVocabulario": "resultadoAprendizaje, aprendizajeEsperado, indicadorDeLogro",
             "terminosDominio": "Definición de Aprendizaje Esperado, Indicador de Logro, y todos los verbos de la taxonomía UNAB"
@@ -393,7 +446,12 @@
       "ai_languageModel": [
         [
           {
-            "node": "HTML a JSON-LD",
+            "node": "Agente Extractor de RAs",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Agente Extractor de AEs",
             "type": "ai_languageModel",
             "index": 0
           }
@@ -420,29 +478,12 @@
       "main": [
         [
           {
-            "node": "HTML a JSON-LD",
+            "node": "Agente Extractor de RAs",
             "type": "main",
             "index": 0
-          }
-        ]
-      ]
-    },
-    "HTML a JSON-LD": {
-      "main": [
-        [
+          },
           {
-            "node": "Limpiar y Parsear JSON",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Limpiar y Parsear JSON": {
-      "main": [
-        [
-          {
-            "node": "RAG Dominio",
+            "node": "Agente Extractor de AEs",
             "type": "main",
             "index": 0
           }
@@ -580,13 +621,79 @@
           }
         ]
       ]
+    },
+    "Agente Extractor de RAs": {
+      "main": [
+        [
+          {
+            "node": "Validar JSON de RAs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar JSON de RAs": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente Extractor de AEs": {
+      "main": [
+        [
+          {
+            "node": "Validar JSON de AEs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Ensamblar JSON Estructurado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar JSON de AEs": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Ensamblar JSON Estructurado": {
+      "main": [
+        [
+          {
+            "node": "RAG Dominio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "5d37b8b2-9954-41ba-a1bc-d5b8820b6b75",
+  "versionId": "491b601c-5b18-48a1-bb8d-6f103062b47b",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "81f9aa344da0912f901e07498089d3dd54ba6d767dbe4d581a261cb5d8886bb9"
