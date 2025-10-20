@@ -19,8 +19,8 @@
       "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
       "typeVersion": 1.3,
       "position": [
-        880,
-        1232
+        752,
+        1024
       ],
       "id": "c479768a-ccb9-4322-9b3f-9c177794df10",
       "name": "RAG de Dominio",
@@ -32,27 +32,12 @@
       }
     },
     {
-      "parameters": {
-        "promptType": "define",
-        "text": "={{ $('Constructor de Prompt Dinámico').first().json.prompt }}",
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 2.2,
-      "position": [
-        1680,
-        1232
-      ],
-      "id": "3332adbf-83dd-424b-b82f-9dc9f0b2aec5",
-      "name": "Agente Generador"
-    },
-    {
       "parameters": {},
       "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
       "typeVersion": 1,
       "position": [
-        880,
-        1408
+        832,
+        1248
       ],
       "id": "f1a56211-8269-40e9-9835-8e39b151901f",
       "name": "Embeddings Google Gemini",
@@ -67,14 +52,14 @@
       "parameters": {
         "modelName": "models/gemini-2.5-flash-lite",
         "options": {
-          "temperature": 0.4
+          "temperature": 0.3
         }
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        1760,
-        1456
+        1632,
+        1248
       ],
       "id": "5367768d-96e8-4c35-8d2c-350a9f17f62e",
       "name": "Google Gemini Chat Model",
@@ -87,19 +72,6 @@
     },
     {
       "parameters": {
-        "jsCode": "// Obtenemos los datos de la iteración actual referenciando el nodo Split In Batches. ESTA ES LA LÓGICA CORRECTA.\nconst itemData = $('Procesar Uno por Uno').first().json;\n\n// Obtenemos el contexto del nodo inmediatamente anterior (Consolidar Contexto) usando $input.\nconst contextoGlosario = $input.first().json.contexto_consolidado;\n\n// Ahora la desestructuración funcionará porque 'itemData' tiene los datos correctos.\nconst { estructuraMEI, objetivo_actual, contexto_superior } = itemData;\n\nlet promptBase = `Eres un experto diseñador instruccional de la UNAB. Tu rol es seguir las reglas pedagógicas de forma estricta y precisa, y justificar tus decisiones con claridad.`;\nlet contextoTexto = \"\";\nlet tareaTexto = \"\";\nlet tipoIndicador = \"\";\n\n// La lógica de protección dentro de los if/else sigue siendo una buena práctica.\nif (estructuraMEI === 'MEI-Antiguo') {\n  tipoIndicador = \"Indicadores de Logro (IL)\";\n  const ras = contexto_superior.resultadosAprendizaje.map(ra => `- ${ra.texto}`).join('\\\\n');\n  contextoTexto = `### OBJETIVOS DE NIVEL SUPERIOR (Resultados de Aprendizaje):\\n${ras}`;\n  tareaTexto = `Genera una lista de 2 a 4 ${tipoIndicador} que desglosen operativamente el siguiente Aprendizaje Esperado (AE).`;\n\n} else if (estructuraMEI === 'MEI-Actualizado') {\n  tipoIndicador = \"Indicadores de Desempeño (ID)\";\n  const rfs = contexto_superior.resultadosFormativos.map(rf => `- ${rf.texto}`).join('\\\\n');\n  // --- LÍNEA CORREGIDA ---\n  // Se reemplaza la variable incorrecta 'rf_text' por la variable procesada 'rfs'.\n  contextoTexto = `### OBJETIVO DE NIVEL SUPERIOR (Resultado Formativo):\\n${rfs}`;\n  // -----------------------\n  tareaTexto = `Genera una lista de 3 a 5 ${tipoIndicador} que desglosen operativamente el siguiente Resultado de Aprendizaje (RA).`;\n}\n\nlet datosEntrada = `### ${estructuraMEI === 'MEI-Antiguo' ? 'APRENDIZAJE ESPERADO' : 'RESULTADO DE APRENDIZAJE'} A DESGLOSAR:\\n\"${objetivo_actual.texto}\"`;\nif (objetivo_actual.contenido) {\n  datosEntrada += `\\n\\n### CONTENIDO ASOCIADO:\\n${objetivo_actual.contenido}`;\n}\nif (objetivo_actual.metodologia) {\n  datosEntrada += `\\n\\n### METODOLOGÍA PROPUESTA:\\n${objetivo_actual.metodologia}`;\n}\n\nconst finalInstructions = `\n### INSTRUCCIONES DE GENERACIÓN Y FORMATO (MUY IMPORTANTE):\nTu tarea es generar un array JSON de objetos. Sigue estas reglas de forma estricta:\n\n1.  **REGLA TAXONÓMICA INFLEXIBLE:** El verbo del indicador que generes DEBE ser de un nivel taxonómico **IGUAL O INFERIOR** al del verbo del objetivo a desglosar. **NUNCA SUPERIOR.**\n\n2.  **REGLA DE SINTAXIS:** El indicador describe una **evidencia observable**, no un propósito. Por lo tanto, NO DEBE usar la palabra \"para\" para expresar finalidad.\n\n3.  **FORMATO DE SALIDA:** Tu respuesta DEBE SER ÚNICAMENTE un array JSON de objetos. Para cada objeto, rellena los siguientes campos:\n    *   **indicador**: El texto completo del indicador.\n    *   **verbo**: El verbo principal en infinitivo.\n    *   **justificacionSemantica**: Explica por qué el indicador es una evidencia relevante del objetivo.\n    *   **justificacionTaxonomica**: En una sola frase, identifica el verbo y nivel del objetivo, el verbo y nivel del indicador, declara la relación ('inferior' o 'igual'), y explica brevemente por qué es coherente.\n    *   **justificacionSintactica**: Explica por qué la sintaxis del indicador es correcta, enfocándose en cómo describe una **evidencia observable** que **contribuye a la finalidad ya expresada en el objetivo padre**, en lugar de definir una nueva finalidad.\n\n### EJEMPLOS DE APLICACIÓN DE LAS REGLAS DE JUSTIFICACIÓN:\n\n**EJEMPLO 1:**\n- **Objetivo a desglosar:** \"Analizar el desempeño del proyecto...\" (Finalidad: analizar desempeño)\n- **Salida del indicador:**\n  {\n    \"indicador\": \"Calcular los índices de desempeño (CPI y SPI) para determinar la salud del proyecto.\",\n    \"verbo\": \"Calcular\",\n    \"justificacionSemantica\": \"El indicador desglosa la tarea de 'analizar el desempeño' en la acción medible de calcular los índices CPI y SPI, que son métricas fundamentales para dicho análisis.\",\n    \"justificacionTaxonomica\": \"El verbo del objetivo es 'Analizar' (Nivel 4) y el del indicador es 'Calcular' (Nivel 3), siendo la relación 'inferior', lo cual es coherente ya que el cálculo es un prerrequisito para el análisis.\",\n    \"justificacionSintactica\": \"La sintaxis es correcta porque describe la evidencia observable (el cálculo de los índices) que permite cumplir la finalidad de 'analizar el desempeño' ya definida en el objetivo, sin introducir un nuevo propósito.\"\n  }\n\n**EJEMPLO 2 (INCORRECTO Y PROHIBIDO - VIOLACIÓN TAXONÓMICA):**\n- **Objetivo a desglosar:** \"Implementar una campaña de email marketing...\" (Verbo 'Implementar', Nivel 3)\n- **Salida inválida (verbo superior):**\n  {\n    \"indicador\": \"Diseñar el flujo de automatización de la campaña...\",\n    \"verbo\": \"Diseñar\" // Verbo 'Diseñar' (Nivel 6) es SUPERIOR a 'Implementar' (Nivel 3). ESTO ESTÁ PROHIBIDO.\n  }\n`;\n\nconst promptFinal = `\n${promptBase}\n\n### CONTEXTO PEDAGÓGICO (REGLAS OBLIGATORIAS):\n${contextoGlosario}\n\n${contextoTexto}\n\n### TAREA ESPECÍFICA:\n${tareaTexto}\n\n${datosEntrada}\n\n${finalInstructions}\n`;\n\nreturn { json: { prompt: promptFinal, objetivo_original: objetivo_actual } };"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1456,
-        1232
-      ],
-      "id": "6d1dd585-7e33-4f18-b6a4-ef782a125ff3",
-      "name": "Constructor de Prompt Dinámico"
-    },
-    {
-      "parameters": {
         "httpMethod": "POST",
         "path": "0b0f8ddd-f0bb-476b-ac21-9e81f74f2c6c",
         "responseMode": "responseNode",
@@ -108,7 +80,7 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        -128,
+        80,
         1024
       ],
       "id": "a051ebfe-8956-4ec4-8fc8-f1ea3a75465f",
@@ -117,55 +89,8 @@
     },
     {
       "parameters": {
-        "jsCode": "// --- CONFIGURACIÓN DE LA PRUEBA ---\n// Cambia este valor para probar los diferentes escenarios.\n// Opciones disponibles:\n// 1. 'MEI-Actualizado-Simple'   (Un solo RA)\n// 2. 'MEI-Actualizado-Complejo'  (Múltiples RAs, con contenido/metodología)\n// 3. 'MEI-Antiguo-Simple'       (Un solo AE)\n// 4. 'MEI-Antiguo-Complejo'     (Múltiples AEs)\nconst testCase = 'MEI-Antiguo-Complejo';\n// ---------------------------------\n\nlet payload = {};\n\nswitch (testCase) {\n    case 'MEI-Actualizado-Simple':\n        payload = {\n            \"estructuraMEI\": \"MEI-Actualizado\",\n            \"resultadosFormativos\": [\n                { \"id\": \"RF-1\", \"texto\": \"Diseñar soluciones de software escalables y seguras aplicando principios de ingeniería y estándares de la industria.\" }\n            ],\n            \"resultadosAprendizaje\": [\n                {\n                    \"id\": \"RA-1-Simple\",\n                    \"tributaA\": [\"RF-1\"],\n                    \"texto\": \"Aplicar patrones de diseño creacionales para la construcción de objetos en un sistema de gestión de transacciones bancarias.\"\n                }\n            ]\n        };\n        break;\n\n    case 'MEI-Actualizado-Complejo':\n        payload = {\n            \"estructuraMEI\": \"MEI-Actualizado\",\n            \"resultadosFormativos\": [\n                { \"id\": \"RF-1\", \"texto\": \"Diseñar sistemas de software robustos y escalables aplicando patrones de arquitectura para satisfacer requisitos complejos.\" },\n                { \"id\": \"RF-2\", \"texto\": \"Comunicar soluciones técnicas de manera efectiva a audiencias diversas.\" }\n            ],\n            \"resultadosAprendizaje\": [\n                {\n                    \"id\": \"RA-1-Complejo\",\n                    \"tributaA\": [\"RF-1\"],\n                    \"texto\": \"Implementar un sistema de microservicios que se comunican de forma asíncrona utilizando un bus de mensajes.\",\n                    \"contenido\": \"Patrón de arquitectura de microservicios, Docker, RabbitMQ (Message Broker), consistencia eventual.\",\n                    \"metodologia\": \"Aprendizaje Basado en Problemas (ABP).\"\n                },\n                {\n                    \"id\": \"RA-2-Complejo\",\n                    \"tributaA\": [\"RF-1\", \"RF-2\"],\n                    \"texto\": \"Argumentar las decisiones de diseño arquitectónico tomadas, justificando la elección de patrones frente a alternativas.\",\n                    \"contenido\": \"Documentos de Decisión de Arquitectura (ADR), diagramas C4 Model, comparación de patrones.\",\n                    \"metodologia\": \"Análisis de Caso y Debate.\"\n                }\n            ]\n        };\n        break;\n\n    case 'MEI-Antiguo-Simple':\n        payload = {\n            \"estructuraMEI\": \"MEI-Antiguo\",\n            \"resultadosAprendizaje\": [\n                { \"id\": \"RA-1\", \"texto\": \"Analizar los principios fundamentales del marketing digital.\" }\n            ],\n            \"aprendizajesEsperados\": [\n                {\n                    \"id\": \"AE-1-Simple\",\n                    \"tributaA\": [\"RA-1\"],\n                    \"texto\": \"Diferenciar las métricas clave (KPIs) utilizadas en campañas de redes sociales para evaluar su efectividad.\"\n                }\n            ]\n        };\n        break;\n\n    case 'MEI-Antiguo-Complejo':\n        payload = {\n            \"estructuraMEI\": \"MEI-Antiguo\",\n            \"resultadosAprendizaje\": [\n                { \"id\": \"RA-1\", \"texto\": \"Diseñar planes de proyecto integrales, aplicando metodologías ágiles y predictivas.\" },\n                { \"id\": \"RA-2\", \"texto\": \"Gestionar la ejecución y el control de proyectos, evaluando el desempeño.\" }\n            ],\n            \"aprendizajesEsperados\": [\n                {\n                    \"id\": \"AE-1-Complejo\",\n                    \"tributaA\": [\"RA-1\"],\n                    \"texto\": \"Elaborar la Estructura de Desglose del Trabajo (EDT) de un proyecto para definir el alcance total del mismo.\"\n                },\n                {\n                    \"id\": \"AE-2-Complejo\",\n                    \"tributaA\": [\"RA-2\"],\n                    \"texto\": \"Analizar el desempeño del proyecto utilizando métricas de la Gestión del Valor Ganado (EVM) para evaluar desviaciones.\"\n                }\n            ]\n        };\n        break;\n\n    default:\n        payload = { \"error\": \"testCase no válido\" };\n}\n\nreturn { json: { body: payload } };"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        96,
-        1216
-      ],
-      "id": "87e7aa89-1f9c-4b06-bf3e-8bbe21db8649",
-      "name": "Set Test Payload"
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "53604407-1ab7-4309-a4de-342a9ab14a84",
-              "leftValue": "={{ $json.estructuraMEI }}",
-              "rightValue": "=true",
-              "operator": {
-                "type": "string",
-                "operation": "exists",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        1456,
-        816
-      ],
-      "id": "1cdf1ea1-ac35-43a1-85a2-4151133e92b2",
-      "name": "Json Valido?"
-    },
-    {
-      "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ $('Validar y Extraer Indicadores').first().json }}",
+        "responseBody": "={{ $('Formatear Salida Final').first().json }}",
         "options": {
           "responseCode": 200
         }
@@ -173,7 +98,7 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.4,
       "position": [
-        1744,
+        1328,
         720
       ],
       "id": "e317bab9-00c6-4eb8-8bb3-3380649b39de",
@@ -181,30 +106,13 @@
     },
     {
       "parameters": {
-        "respondWith": "json",
-        "responseBody": "{\n  \"error\": \"Error al generar o validar los indicadores.\",\n  \"details\": \"El modelo de lenguaje no devolvió un array JSON válido.\",\n  \"raw_output\": \"{{ $('Agente Generador').first().json.output }}\"\n}",
-        "options": {
-          "responseCode": 500
-        }
-      },
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.4,
-      "position": [
-        1744,
-        912
-      ],
-      "id": "d7779147-ceac-40cc-b005-8576dc6a4654",
-      "name": "Respuesta de Error (500)"
-    },
-    {
-      "parameters": {
-        "jsCode": "const llmOutput = $('Agente Generador').first().json.output;\nconst entradaOriginal = $('Constructor de Prompt Dinámico').first().json;\n\n// Define la estructura que CADA objeto en el array debe tener.\nconst requiredKeys = [\n    'indicador', \n    'verbo', \n    'justificacionSemantica', \n    'justificacionTaxonomica', \n    'justificacionSintactica'\n];\n\n// Paso 1: Intentar limpiar y parsear el JSON.\n// Usamos un parseo seguro que no detiene el flujo si falla.\nlet parsedJson;\nconst cleanedOutput = llmOutput.replace(/```json|```/g, '').trim();\ntry {\n  parsedJson = JSON.parse(cleanedOutput);\n} catch (e) {\n  parsedJson = null; // Si falla, asignamos null y dejamos que las validaciones siguientes fallen.\n}\n\n\n// Paso 2: Ejecutar una cadena de validaciones.\n// Si alguna falla, la función retorna un array vacío de inmediato.\n\n// 2.1 ¿El parseo fue exitoso y el resultado es un array?\nif (!parsedJson || !Array.isArray(parsedJson)) {\n    return []; \n}\n\n// 2.2 ¿El array tiene al menos un elemento?\nif (parsedJson.length === 0) {\n    return [];\n}\n\n// 2.3 ¿Cada elemento del array es un objeto con TODAS las claves requeridas?\nconst isStructureValid = parsedJson.every(item => \n    typeof item === 'object' && \n    item !== null && \n    requiredKeys.every(key => Object.prototype.hasOwnProperty.call(item, key))\n);\n\nif (!isStructureValid) {\n    return [];\n}\n\n// Si TODAS las validaciones pasaron, significa que la salida es válida.\n// Devolvemos el resultado exitoso.\nreturn [{ \n    json: {\n        ...entradaOriginal,\n        indicadoresGenerados: parsedJson,\n        error: null\n    }\n}];"
+        "jsCode": "// Leemos la salida del agente final en nuestra cadena: 'Agente 3 - Supervisor'.\nconst llmOutput = $('Agente 3 - Supervisor').first().json.output;\n\n// Los datos originales ahora vienen del constructor del Agente 3.\nconst entradaOriginal = $('Constructor de Prompt (Agente 3 - Supervisor)').first().json; \nconst { estructuraMEI } = entradaOriginal;\n\nlet parsedJson;\n\n// --- INICIO DE LA CORRECCIÓN CLAVE ---\n// Usamos una expresión regular para encontrar el primer bloque JSON válido en el texto.\n// Esto maneja el caso en que el LLM añade texto antes o después del JSON.\nconst jsonRegex = /\\[[\\s\\S]*\\]/; // Busca un array que empieza con [ y termina con ]\nconst jsonMatch = llmOutput.match(jsonRegex);\n\nif (jsonMatch && jsonMatch[0]) {\n  try {\n    // Intentamos parsear solo la parte que coincide con el JSON.\n    parsedJson = JSON.parse(jsonMatch[0]);\n  } catch (e) {\n    parsedJson = null; // Si el bloque extraído sigue siendo inválido, asignamos null.\n  }\n} else {\n  parsedJson = null; // Si no se encuentra ningún bloque JSON, asignamos null.\n}\n// --- FIN DE LA CORRECCIÓN CLAVE ---\n\n\nif (!parsedJson || !Array.isArray(parsedJson) || parsedJson.length === 0) {\n    return []; // Falla si no se pudo parsear, no es un array o está vacío.\n}\n\nlet requiredKeys = [];\nif (estructuraMEI === 'MEI-Actualizado') {\n  requiredKeys = ['indicador', 'justificacionPedagogica'];\n} else if (estructuraMEI === 'MEI-Antiguo') {\n  requiredKeys = ['habilidad', 'contenido', 'condicion_contexto', 'justificacionPedagogica'];\n}\n\nconst isStructureValid = parsedJson.every(item => \n    typeof item === 'object' && \n    item !== null && \n    requiredKeys.every(key => Object.prototype.hasOwnProperty.call(item, key))\n);\n\nif (isStructureValid) {\n  // ÉXITO: Devolvemos el resultado para el nodo de formateo final.\n  return [{ \n      json: {\n          objetivo_original: entradaOriginal.objetivo_original,\n          indicadoresGenerados: parsedJson,\n          error: null\n      }\n  }];\n}\n\n// Falla si la estructura de los objetos es incorrecta.\nreturn [];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2032,
-        1360
+        3248,
+        1024
       ],
       "id": "2615684f-adea-4a7a-ae64-a654ad1df034",
       "name": "Validar y Extraer Indicadores"
@@ -216,8 +124,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        320,
-        1216
+        304,
+        1024
       ],
       "id": "8af13527-364b-4a8a-a708-2ce020ccde37",
       "name": "Desglosar Objetivos en Items"
@@ -229,8 +137,8 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        656,
-        1216
+        528,
+        1024
       ],
       "id": "f5d10970-61cb-4e10-957f-66a7ab8e6722",
       "name": "Procesar Uno por Uno"
@@ -243,21 +151,21 @@
       "type": "n8n-nodes-base.aggregate",
       "typeVersion": 1,
       "position": [
-        944,
-        816
+        816,
+        720
       ],
       "id": "8460b90d-af4e-4330-85cb-d6fbce45e98d",
       "name": "Aggregate"
     },
     {
       "parameters": {
-        "jsCode": "const aggregatedResults = $input.first().json.data;\nconst originalPayload = $('Set Test Payload').first().json.body;\nconst { estructuraMEI } = originalPayload;\n\nlet finalOutput = { estructuraMEI };\n\nif (estructuraMEI === 'MEI-Antiguo') {\n  finalOutput.resultadosAprendizaje = originalPayload.resultadosAprendizaje;\n  finalOutput.analisisAprendizajesEsperados = [];\n} else if (estructuraMEI === 'MEI-Actualizado') {\n  finalOutput.resultadosFormativos = originalPayload.resultadosFormativos;\n  finalOutput.analisisResultadosAprendizaje = [];\n}\n\nfor (const result of aggregatedResults) {\n  // Manejo de errores del loop\n  if (result.error) {\n      if (!finalOutput.errors) finalOutput.errors = [];\n      finalOutput.errors.push({\n          objetivoFallido: result.objetivo_original,\n          detalleError: result.error\n      });\n      continue; // Salta al siguiente resultado si este falló\n  }\n\n  const resultadoConIndicadores = {\n    ...result.objetivo_original,\n    // Aquí usamos la nueva clave consistente del Validador\n    indicadoresGenerados: result.indicadoresGenerados \n  };\n\n  if (estructuraMEI === 'MEI-Antiguo') {\n    finalOutput.analisisAprendizajesEsperados.push(resultadoConIndicadores);\n  } else if (estructuraMEI === 'MEI-Actualizado') {\n    finalOutput.analisisResultadosAprendizaje.push(resultadoConIndicadores);\n  }\n}\n\nreturn finalOutput;"
+        "jsCode": "const aggregatedResults = $input.first().json.data;\nconst originalPayload = $('Webhook').first().json.body;\nconst { estructuraMEI } = originalPayload;\n\nlet finalOutput = { estructuraMEI };\n\nif (estructuraMEI === 'MEI-Antiguo') {\n  finalOutput.resultadosAprendizaje = originalPayload.resultadosAprendizaje;\n  finalOutput.analisisAprendizajesEsperados = [];\n} else if (estructuraMEI === 'MEI-Actualizado') {\n  finalOutput.resultadosFormativos = originalPayload.resultadosFormativos;\n  finalOutput.analisisResultadosAprendizaje = [];\n}\n\n// Iteramos sobre los resultados agregados, que contienen los datos de cada loop.\nfor (const result of aggregatedResults) {\n  // Manejo de errores: Si un loop falló, su 'error' no será null.\n  if (result.error) {\n      if (!finalOutput.errors) finalOutput.errors = [];\n      finalOutput.errors.push({\n          objetivoFallido: result.objetivo_original, // objetivo_original SÍ está disponible aquí\n          detalleError: result.error\n      });\n      continue; // Salta al siguiente resultado\n  }\n\n  // --- CORRECCIÓN CLAVE ---\n  // Construimos el objeto final fusionando el 'objetivo_original' (que contiene id, texto, etc.)\n  // con la nueva propiedad 'indicadoresGenerados'.\n  const resultadoConIndicadores = {\n    ...result.objetivo_original, \n    indicadoresGenerados: result.indicadoresGenerados \n  };\n  // -------------------------\n\n  if (estructuraMEI === 'MEI-Antiguo') {\n    finalOutput.analisisAprendizajesEsperados.push(resultadoConIndicadores);\n  } else if (estructuraMEI === 'MEI-Actualizado') {\n    finalOutput.analisisResultadosAprendizaje.push(resultadoConIndicadores);\n  }\n}\n\nreturn finalOutput;"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1232,
-        816
+        1104,
+        720
       ],
       "id": "772a0a0b-d827-4142-b78e-4b020c9a0a5e",
       "name": "Formatear Salida Final"
@@ -269,42 +177,155 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1232,
-        1232
+        1104,
+        1024
       ],
       "id": "83c8dbe7-5ae8-4c89-8f0d-d8f643d3ab34",
       "name": "Consolidar Contexto"
     },
     {
-      "parameters": {},
-      "type": "n8n-nodes-base.manualTrigger",
-      "typeVersion": 1,
+      "parameters": {
+        "jsCode": "const itemData = $('Procesar Uno por Uno').first().json;\nconst { objetivo_actual } = itemData;\n\nconst promptBase = `Eres un experto en evaluación de competencias profesionales del modelo UNAB. Tu tarea es deconstruir una habilidad compleja en 2 o 3 procesos clave o hitos de desempeño observables.`;\n\nconst tareaTexto = `Para el siguiente objetivo, que describe una competencia profesional, identifica los 2 o 3 **procesos clave** que un profesional debe ejecutar para demostrar maestría. Para cada proceso, especifica el verbo de acción observable más importante.\n\n### FILOSOFÍA DE DECONSTRUCCIÓN:\nPiensa en las grandes fases o entregables del trabajo de un experto. No en un andamiaje para novatos.\n- **ENFOQUE:** Deconstrucción del proceso experto (ej. Analizar el problema -> Diseñar la solución -> Justificar el diseño).\n\n### REGLA DE VERBOS OBSERVABLES:\nEstán prohibidos los verbos de procesos internos: **conocer, comprender, analizar, reflexionar, valorar**. Usa alternativas que describan la evidencia de esos procesos.\n\n### OBJETIVO A DESGLOSAR:\n\"${objetivo_actual.texto}\"\n\n### FORMATO DE SALIDA OBLIGATORIO:\nTu respuesta DEBE SER ÚNICAMENTE un array JSON de objetos, donde cada objeto tiene dos claves: \"paso\" (la descripción del proceso) y \"verbo_principal\" (el verbo observable).\nEjemplo de salida:\n[\n  { \"paso\": \"Comparar el desempeño y necesidades de los estudiantes utilizando registros de aula\", \"verbo_principal\": \"Comparar\" },\n  { \"paso\": \"Elaborar una propuesta de unidad didáctica ajustada a la diversidad del grupo\", \"verbo_principal\": \"Elaborar\" },\n  { \"paso\": \"Argumentar la selección de estrategias en la unidad, demostrando su impacto\", \"verbo_principal\": \"Argumentar\" }\n]\n`;\n\nconst promptFinal = `${promptBase}\\n\\n${tareaTexto}`;\n\nreturn [{ json: { prompt: promptFinal, ...itemData } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
-        -128,
-        1216
+        1328,
+        1024
       ],
-      "id": "8a85cd41-3e0a-4860-8e0f-bdd6e88124b6",
-      "name": "When clicking ‘Execute workflow’"
+      "id": "8b0ee2d1-a120-4e2d-bc2a-1cfb970a040a",
+      "name": "Constructor de Prompt (Agente 1 - Estratega)"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Constructor de Prompt (Agente 1 - Estratega)').first().json.prompt }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1552,
+        1024
+      ],
+      "id": "3332adbf-83dd-424b-b82f-9dc9f0b2aec5",
+      "name": "Agente 1 - Estratega"
+    },
+    {
+      "parameters": {
+        "jsCode": "const llmOutput = $input.first().json.output;\n// Heredamos los datos originales del nodo anterior (Constructor del Agente 1)\nconst originalData = $('Constructor de Prompt (Agente 1 - Estratega)').first().json;\n\ntry {\n  const cleanedOutput = llmOutput.replace(/```json|```/g, '').trim();\n  const parsedJson = JSON.parse(cleanedOutput);\n\n  // --- CORRECCIÓN CLAVE ---\n  // Validamos que sea un array de objetos, y que cada objeto tenga las claves \"paso\" y \"verbo_principal\".\n  if (\n    Array.isArray(parsedJson) &&\n    parsedJson.length > 0 &&\n    parsedJson.every(item =>\n      typeof item === 'object' &&\n      item !== null &&\n      Object.prototype.hasOwnProperty.call(item, 'paso') &&\n      Object.prototype.hasOwnProperty.call(item, 'verbo_principal')\n    )\n  ) {\n    \n    // ÉXITO: Devolvemos un objeto que contiene los datos originales\n    // y la nueva progresión pedagógica validada.\n    return [{ \n      json: {\n        progresionPedagogica: parsedJson,\n        ...originalData // Re-inyectamos los datos del item actual del loop\n      }\n    }];\n  }\n  // -------------------------\n\n} catch (error) {\n  // Si JSON.parse falla, el catch se activa y la función continúa hasta el final.\n}\n\n// Si cualquier validación falla, o si hubo un error de parseo,\n// retornamos un array vacío para detener esta iteración del loop.\nreturn [];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1904,
+        1024
+      ],
+      "id": "4eb8d761-f0a5-4cee-874c-ea45364b8808",
+      "name": "Validar Salida del Estratega"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $input.first().json.prompt }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        2352,
+        1024
+      ],
+      "id": "c51f017d-7c17-4adf-99ae-2548ef9aaa0c",
+      "name": "Agente 2 - Redactor Bruto"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Obtenemos la salida del Agente 2 (Redactor Bruto).\nconst draftOutput = $input.first().json.output;\n// Heredamos los datos originales del nodo anterior.\nconst originalData = $('Constructor de Prompt (Agente 2 - Redactor Bruto)').first().json;\nconst contextoGlosario = $('Consolidar Contexto').first().json.contexto_consolidado;\nconst { estructuraMEI, objetivo_actual } = originalData;\n\nlet promptBase = `Eres un experto en la filosofía pedagógica del modelo UNAB, entrenado por Andrea. Tu misión es transformar borradores de indicadores en evidencias de aprendizaje impecables y explicar su validez de forma magistral.`;\nlet tareaTexto = `Toma las siguientes ideas de indicadores y elévalas al estándar de calidad UNAB. Reescríbelas si es necesario para que sean perfectas. Luego, redacta una justificación experta para cada una.`;\nlet finalInstructions = \"\";\n\nif (estructuraMEI === 'MEI-Antiguo') {\n  finalInstructions = `\n### REGLAS FILOSÓFICAS Y DE FORMATO (MANDATO ABSOLUTO):\n1.  **PRINCIPIO DE EVIDENCIA PURA (Cero Finalidad):** Un indicador describe una **evidencia observable en presente**, NO un propósito futuro. La finalidad ya está en el AE. Por lo tanto, está **TERMINANTEMENTE PROHIBIDO** usar \"para\", \"con el fin de\", \"con el propósito de\" o cualquier sinónimo. Tu misión es transformar cualquier atisbo de finalidad en una **condición de ejecución** o un **criterio de calidad** observable.\n2.  **PRINCIPIO DE ACCIÓN ÚNICA:** El campo 'habilidad' debe contener **UN ÚNICO verbo** en tercera persona plural.\n3.  **MISIÓN DE JUSTIFICACIÓN GUÍA:** La 'justificacionPedagogica' debe ser una guía para el equipo de calidad. Debe explicar por qué el indicador es la **evidencia correcta para medir el AE**, conectando explícitamente la habilidad, el contenido y la condición del indicador con las demandas del objetivo superior.\n\n### FORMATO DE SALIDA (JSON Únicamente):\nArray de objetos con: \"habilidad\", \"contenido\", \"condicion_contexto\", \"justificacionPedagogica\".\n\n### EJEMPLO DE ORO (MODELO A SEGUIR):\n- **OBJETIVO (AE):** \"Diseñar unidades didácticas...\"\n- **SALIDA ESPERADA:**\n  {\n    \"habilidad\": \"Comparan\",\n    \"contenido\": \"enfoques teóricos y necesidades educativas\",\n    \"condicion_contexto\": \"a partir de registros de aula.\",\n    \"justificacionPedagogica\": \"Para 'Diseñar' (el AE), es crucial primero poder analizar el contexto. Este indicador mide esa habilidad previa a través de la 'Comparación', que es una acción de análisis observable. El contenido y la condición especifican qué se compara y con qué evidencia, haciendo la medición precisa y relevante para el diseño final.\"\n  }\n`;\n\n} else if (estructuraMEI === 'MEI-Actualizado') {\n  finalInstructions = `\n### REGLAS FILOSÓFICAS Y DE FORMATO (MANDATO ABSOLUTO):\n1.  **PRINCIPIO DE EVIDENCIA PURA (Cero Finalidad):** Un indicador describe una **evidencia observable**, NO un propósito futuro. La finalidad ya está en el RA. Por lo tanto, está **TERMINANTEMENTE PROHIBIDO** usar \"para\" o sinónimos. Tu misión es transformar cualquier finalidad en una **condición de ejecución** o un **criterio de calidad observable**.\n2.  **PRINCIPIO DE ACCIÓN ÚNICA:** El indicador debe comenzar con **UN ÚNICO verbo** observable en infinitivo.\n3.  **MISIÓN DE JUSTIFICACIÓN GUÍA:** La 'justificacionPedagogica' debe ser una guía para el equipo de calidad. Debe explicar por qué el indicador es la **evidencia correcta para medir el RA**, conectando la acción del indicador (Verbo + Producto/Proceso) con las demandas de la competencia descrita en el objetivo superior.\n\n### FORMATO DE SALIDA (JSON Únicamente):\nArray de objetos con: \"indicador\", \"justificacionPedagogica\".\n\n### EJEMPLO DE ORO (MODELO A SEGUIR):\n- **OBJETIVO (RA):** \"Diseñar unidades didácticas...\"\n- **SALIDA ESPERADA:**\n  {\n    \"indicador\": \"Comparar el desempeño de los estudiantes utilizando registros de aula.\",\n    \"justificacionPedagogica\": \"Para medir la competencia de 'Diseñar' (el RA), el profesional primero debe demostrar que puede analizar el contexto. Este indicador mide esa habilidad a través del proceso de 'Comparar desempeño', que es una evidencia observable y un prerrequisito indispensable para un diseño pertinente.\"\n  }\n`;\n}\n\nconst datosEntrada = `### OBJETIVO PRINCIPAL DE REFERENCIA:\\n\"${objetivo_actual.texto}\"\n### IDEAS DE INDICADORES A PERFECCIONAR Y JUSTIFICAR:\\n${draftOutput}`;\nconst promptFinal = `${promptBase}\\n### CONTEXTO PEDAGÓGICO (para consulta de reglas):\\n${contextoGlosario}\\n### TAREA:\\n${tareaTexto}\\n${datosEntrada}\\n${finalInstructions}`;\n\nreturn { json: { prompt: promptFinal, objetivo_original: objetivo_actual, estructuraMEI: estructuraMEI } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2704,
+        1024
+      ],
+      "id": "3f507d9c-b2d2-445e-ba15-44f0218c26eb",
+      "name": "Constructor de Prompt (Agente 3 - Supervisor)"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Constructor de Prompt (Agente 3 - Supervisor)').first().json.prompt }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        2912,
+        1024
+      ],
+      "id": "015ac096-7490-4ed7-a96e-432d1cd5ba42",
+      "name": "Agente 3 - Supervisor"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Obtenemos los datos del nodo validador del Agente 1.\nconst validatedData = $input.first().json;\nconst contextoGlosario = $('Consolidar Contexto').first().json.contexto_consolidado;\nconst { estructuraMEI, objetivo_actual, contexto_superior, progresionPedagogica } = validatedData;\n\nlet promptBase = `Eres un redactor de diseño instruccional. Tu función es tomar una estrategia pedagógica y convertirla en un borrador de indicadores formales, enfocándote en la estructura correcta para cada modelo MEI.`;\nlet contextoTexto = \"\";\nlet tareaTexto = \"\";\nlet finalInstructions = \"\";\n\nif (estructuraMEI === 'MEI-Antiguo') {\n  const ras = contexto_superior.resultadosAprendizaje.map(ra => `- ${ra.texto}`).join('\\\\n');\n  contextoTexto = `### OBJETIVOS DE NIVEL SUPERIOR (RA):\\n${ras}`;\n  tareaTexto = `Para cada paso, redacta un borrador de Indicador de Logro (IL) descompuesto, enfocándote en el **Contenido** temático.`;\n\n  finalInstructions = `\n### INSTRUCCIONES DE REDACCIÓN (MEI ANTIGUO):\n1.  **HABILIDAD:** Usa el 'verbo_principal' proporcionado, conjugado en tercera persona plural.\n2.  **ESTRUCTURA:** Rellena los campos 'habilidad', 'contenido' (el conocimiento o tema), y 'condicion_contexto'.\n3.  **FORMATO DE SALIDA:** Responde ÚNICAMENTE con un array JSON de objetos con los campos: habilidad, contenido, condicion_contexto.\n`;\n\n} else if (estructuraMEI === 'MEI-Actualizado') {\n  const rfs = contexto_superior.resultadosFormativos.map(rf => `- ${rf.texto}`).join('\\\\n');\n  contextoTexto = `### OBJETIVO DE NIVEL SUPERIOR (RF):\\n${rfs}`;\n  tareaTexto = `Para cada paso, redacta un borrador de Indicador de Desempeño (ID) como una frase completa, enfocándote en un **Producto o Proceso** observable.`;\n  \n  finalInstructions = `\n### INSTRUCCIONES DE REDACCIÓN (MEI ACTUALIZADO):\n1.  **VERBO:** La frase debe comenzar con el 'verbo_principal' proporcionado, en infinitivo.\n2.  **ESTRUCTURA:** La frase debe seguir el formato: Verbo + **Producto** (tangible) o **Proceso** (observable) + Condición/Contexto.\n3.  **FORMATO DE SALIDA:** Responde ÚNICAMENTE con un array JSON de strings, donde cada string es el indicador redactado.\n`;\n}\n\nconst datosEntrada = `### OBJETIVO PRINCIPAL A DESGLOSAR:\\n\"${objetivo_actual.texto}\"\n### PROGRESIÓN PEDAGÓGICA A CONVERTIR:\\n${JSON.stringify(progresionPedagogica, null, 2)}`;\nconst promptFinal = `${promptBase}\\n${contextoTexto}\\n### CONTEXTO PEDAGÓGICO:\\n${contextoGlosario}\\n### TAREA:\\n${tareaTexto}\\n${datosEntrada}\\n${finalInstructions}`;\n\nreturn {\n    json: {\n        prompt: promptFinal,\n        objetivo_actual: objetivo_actual,\n        contexto_superior: contexto_superior,\n        estructuraMEI: estructuraMEI,\n    }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2128,
+        1024
+      ],
+      "id": "91f9da41-c700-495d-b3b9-bf1262bdfcf6",
+      "name": "Constructor de Prompt (Agente 2 - Redactor Bruto)"
     }
   ],
-  "pinData": {},
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n:5678",
+            "user-agent": "python-requests/2.32.5",
+            "accept-encoding": "gzip, deflate",
+            "accept": "*/*",
+            "connection": "keep-alive",
+            "content-length": "1081",
+            "content-type": "application/json"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "estructuraMEI": "MEI-Actualizado",
+            "resultadosFormativos": [
+              {
+                "id": "RF-1",
+                "texto": "Diseñar estrategias pedagógicas y unidades didácticas que integren conocimientos pedagógicos, teorías del aprendizaje, enfoques inclusivos y principios de diversidad educativa, aplicando el análisis de procesos de aprendizaje, necesidades, intereses y características de los estudiantes de educación básica, con el fin de promover su aprendizaje significativo, desarrollo integral, socioemocional, autonomía, pensamiento crítico y habilidades para la convivencia, fortaleciendo la formación ética, reflexiva y profesional del futuro docente en diversos contextos educativos."
+              }
+            ],
+            "resultadosAprendizaje": [
+              {
+                "id": "RA-1",
+                "tributaA": [
+                  "RF-1"
+                ],
+                "texto": "Diseñar unidades didácticas que integren estrategias pedagógicas inclusivas y pertinentes, aplicando el análisis de los procesos de aprendizaje de estudiantes de educación básica, con el fin de promover su desarrollo integral y socioemocional."
+              }
+            ]
+          },
+          "webhookUrl": "http://localhost:5678/webhook/0b0f8ddd-f0bb-476b-ac21-9e81f74f2c6c",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
   "connections": {
     "RAG de Dominio": {
       "main": [
         [
           {
             "node": "Consolidar Contexto",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Agente Generador": {
-      "main": [
-        [
-          {
-            "node": "Validar y Extraer Indicadores",
             "type": "main",
             "index": 0
           }
@@ -326,19 +347,18 @@
       "ai_languageModel": [
         [
           {
-            "node": "Agente Generador",
+            "node": "Agente 1 - Estratega",
             "type": "ai_languageModel",
             "index": 0
-          }
-        ]
-      ]
-    },
-    "Constructor de Prompt Dinámico": {
-      "main": [
-        [
+          },
           {
-            "node": "Agente Generador",
-            "type": "main",
+            "node": "Agente 2 - Redactor Bruto",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Agente 3 - Supervisor",
+            "type": "ai_languageModel",
             "index": 0
           }
         ]
@@ -346,32 +366,9 @@
     },
     "Webhook": {
       "main": [
-        []
-      ]
-    },
-    "Set Test Payload": {
-      "main": [
         [
           {
             "node": "Desglosar Objetivos en Items",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Json Valido?": {
-      "main": [
-        [
-          {
-            "node": "Respuesta Exitosa (200)",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Respuesta de Error (500)",
             "type": "main",
             "index": 0
           }
@@ -433,7 +430,7 @@
       "main": [
         [
           {
-            "node": "Json Valido?",
+            "node": "Respuesta Exitosa (200)",
             "type": "main",
             "index": 0
           }
@@ -444,18 +441,84 @@
       "main": [
         [
           {
-            "node": "Constructor de Prompt Dinámico",
+            "node": "Constructor de Prompt (Agente 1 - Estratega)",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "When clicking ‘Execute workflow’": {
+    "Constructor de Prompt (Agente 1 - Estratega)": {
       "main": [
         [
           {
-            "node": "Set Test Payload",
+            "node": "Agente 1 - Estratega",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente 1 - Estratega": {
+      "main": [
+        [
+          {
+            "node": "Validar Salida del Estratega",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar Salida del Estratega": {
+      "main": [
+        [
+          {
+            "node": "Constructor de Prompt (Agente 2 - Redactor Bruto)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente 2 - Redactor Bruto": {
+      "main": [
+        [
+          {
+            "node": "Constructor de Prompt (Agente 3 - Supervisor)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Constructor de Prompt (Agente 3 - Supervisor)": {
+      "main": [
+        [
+          {
+            "node": "Agente 3 - Supervisor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente 3 - Supervisor": {
+      "main": [
+        [
+          {
+            "node": "Validar y Extraer Indicadores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Constructor de Prompt (Agente 2 - Redactor Bruto)": {
+      "main": [
+        [
+          {
+            "node": "Agente 2 - Redactor Bruto",
             "type": "main",
             "index": 0
           }
@@ -463,11 +526,11 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "9474ce09-be6c-493c-844c-eb7f8d0b4e33",
+  "versionId": "da79ad85-1e50-435e-9b1d-81c3669bc6ac",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "81f9aa344da0912f901e07498089d3dd54ba6d767dbe4d581a261cb5d8886bb9"

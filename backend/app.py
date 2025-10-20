@@ -361,15 +361,18 @@ def generate_indicators():
 
 @app.route('/api/generations', methods=['GET'])
 @token_required
-def get_user_generations(): # Se elimina 'current_user'
+def get_user_generations(): # <-- CORRECCIÓN 1: Se elimina 'current_user' de los argumentos.
     """
     Obtiene todas las generaciones de IA del usuario actual.
     """
     try:
+        # --- CORRECCIÓN 2: Se usa g.user_id del contexto global, que es establecido por el decorador. ---
         response = g.supabase.table('generaciones_ia').select('*').eq('user_id', g.user_id).order('created_at', desc=True).execute()
+        # ------------------------------------------------------------------------------------------------
         return jsonify(response.data), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        app.logger.error(f"!!! ERROR en get_user_generations: {e}")
+        return jsonify({"error": "Error interno al obtener las generaciones."}), 500
 
 @app.route('/api/generations/<uuid:generation_id>', methods=['DELETE'])
 @token_required
