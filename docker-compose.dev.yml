@@ -1,0 +1,57 @@
+# docker-compose.dev.yml (MODIFICADO Y AISLADO)
+
+services:
+  backend:
+    build: ./backend
+    container_name: validador_qm_backend_dev # <-- SUFIJO
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend:/app
+    env_file:
+      - .env
+    restart: always
+    networks:
+      - validador-net-dev # <-- SUFIJO
+
+  frontend:
+    build: ./frontend
+    container_name: validador_qm_frontend_dev # <-- SUFIJO
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    restart: always
+    networks:
+      - validador-net-dev # <-- SUFIJO
+
+  n8n:
+    # Usamos la misma imagen personalizada, ya que las dependencias
+    # (pandoc, etc.) son útiles en ambos entornos.
+    build:
+      context: .
+      dockerfile: ./n8n_custom/Dockerfile.dev
+    container_name: validador_qm_n8n_dev # <-- SUFIJO
+    restart: always
+    ports:
+      - "5678:5678"
+    environment:
+      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE}
+    volumes:
+      # Volumen de datos específico para desarrollo
+      - n8n_data_dev:/home/node/.n8n # <-- SUFIJO
+      # Montamos los workflows para ver los cambios en tiempo real
+      - ./n8n_workflows:/home/node/.n8n/workflows
+    networks:
+      - validador-net-dev # <-- SUFIJO
+
+networks:
+  validador-net-dev: # <-- SUFIJO
+    driver: bridge
+
+# Definimos el volumen nombrado para desarrollo
+volumes:
+  n8n_data_dev: # <-- SUFIJO

@@ -28,3 +28,4 @@ coverage
 *.sw?
 
 *.tsbuildinfo
+n8n_credentials.json

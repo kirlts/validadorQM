@@ -1,3 +1,13 @@
+COMANDOS UTILES:
+
+docker compose -f docker-compose.dev.yml up --build -d
+docker compose -f docker-compose.dev.yml down
+
+docker compose -p validadorqm_prod -f docker-compose.prod.yml --env-file .env.prod down
+docker compose -p validadorqm_prod -f docker-compose.prod.yml --env-file .env.prod up --build -d
+
+docker logs validador_qm_n8n_prod
+
 # Validador QM con IA
 
 Este proyecto es una aplicación web diseñada para validar Diseños Instruccionales (DIs) contra la rúbrica de Quality Matters (QM) utilizando un asistente de Inteligencia Artificial. El sistema permite a los docentes subir sus DIs, recibir un análisis de calidad y obtener sugerencias de mejora.
@@ -63,7 +73,7 @@ Para una experiencia de usuario fluida y reactiva, el sistema utiliza un **patr�
 Una vez configurados los archivos `.env`, puedes levantar todo el entorno con un solo comando:
 
 ```bash
-docker compose up -d --build
+docker compose -f docker-compose.dev.yml up --build
 Una vez iniciados los contenedores, los servicios estarán disponibles en:
 
 Frontend: http://localhost:8080

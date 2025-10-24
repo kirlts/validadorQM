@@ -1,0 +1,95 @@
+# docker-compose.prod.yml (VERSIÓN COMPLETA Y FINAL)
+
+services:
+  #--- SERVICIO DE BACKEND (FLASK) ---
+  backend:
+    build: ./backend
+    container_name: validador_qm_backend_prod
+    env_file:
+      - .env.prod
+    # En producción, no montamos el volumen de código. El código ya está
+    # dentro de la imagen gracias a la instrucción COPY en su Dockerfile.
+    # No exponemos el puerto 5000 al exterior, la comunicación será
+    # interna a través de la red de Docker.
+    restart: always
+    networks:
+      - validador-net-prod
+    depends_on:
+      - n8n
+      - postgres
+
+  #--- SERVICIO DE FRONTEND (VUE) ---
+  frontend:
+    build: ./frontend
+    container_name: validador_qm_frontend_prod
+    ports:
+      # Exponemos el puerto 80, el estándar para HTTP.
+      - "80:8080"
+    # Al igual que el backend, el código ya está en la imagen. No se necesita
+    # montar el volumen de código.
+    restart: always
+    networks:
+      - validador-net-prod
+    depends_on:
+      - backend
+
+  #--- SERVICIO DE ORQUESTACIÓN (N8N) ---
+  n8n:
+    build:
+      context: .
+      dockerfile: ./n8n_custom/Dockerfile.prod
+    container_name: validador_qm_n8n_prod
+    env_file:
+      - .env.prod
+    restart: always
+    ports:
+      - "5678:5678"
+    environment:
+      # Las variables para el entrypoint se cargan desde .env.prod
+      N8N_OWNER_EMAIL: ${N8N_OWNER_EMAIL}
+      N8N_OWNER_PASSWORD: ${N8N_OWNER_PASSWORD}
+      # Configuración de la base de datos
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_DATABASE: ${POSTGRES_DB}
+      DB_POSTGRESDB_USER: ${POSTGRES_USER}
+      DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD}
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+      GENERIC_TIMEZONE: ${GENERIC_TIMEZONE}
+    volumes:
+      - n8n_data_prod:/home/node/.n8n
+      - ./n8n_workflows:/home/node/workflows:ro
+    secrets:
+      - n8n_credentials
+    networks:
+      - validador-net-prod
+    depends_on:
+      - postgres
+
+  #--- SERVICIO DE BASE DE DATOS (POSTGRESQL) ---
+  postgres:
+    image: postgres:13
+    container_name: validador_qm_postgres_prod
+    env_file:
+      - .env.prod
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    networks:
+      - validador-net-prod
+
+networks:
+  validador-net-prod:
+    driver: bridge
+
+volumes:
+  n8n_data_prod:
+  postgres_data_prod:
+
+secrets:
+  n8n_credentials:
+    file: ./n8n_credentials.json

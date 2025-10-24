@@ -1,0 +1,14 @@
+# n8n_custom/Dockerfile
+
+FROM n8nio/n8n:latest
+
+USER root
+RUN apk add --no-cache pandoc poppler-utils curl grep
+
+# Copiamos nuestro entrypoint y lo hacemos ejecutable de forma robusta
+COPY ./n8n_custom/entrypoint.sh /usr/local/bin/
+RUN dos2unix /usr/local/bin/entrypoint.sh && \
+    chmod +x /usr/local/bin/entrypoint.sh
+
+USER node
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
