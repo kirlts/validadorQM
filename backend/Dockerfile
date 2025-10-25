@@ -5,13 +5,13 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Copia el archivo de dependencias
-COPY requirements.txt .
+COPY ./backend/requirements.txt .
 
 # Instala las dependencias
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copia el resto del código de la aplicación
-COPY . .
+COPY ./backend/ .
 
 # Expone el puerto que Flask usará
 EXPOSE 5000
