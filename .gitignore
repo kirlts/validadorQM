@@ -25,3 +25,4 @@ yarn-error.log
 *.log
 
 validador-qm-key.pem
+docker-compose.prod server
