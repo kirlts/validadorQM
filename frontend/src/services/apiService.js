@@ -17,7 +17,7 @@ function getApiBaseUrl() {
     // Para producción: Construye la URL usando el host de la ventana actual,
     // pero forzando el puerto a 5000.
     // ej. Si estás en http://54.145.207.36/, esto se convertirá en http://54.145.207.36:5000
-    return `${window.location.protocol}//${window.location.hostname}:5000/api`;
+    return '/api';
   } else {
     // Para desarrollo: Siempre usa localhost:5000.
     return 'http://localhost:5000/api';
