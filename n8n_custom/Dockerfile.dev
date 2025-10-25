@@ -1,11 +1,15 @@
-# Usa la imagen oficial de n8n como base
+# n8n_custom/Dockerfile.dev
+
 FROM n8nio/n8n:latest
 
-# Cambia al usuario root para poder instalar paquetes
 USER root
-
-# Instala pandoc y poppler-utils usando el gestor de paquetes de Alpine (apk)
 RUN apk add --no-cache pandoc poppler-utils
 
-# Vuelve al usuario por defecto de n8n para mantener la seguridad
+# ¡CAMBIO CLAVE! Copiamos y preparamos nuestro nuevo entrypoint de desarrollo.
+COPY ./n8n_custom/entrypoint.dev.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/entrypoint.dev.sh
+
 USER node
+
+# Le decimos a la imagen que use nuestro script como punto de entrada.
+ENTRYPOINT ["/usr/local/bin/entrypoint.dev.sh"]

@@ -7,10 +7,8 @@ services:
     container_name: validador_qm_backend_prod
     env_file:
       - .env.prod
-    # En producción, no montamos el volumen de código. El código ya está
-    # dentro de la imagen gracias a la instrucción COPY en su Dockerfile.
-    # No exponemos el puerto 5000 al exterior, la comunicación será
-    # interna a través de la red de Docker.
+    ports:
+      - "5000:5000"
     restart: always
     networks:
       - validador-net-prod
@@ -23,10 +21,7 @@ services:
     build: ./frontend
     container_name: validador_qm_frontend_prod
     ports:
-      # Exponemos el puerto 80, el estándar para HTTP.
-      - "80:8080"
-    # Al igual que el backend, el código ya está en la imagen. No se necesita
-    # montar el volumen de código.
+      - "8080:8080"
     restart: always
     networks:
       - validador-net-prod
@@ -46,8 +41,8 @@ services:
       - "5678:5678"
     environment:
       # Las variables para el entrypoint se cargan desde .env.prod
-      N8N_OWNER_EMAIL: ${N8N_OWNER_EMAIL}
-      N8N_OWNER_PASSWORD: ${N8N_OWNER_PASSWORD}
+      #N8N_OWNER_EMAIL: ${N8N_OWNER_EMAIL}
+      #N8N_OWNER_PASSWORD: ${N8N_OWNER_PASSWORD}
       # Configuración de la base de datos
       DB_TYPE: postgresdb
       DB_POSTGRESDB_HOST: postgres
