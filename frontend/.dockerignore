@@ -1,0 +1,7 @@
+# frontend/.dockerignore
+
+# Ignoramos node_modules porque se instalarán dentro del contenedor
+node_modules
+
+# Ignoramos la carpeta de build local si existe
+dist
