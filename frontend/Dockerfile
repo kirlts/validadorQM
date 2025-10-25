@@ -1,23 +1,28 @@
-# Fase 1: Usar una imagen oficial de Node.js como base
-# Se recomienda usar una versión LTS (Long-Term Support) específica
-FROM node:20-alpine
+# frontend/Dockerfile (VERSIÓN DE PRODUCCIÓN)
 
-# Establecer el directorio de trabajo dentro del contenedor
+# --- Etapa 1: Build ---
+# Usamos una imagen de Node para construir el proyecto Vue.
+FROM node:20-alpine AS build-stage
+
 WORKDIR /app
-
-# Copiar los archivos de manifiesto de dependencias PRIMERO
-# Esto aprovecha el caché de Docker. Si no cambian, no se re-instala.
 COPY package*.json ./
-
-# Instalar las dependencias del proyecto
 RUN npm install
-
-# Copiar el resto de los archivos de la aplicación
 COPY . .
+# ¡CRÍTICO! Este comando construye los archivos estáticos para producción.
+RUN npm run build
 
-# Exponer el puerto que Vite usará dentro del contenedor
-# Debe coincidir con el script "dev" en package.json (8080 en tu caso)
+# --- Etapa 2: Serve ---
+# Usamos una imagen ligera de Nginx para servir los archivos.
+FROM nginx:stable-alpine AS production-stage
+
+# Copiamos los archivos estáticos construidos desde la etapa anterior.
+COPY --from=build-stage /app/dist /usr/share/nginx/html
+
+# Copiamos nuestra configuración personalizada de Nginx.
+COPY ./nginx/default.conf /etc/nginx/conf.d/default.conf
+
+# Exponemos el puerto que Nginx está escuchando (definido en default.conf).
 EXPOSE 8080
 
-# El comando que se ejecutará cuando el contenedor se inicie
-CMD ["npm", "run", "dev"]
+# El comando para iniciar Nginx.
+CMD ["nginx", "-g", "daemon off;"]

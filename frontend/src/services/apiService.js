@@ -1,6 +1,39 @@
 import { supabase } from '@/supabase';
 
-const API_URL = 'http://localhost:5000/api';
+// --- INICIO DE LA NUEVA LÓGICA ---
+
+/**
+ * Determina la URL base para la API del backend.
+ * En modo de desarrollo, apunta a localhost:5000.
+ * En modo de producción, asume que el backend se sirve desde el mismo host
+ * que el frontend, pero en el puerto 5000.
+ * @returns {string} La URL base de la API.
+ */
+function getApiBaseUrl() {
+  // `import.meta.env.PROD` es una variable especial de Vite.
+  // Es `true` cuando ejecutas `vite build` (para producción).
+  // Es `false` cuando ejecutas `vite` (el servidor de desarrollo).
+  if (import.meta.env.PROD) {
+    // Para producción: Construye la URL usando el host de la ventana actual,
+    // pero forzando el puerto a 5000.
+    // ej. Si estás en http://54.145.207.36/, esto se convertirá en http://54.145.207.36:5000
+    return `${window.location.protocol}//${window.location.hostname}:5000/api`;
+  } else {
+    // Para desarrollo: Siempre usa localhost:5000.
+    return 'http://localhost:5000/api';
+  }
+}
+
+// Define la URL base de la API una vez, usando la función anterior.
+const API_URL = getApiBaseUrl();
+
+console.log(`[apiService] Configurado para usar la API en: ${API_URL}`);
+
+// --- FIN DE LA NUEVA LÓGICA ---
+
+
+// El resto de tu código no necesita cambios, ya que depende de la constante API_URL
+// que ahora se establece dinámicamente.
 
 async function fetchWithAuth(endpoint, options = {}) {
   const { data: { session } } = await supabase.auth.getSession();
@@ -44,16 +77,15 @@ export function getDis() {
   return fetchWithAuth('dis');
 }
 
-export async function uploadDi(file, estructuraMEI) { // <-- CAMBIO 1: Renombrar el segundo argumento para mayor claridad
+export async function uploadDi(file, estructuraMEI) {
   const formData = new FormData();
   formData.append('file', file);
-  
-  // --- CAMBIO 2: Usar la clave correcta 'estructuraMEI' que el backend espera ---
   formData.append('estructuraMEI', estructuraMEI); 
 
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error('No hay sesión de usuario activa.');
 
+  // Nota: esta función usa su propia lógica de fetch, la actualizamos también.
   const response = await fetch(`${API_URL}/dis`, {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${session.access_token}` },
