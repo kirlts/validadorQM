@@ -2,6 +2,7 @@
 .env
 .env.prod
 n8n_credentials.json
+admin.txt
 __pycache__/
 *.pyc
 .gitignore
