@@ -288,6 +288,17 @@
           "name": "Api 1"
         }
       }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -32,
+        272
+      ],
+      "id": "bc74bd3f-2e66-420f-a9a4-702b3ff11940",
+      "name": "Sticky Note"
     }
   ],
   "pinData": {
@@ -450,7 +461,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "e4ad7de9-807f-42dd-bd75-6a54fe44619d",
+  "versionId": "725214f0-65e5-4f81-b2cb-5280a67b0296",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "8991d57cc3be404c4c8d6951306c68fa6ee93d0a9fcfe54908cc27cc5546f205"
