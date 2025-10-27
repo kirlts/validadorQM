@@ -61,7 +61,7 @@ jobs:
           docker push ${{ steps.login-ecr.outputs.registry }}/validador-qm-frontend --all-tags
 
       - name: Build and push n8n image
-        if: contains(steps.changed-files.outputs.all_changed_files, 'n8n_custom/')
+        if: contains(steps.changed-files.outputs.all_changed_files, 'n8n_custom/') || contains(steps.changed-files.outputs.all_changed_files, 'n8n_workflows/')
         run: |
           docker build -t ${{ steps.login-ecr.outputs.registry }}/validador-qm-n8n:${{ steps.image_tag.outputs.tag }} -t ${{ steps.login-ecr.outputs.registry }}/validador-qm-n8n:latest -f n8n_custom/Dockerfile.prod .
           docker push ${{ steps.login-ecr.outputs.registry }}/validador-qm-n8n --all-tags
@@ -105,24 +105,7 @@ jobs:
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin $ECR_REGISTRY
             
             docker compose -p validadorqm_prod -f docker-compose.prod.yml pull
-            
-            # --- LÓGICA DE REINICIO INTELIGENTE ---
-            CHANGED_FILES="${{ needs.build-and-push.outputs.changed_files }}"
 
-            # Si el docker-compose.prod.yml o el deploy.yml cambiaron, forzamos recreación total.
-            if echo "$CHANGED_FILES" | grep -q "docker-compose.prod.yml" || echo "$CHANGED_FILES" | grep -q ".github/workflows/deploy.yml"; then
-              echo "Infrastructure file changed. Forcing recreation of all services..."
-              docker compose -p validadorqm_prod -f docker-compose.prod.yml --env-file .env.prod up -d --force-recreate
-            # Si solo los workflows cambiaron, forzamos recreación solo de n8n.
-            elif echo "$CHANGED_FILES" | grep -q "n8n_workflows/"; then
-              echo "Workflow files changed. Forcing n8n container recreation..."
-              # Primero aseguramos que los otros servicios estén corriendo
-              docker compose -p validadorqm_prod -f docker-compose.prod.yml --env-file .env.prod up -d
-              # Luego forzamos la recreación solo de n8n
-              docker compose -p validadorqm_prod -f docker-compose.prod.yml --env-file .env.prod up -d --force-recreate n8n
-            else
-              # Para cambios simples (backend, frontend, n8n_custom), dejamos que 'up -d' sea inteligente.
-              docker compose -p validadorqm_prod -f docker-compose.prod.yml --env-file .env.prod up -d
-            fi
+            docker compose -p validadorqm_prod -f docker-compose.prod.yml --env-file .env.prod up -d
             
             docker image prune -f
