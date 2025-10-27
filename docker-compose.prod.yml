@@ -60,6 +60,7 @@ services:
       GENERIC_TIMEZONE: ${GENERIC_TIMEZONE}
       N8N_PROXY_MODE: ${N8N_PROXY_MODE}
       WEBHOOK_URL: ${WEBHOOK_URL}
+      N8N_PATH: ${N8N_PATH}
     volumes:
       - n8n_data_prod:/home/node/.n8n
     secrets:
