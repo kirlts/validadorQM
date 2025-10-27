@@ -7,10 +7,14 @@ on:
     branches: [ "main" ]
 
 jobs:
-  # UN ÚNICO JOB, MÁS SIMPLE Y ROBUSTO
-  build-and-deploy:
+  # JOB 1: Detecta cambios y construye/sube imágenes.
+  build-and-push:
     runs-on: ubuntu-latest
-    
+    outputs:
+      image_tag: ${{ steps.image_tag.outputs.tag }}
+      # Pasamos la lista de archivos cambiados al siguiente job.
+      changed_files: ${{ steps.changed-files.outputs.all_changed_files }}
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
@@ -21,7 +25,6 @@ jobs:
         id: changed-files
         uses: tj-actions/changed-files@v41
         with:
-          # Monitoreamos todo lo que puede requerir una acción
           files: |
             backend/**
             frontend/**
@@ -30,8 +33,6 @@ jobs:
             docker-compose.prod.yml
             .github/workflows/deploy.yml
 
-      # --- ETAPA DE BUILD & PUSH SELECTIVA ---
-      
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -45,37 +46,46 @@ jobs:
 
       - name: Set Image Tag
         id: image_tag
-        run: echo "tag=$(echo ${GITHUB_SHA} | cut-c1-7)" >> $GITHUB_OUTPUT
+        run: echo "tag=$(echo ${GITHUB_SHA} | cut -c1-7)" >> $GITHUB_OUTPUT
         
-      # Construimos solo las imágenes que han cambiado
-      - name: Build and push changed images
-        # Este paso solo se ejecuta si hay cambios en las carpetas de las apps
-        if: contains(steps.changed-files.outputs.all_changed_files, 'backend/') || contains(steps.changed-files.outputs.all_changed_files, 'frontend/') || contains(steps.changed-files.outputs.all_changed_files, 'n8n_custom/')
+      - name: Build and push Backend image
+        if: contains(steps.changed-files.outputs.all_changed_files, 'backend/')
         run: |
-          ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG=${{ steps.image_tag.outputs.tag }}
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/validador-qm-backend:${{ steps.image_tag.outputs.tag }} -t ${{ steps.login-ecr.outputs.registry }}/validador-qm-backend:latest -f backend/Dockerfile .
+          docker push ${{ steps.login-ecr.outputs.registry }}/validador-qm-backend --all-tags
 
-          if [[ "${{ contains(steps.changed-files.outputs.all_changed_files, 'backend/') }}" == "true" ]]; then
-            echo "Building backend..."
-            docker build -t $ECR_REGISTRY/validador-qm-backend:$IMAGE_TAG -t $ECR_REGISTRY/validador-qm-backend:latest -f backend/Dockerfile .
-            docker push $ECR_REGISTRY/validador-qm-backend --all-tags
-          fi
-          if [[ "${{ contains(steps.changed-files.outputs.all_changed_files, 'frontend/') }}" == "true" ]]; then
-            echo "Building frontend..."
-            docker build -t $ECR_REGISTRY/validador-qm-frontend:$IMAGE_TAG -t $ECR_REGISTRY/validador-qm-frontend:latest --build-arg VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }} --build-arg VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }} -f frontend/Dockerfile .
-            docker push $ECR_REGISTRY/validador-qm-frontend --all-tags
-          fi
-          if [[ "${{ contains(steps.changed-files.outputs.all_changed_files, 'n8n_custom/') }}" == "true" ]]; then
-            echo "Building n8n..."
-            docker build -t $ECR_REGISTRY/validador-qm-n8n:$IMAGE_TAG -t $ECR_REGISTRY/validador-qm-n8n:latest -f n8n_custom/Dockerfile.prod .
-            docker push $ECR_REGISTRY/validador-qm-n8n --all-tags
-          fi
+      - name: Build and push Frontend image
+        if: contains(steps.changed-files.outputs.all_changed_files, 'frontend/')
+        run: |
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/validador-qm-frontend:${{ steps.image_tag.outputs.tag }} -t ${{ steps.login-ecr.outputs.registry }}/validador-qm-frontend:latest --build-arg VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }} --build-arg VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }} -f frontend/Dockerfile .
+          docker push ${{ steps.login-ecr.outputs.registry }}/validador-qm-frontend --all-tags
+
+      - name: Build and push n8n image
+        if: contains(steps.changed-files.outputs.all_changed_files, 'n8n_custom/')
+        run: |
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/validador-qm-n8n:${{ steps.image_tag.outputs.tag }} -t ${{ steps.login-ecr.outputs.registry }}/validador-qm-n8n:latest -f n8n_custom/Dockerfile.prod .
+          docker push ${{ steps.login-ecr.outputs.registry }}/validador-qm-n8n --all-tags
+
+  # JOB 2: Despliega en EC2.
+  deploy:
+    needs: build-and-push
+    # ¡CAMBIO CLAVE! Se ejecuta siempre que haya CUALQUIER cambio en los archivos monitoreados.
+    if: needs.build-and-push.outputs.changed_files != ''
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
           
-      # --- ETAPA DE DEPLOY (EN EC2) ---
-      
-      # Este paso se ejecuta SIEMPRE que haya un cambio en CUALQUIER archivo monitoreado
       - name: Deploy to EC2
-        if: steps.changed-files.outputs.any_changed == 'true'
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -94,27 +104,25 @@ jobs:
           
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin $ECR_REGISTRY
             
-            # Descargamos las imágenes 'latest' que puedan haber cambiado
             docker compose -p validadorqm_prod -f docker-compose.prod.yml pull
             
             # --- LÓGICA DE REINICIO INTELIGENTE ---
-            # Guardamos la lista de archivos cambiados en una variable de bash
-            CHANGED_FILES="${{ steps.changed-files.outputs.all_changed_files }}"
+            CHANGED_FILES="${{ needs.build-and-push.outputs.changed_files }}"
 
-            # Si el docker-compose.prod.yml o el propio deploy.yml cambiaron,
-            # es más seguro forzar la recreación de todo para aplicar cambios estructurales.
+            # Si el docker-compose.prod.yml o el deploy.yml cambiaron, forzamos recreación total.
             if echo "$CHANGED_FILES" | grep -q "docker-compose.prod.yml" || echo "$CHANGED_FILES" | grep -q ".github/workflows/deploy.yml"; then
               echo "Infrastructure file changed. Forcing recreation of all services..."
               docker compose -p validadorqm_prod -f docker-compose.prod.yml --env-file .env.prod up -d --force-recreate
-            else
-              # Si no, dejamos que 'up -d' sea inteligente
-              docker compose -p validadorqm_prod -f docker-compose.prod.yml --env-file .env.prod up -d
-            fi
-            
-            # La lógica para los workflows se mantiene: si cambian, se reinicia n8n
-            if echo "$CHANGED_FILES" | grep -q "n8n_workflows/"; then
+            # Si solo los workflows cambiaron, forzamos recreación solo de n8n.
+            elif echo "$CHANGED_FILES" | grep -q "n8n_workflows/"; then
               echo "Workflow files changed. Forcing n8n container recreation..."
+              # Primero aseguramos que los otros servicios estén corriendo
+              docker compose -p validadorqm_prod -f docker-compose.prod.yml --env-file .env.prod up -d
+              # Luego forzamos la recreación solo de n8n
               docker compose -p validadorqm_prod -f docker-compose.prod.yml --env-file .env.prod up -d --force-recreate n8n
+            else
+              # Para cambios simples (backend, frontend, n8n_custom), dejamos que 'up -d' sea inteligente.
+              docker compose -p validadorqm_prod -f docker-compose.prod.yml --env-file .env.prod up -d
             fi
             
             docker image prune -f
