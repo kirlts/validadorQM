@@ -1,113 +1,78 @@
 # .github/workflows/deploy.yml
 
-name: Build and Deploy Full Application to AWS EC2
+name: Deploy Full Application to AWS EC2
 
 on:
   push:
     branches: [ "main" ]
 
 jobs:
-  build-push-and-deploy:
+  # JOB 1: Detecta qué ha cambiado.
+  detect-changes:
     runs-on: ubuntu-latest
-    
+    outputs:
+      app_changed: ${{ steps.changed-files-app.outputs.any_changed }}
+      # ¡CAMBIO! Usamos el output simple, una cadena separada por espacios.
+      workflows_changed: ${{ steps.changed-files-workflows.outputs.all_changed_files }}
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          fetch-depth: 0 
-
-      - name: Detect Changed Files
-        id: changed-files
+          fetch-depth: 0
+      - name: Find changed application files
+        id: changed-files-app
         uses: tj-actions/changed-files@v41
         with:
-          # Monitoreamos todas las carpetas relevantes
           files: |
             backend/**
             frontend/**
             n8n_custom/**
-            n8n_workflows/**.json
+      - name: Find changed workflow files
+        id: changed-files-workflows
+        uses: tj-actions/changed-files@v41
+        with:
+          files: n8n_workflows/**.json
 
-      # --- ETAPA DE BUILD & PUSH SELECTIVA ---
+  # JOB 2: Construye y sube las imágenes de la app, SI ES NECESARIO.
+  build-and-push-app:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.app_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure AWS Credentials & Login
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
       
+      - name: Build, tag, and push images
+        run: |
+          ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
+          docker build -t $ECR_REGISTRY/validador-qm-backend:latest -f backend/Dockerfile .
+          docker build -t $ECR_REGISTRY/validador-qm-frontend:latest --build-arg VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }} --build-arg VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }} -f frontend/Dockerfile .
+          docker build -t $ECR_REGISTRY/validador-qm-n8n:latest -f n8n_custom/Dockerfile.prod .
+          
+          docker push $ECR_REGISTRY/validador-qm-backend:latest
+          docker push $ECR_REGISTRY/validador-qm-frontend:latest
+          docker push $ECR_REGISTRY/validador-qm-n8n:latest
+
+  # JOB 3: Despliega los contenedores de la app en EC2, SI ES NECESARIO.
+  deploy-app-containers:
+    needs: [detect-changes, build-and-push-app]
+    if: needs.detect-changes.outputs.app_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
-        
-      # Construimos imágenes de la app (backend, frontend, n8n) solo si su código cambió
-      - name: Build and push Application Images
-        # Se ejecuta si cambian las carpetas de código que requieren un build
-        if: contains(steps.changed-files.outputs.all_changed_files, 'backend/') || contains(steps.changed-files.outputs.all_changed_files, 'frontend/') || contains(steps.changed-files.outputs.all_changed_files, 'n8n_custom/')
-        run: |
-          ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
-
-          if [[ "${{ contains(steps.changed-files.outputs.all_changed_files, 'backend/') }}" == "true" ]]; then
-            echo "Building backend..."
-            docker build -t $ECR_REGISTRY/validador-qm-backend:latest -f backend/Dockerfile .
-            docker push $ECR_REGISTRY/validador-qm-backend:latest
-          fi
-
-          if [[ "${{ contains(steps.changed-files.outputs.all_changed_files, 'frontend/') }}" == "true" ]]; then
-            echo "Building frontend..."
-            docker build -t $ECR_REGISTRY/validador-qm-frontend:latest --build-arg VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }} --build-arg VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }} -f frontend/Dockerfile .
-            docker push $ECR_REGISTRY/validador-qm-frontend:latest
-          fi
-
-          if [[ "${{ contains(steps.changed-files.outputs.all_changed_files, 'n8n_custom/') }}" == "true" ]]; then
-            echo "Building n8n..."
-            docker build -t $ECR_REGISTRY/validador-qm-n8n:latest -f n8n_custom/Dockerfile.prod .
-            docker push $ECR_REGISTRY/validador-qm-n8n:latest
-          fi
-
-      # --- ETAPA DE DEPLOY DE WORKFLOWS (vía API) ---
-
-      - name: Get changed workflow files as JSON
-        id: changed-workflows
-        # Se ejecuta solo si cambiaron los workflows
-        if: contains(steps.changed-files.outputs.all_changed_files, 'n8n_workflows/')
-        uses: tj-actions/changed-files@v41
-        with:
-          files: n8n_workflows/**.json
-          # Obtenemos la salida en formato JSON para la matriz
-          json: "true"
-
-      - name: Deploy Changed Workflows via API
-        # Se ejecuta solo si el paso anterior encontró archivos y generó un JSON no vacío
-        if: steps.changed-workflows.outputs.all_changed_files != '[]'
-        uses: actions/checkout@v4
-      - run: | # Este 'run' se ejecuta solo si el 'if' anterior es verdadero
-          for workflow_file in $(echo '${{ steps.changed-workflows.outputs.all_changed_files }}' | jq -r '.[]' ); do
-            echo "Deploying workflow: $workflow_file"
-            WORKFLOW_ID=$(cat "$workflow_file" | jq -r '.id')
-            
-            if [ -z "$WORKFLOW_ID" ]; then
-              echo "Error: Could not find workflow ID in $workflow_file"
-              exit 1
-            fi
-            
-            echo "Found Workflow ID: $WORKFLOW_ID"
-            
-            curl --fail -S -X PUT "${{ secrets.N8N_URL }}/api/v1/workflows/${WORKFLOW_ID}" \
-              -H "Authorization: Bearer ${{ secrets.N8N_PROD_API_KEY }}" \
-              -H "Content-Type: application/json" \
-              -d @"$workflow_file"
-          done
-        env:
-          # Pasamos los secretos necesarios al entorno del script
-          N8N_PROD_API_KEY: ${{ secrets.N8N_PROD_API_KEY }}
-          N8N_URL: ${{ secrets.N8N_URL }}
-        
-      # --- ETAPA DE DEPLOY DE CONTENEDORES (EN EC2) ---
-      
-      - name: Restart App Containers on EC2 if changed
-        # Se ejecuta si cambiaron las carpetas de código (que dispararon un build)
-        if: contains(steps.changed-files.outputs.all_changed_files, 'backend/') || contains(steps.changed-files.outputs.all_changed_files, 'frontend/') || contains(steps.changed-files.outputs.all_changed_files, 'n8n_custom/')
+      - name: Deploy to EC2
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -126,7 +91,40 @@ jobs:
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin $ECR_REGISTRY
             
             docker compose -p validadorqm_prod -f docker-compose.prod.yml pull
-            
             docker compose -p validadorqm_prod -f docker-compose.prod.yml --env-file .env.prod up -d --force-recreate
-            
             docker image prune -f
+
+  # JOB 4: Despliega los workflows vía API, SI ES NECESARIO.
+  deploy-workflows:
+    needs: detect-changes
+    # Se ejecuta si la lista de workflows cambiados NO está vacía.
+    if: needs.detect-changes.outputs.workflows_changed != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy Changed Workflows
+        env:
+          N8N_API_KEY: ${{ secrets.N8N_PROD_API_KEY }}
+          N8N_URL: http://44.209.113.21/n8n
+          # ¡CAMBIO CLAVE! Pasamos la lista de archivos como un string.
+          CHANGED_WORKFLOWS: ${{ needs.detect-changes.outputs.workflows_changed }}
+        run: |
+          # Usamos un bucle 'for' de shell que itera sobre el string.
+          for workflow_file in $CHANGED_WORKFLOWS; do
+            echo "Deploying workflow: $workflow_file"
+            
+            # Usamos 'grep' y 'awk', que son más robustos que jq para este caso.
+            WORKFLOW_ID=$(grep '"id":' "$workflow_file" | head -n 1 | awk -F'"' '{print $4}')
+            
+            if [ -z "$WORKFLOW_ID" ]; then
+              echo "Error: Could not find workflow ID in $workflow_file"
+              exit 1
+            fi
+            
+            echo "Found Workflow ID: $WORKFLOW_ID"
+            
+            curl --fail -S -X PUT "${N8N_URL}/api/v1/workflows/${WORKFLOW_ID}" \
+              -H "Authorization: Bearer ${N8N_API_KEY}" \
+              -H "Content-Type: application/json" \
+              -d @"$workflow_file"
+          done
