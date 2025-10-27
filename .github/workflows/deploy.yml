@@ -7,13 +7,10 @@ on:
     branches: [ "main" ]
 
 jobs:
-  # JOB 1: Detecta cambios, construye y sube solo lo necesario.
-  build-and-push:
+  # UN ÚNICO JOB PARA TODO EL PROCESO
+  build-push-deploy:
     runs-on: ubuntu-latest
-    outputs:
-      # Pasamos un booleano para saber si el despliegue es necesario.
-      deploy_required: ${{ steps.detect-changes.outputs.deploy_required }}
-
+    
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
@@ -31,72 +28,47 @@ jobs:
             n8n_workflows/**
             .github/workflows/deploy.yml
 
-      - name: Determine if deployment is required
-        id: detect-changes
-        run: |
-          if ${{ steps.changed-files.outputs.any_changed == 'true' }}; then
-            echo "deploy_required=true" >> $GITHUB_OUTPUT
-          else
-            echo "deploy_required=false" >> $GITHUB_OUTPUT
-          fi
-          
-      # --- ETAPA DE BUILD & PUSH SELECTIVA (si es necesario) ---
+      # --- ETAPA DE BUILD & PUSH SELECTIVA ---
       
-      - name: Configure AWS Credentials & Login to ECR
-        if: steps.detect-changes.outputs.deploy_required == 'true'
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-      - name: Login to Amazon ECR
-        if: steps.detect-changes.outputs.deploy_required == 'true'
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
-
-      - name: Set Image Tag
-        if: steps.detect-changes.outputs.deploy_required == 'true'
-        id: image_tag
-        run: echo "tag=$(echo ${GITHUB_SHA} | cut -c1-7)" >> $GITHUB_OUTPUT
-
-      - name: Build, tag, and push images
-        if: steps.detect-changes.outputs.deploy_required == 'true'
-        run: |
-          ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG=${{ steps.image_tag.outputs.tag }}
-
-          if [[ "${{ contains(steps.changed-files.outputs.all_changed_files, 'backend/') }}" == "true" ]]; then
-            echo "Building backend..."
-            docker build -t $ECR_REGISTRY/validador-qm-backend:$IMAGE_TAG -t $ECR_REGISTRY/validador-qm-backend:latest -f backend/Dockerfile .
-            docker push $ECR_REGISTRY/validador-qm-backend --all-tags
-          fi
-
-          if [[ "${{ contains(steps.changed-files.outputs.all_changed_files, 'frontend/') }}" == "true" ]]; then
-            echo "Building frontend..."
-            docker build -t $ECR_REGISTRY/validador-qm-frontend:$IMAGE_TAG -t $ECR_REGISTRY/validador-qm-frontend:latest --build-arg VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }} --build-arg VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }} -f frontend/Dockerfile .
-            docker push $ECR_REGISTRY/validador-qm-frontend --all-tags
-          fi
-
-          if [[ "${{ contains(steps.changed-files.outputs.all_changed_files, 'n8n_custom/') || contains(steps.changed-files.outputs.all_changed_files, 'n8n_workflows/') }}" == "true" ]]; then
-            echo "Building n8n..."
-            docker build -t $ECR_REGISTRY/validador-qm-n8n:$IMAGE_TAG -t $ECR_REGISTRY/validador-qm-n8n:latest -f n8n_custom/Dockerfile.prod .
-            docker push $ECR_REGISTRY/validador-qm-n8n --all-tags
-          fi
-
-  # JOB 2: Despliega en EC2, solo si el JOB 1 lo requiere.
-  deploy:
-    needs: build-and-push
-    if: needs.build-and-push.outputs.deploy_required == 'true'
-    runs-on: ubuntu-latest
-    
-    steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Set Image Tag
+        id: image_tag
+        run: echo "tag=$(echo ${GITHUB_SHA} | cut-c1-7)" >> $GITHUB_OUTPUT
+        
+      # Construimos solo si hay cambios en las carpetas de la aplicación
+      - name: Build and push images if changed
+        # La condición ahora es simple: si CUALQUIER archivo relevante cambió, ejecutamos este paso
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          # Solo construimos la imagen específica que cambió
+          if [[ "${{ contains(steps.changed-files.outputs.all_changed_files, 'backend/') }}" == "true" ]]; then
+            echo "Building backend..."
+            docker build -t ${{ steps.login-ecr.outputs.registry }}/validador-qm-backend:${{ steps.image_tag.outputs.tag }} -t ${{ steps.login-ecr.outputs.registry }}/validador-qm-backend:latest -f backend/Dockerfile .
+            docker push ${{ steps.login-ecr.outputs.registry }}/validador-qm-backend --all-tags
+          fi
+          if [[ "${{ contains(steps.changed-files.outputs.all_changed_files, 'frontend/') }}" == "true" ]]; then
+            echo "Building frontend..."
+            docker build -t ${{ steps.login-ecr.outputs.registry }}/validador-qm-frontend:${{ steps.image_tag.outputs.tag }} -t ${{ steps.login-ecr.outputs.registry }}/validador-qm-frontend:latest --build-arg VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }} --build-arg VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }} -f frontend/Dockerfile .
+            docker push ${{ steps.login-ecr.outputs.registry }}/validador-qm-frontend --all-tags
+          fi
+          if [[ "${{ contains(steps.changed-files.outputs.all_changed_files, 'n8n_custom/') || contains(steps.changed-files.outputs.all_changed_files, 'n8n_workflows/') }}" == "true" ]]; then
+            echo "Building n8n..."
+            docker build -t ${{ steps.login-ecr.outputs.registry }}/validador-qm-n8n:${{ steps.image_tag.outputs.tag }} -t ${{ steps.login-ecr.outputs.registry }}/validador-qm-n8n:latest -f n8n_custom/Dockerfile.prod .
+            docker push ${{ steps.login-ecr.outputs.registry }}/validador-qm-n8n --all-tags
+          fi
           
+      # --- ETAPA DE DEPLOY (EN EC2) ---
+      # Se ejecuta siempre, pero el 'docker compose up' será inteligente
       - name: Deploy to EC2
         uses: appleboy/ssh-action@master
         with:
@@ -110,16 +82,17 @@ jobs:
             
             echo "${{ secrets.ENV_PROD_CONTENT }}" > .env.prod
             echo "${{ secrets.N8N_CREDENTIALS_JSON }}" | base64 --decode > n8n_credentials.json  
-            
-            # Usamos 'latest' porque el build siempre actualiza esta etiqueta.
+                      
+            # Las variables se definen y se usan en el mismo script, eliminando problemas de alcance
             export IMAGE_TAG=latest
-            export ECR_REGISTRY=${{ secrets.AWS_ECR_REGISTRY }}
+            export ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
           
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin $ECR_REGISTRY
             
+            # El pull traerá las imágenes 'latest' que se hayan actualizado
             docker compose -p validadorqm_prod -f docker-compose.prod.yml pull
             
-            # El --env-file es crucial para que 'up' funcione.
+            # El --env-file es crucial
             docker compose -p validadorqm_prod -f docker-compose.prod.yml --env-file .env.prod up -d
             
             docker image prune -f
