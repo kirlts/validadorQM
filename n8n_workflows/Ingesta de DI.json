@@ -4,7 +4,7 @@
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "=e71af77b-8c5f-4f15-af5a-f0fa2d75d279",
+        "path": "=ingesta-di",
         "responseMode": "responseNode",
         "options": {}
       },
@@ -456,10 +456,10 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "a376ef10-da70-4baa-a34a-1091315a2916",
+  "versionId": "95c5c149-2447-4854-b1aa-d3a45e4a5afe",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "81f9aa344da0912f901e07498089d3dd54ba6d767dbe4d581a261cb5d8886bb9"
+    "instanceId": "8991d57cc3be404c4c8d6951306c68fa6ee93d0a9fcfe54908cc27cc5546f205"
   },
   "id": "52dCBOagXgGB8bCy",
   "tags": []

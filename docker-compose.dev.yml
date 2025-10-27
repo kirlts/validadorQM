@@ -2,7 +2,9 @@
 
 services:
   backend:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: ./backend/Dockerfile
     container_name: validador_qm_backend_dev # <-- SUFIJO
     ports:
       - "5000:5000"
@@ -15,7 +17,9 @@ services:
       - validador-net-dev # <-- SUFIJO
 
   frontend:
-    build: ./frontend
+    build:
+      context: .
+      dockerfile: ./frontend/Dockerfile
     container_name: validador_qm_frontend_dev # <-- SUFIJO
     ports:
       - "8080:8080"
@@ -29,8 +33,6 @@ services:
       - validador-net-dev # <-- SUFIJO
 
   n8n:
-    # Usamos la misma imagen personalizada, ya que las dependencias
-    # (pandoc, etc.) son útiles en ambos entornos.
     build:
       context: .
       dockerfile: ./n8n_custom/Dockerfile.dev

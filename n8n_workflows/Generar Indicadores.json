@@ -73,7 +73,7 @@
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "0b0f8ddd-f0bb-476b-ac21-9e81f74f2c6c",
+        "path": "generar-indicadores",
         "responseMode": "responseNode",
         "options": {}
       },
@@ -530,10 +530,10 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "67f0beda-574e-45c6-8cb1-18c3a6a897e8",
+  "versionId": "991a46bb-50e3-43b9-a721-20cfc95ec673",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "81f9aa344da0912f901e07498089d3dd54ba6d767dbe4d581a261cb5d8886bb9"
+    "instanceId": "8991d57cc3be404c4c8d6951306c68fa6ee93d0a9fcfe54908cc27cc5546f205"
   },
   "id": "ChIBB6KiCNlHa36x",
   "tags": []
