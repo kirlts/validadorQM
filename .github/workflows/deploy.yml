@@ -66,8 +66,8 @@ jobs:
             
             # Crear los archivos de secretos
             echo "${{ secrets.ENV_PROD_CONTENT }}" > .env.prod
-            echo "${{ secrets.N8N_CREDENTIALS_JSON }}" > n8n_credentials.json
-            
+            echo "${{ secrets.N8N_CREDENTIALS_JSON }}" | base64 --decode > n8n_credentials.json  
+                      
             # Exportar variables
             export IMAGE_TAG=${{ steps.image_tag.outputs.tag }}
             export ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
