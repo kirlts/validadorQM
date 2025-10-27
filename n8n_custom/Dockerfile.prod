@@ -1,9 +1,9 @@
-# n8n_custom/Dockerfile.prod (CON WORKFLOWS HORNEADOS)
+# n8n_custom/Dockerfile.prod
 
 FROM n8nio/n8n:latest
 
 USER root
-RUN apk add --no-cache pandoc poppler-utils curl grep
+RUN apk add --no-cache pandoc poppler-utils curl grep dos2unix
 
 # ¡NUEVO! Creamos la carpeta y copiamos los workflows DENTRO de la imagen.
 RUN mkdir -p /home/node/workflows/
@@ -11,7 +11,8 @@ COPY ./n8n_workflows/*.json /home/node/workflows/
 
 # Copiamos el entrypoint
 COPY ./n8n_custom/entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/entrypoint.sh
+RUN dos2unix /usr/local/bin/entrypoint.sh && \
+    chmod +x /usr/local/bin/entrypoint.sh
 
 USER node
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

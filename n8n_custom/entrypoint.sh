@@ -17,6 +17,7 @@ echo "--- [Entrypoint] Importing credentials..."
 n8n import:credentials --input=/run/secrets/n8n_credentials
 
 # PASO 2: IMPORTAR Y ACTIVAR WORKFLOWS
+# ¡CAMBIO! Hornearemos los workflows en la imagen, no los montaremos.
 echo "--- [Entrypoint] Importing and activating workflows..."
 n8n import:workflow --separate --input=/home/node/workflows/
 n8n update:workflow --all --active=true
