@@ -63,6 +63,7 @@ services:
       N8N_PATH: ${N8N_PATH}
     volumes:
       - n8n_data_prod:/home/node/.n8n
+      - ./n8n_workflows:/home/node/workflows:ro
     secrets:
       - n8n_credentials
     networks:
