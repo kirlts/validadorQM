@@ -1,21 +1,17 @@
-# docker-compose.prod.yml (VERSIÓN FINAL PARA CI/CD Y DESPLIEGUE EN AWS)
+# docker-compose.prod.yml (VERSIÓN FINAL PARA DESPLIEGUE CON API-DRIVEN CI/CD)
 
-# Esta versión está diseñada para ser usada por el pipeline de CI/CD.
-# No construye las imágenes en el servidor, sino que las descarga desde un
-# registro de contenedores (ECR) donde el pipeline las ha subido previamente.
+# Esta versión asume que el pipeline de CI/CD es el "cerebro".
+# Las imágenes se descargan de ECR. La configuración de n8n es mínima,
+# ya que las actualizaciones de workflows se gestionan externamente a través de la API REST.
 
 services:
   #--- SERVICIO DE PROXY Y FRONTEND (NGINX + VUE) ---
   frontend:
-    # La directiva 'build' se reemplaza por 'image'.
-    # Las variables ${ECR_REGISTRY} y ${IMAGE_TAG} serán exportadas
-    # en el servidor EC2 por el script del pipeline de GitHub Actions.
     image: ${ECR_REGISTRY}/validador-qm-frontend:${IMAGE_TAG}
     container_name: validador_qm_frontend_prod
     restart: always
     ports:
-      # Este es el único punto de entrada público a la aplicación.
-      # Mapea el puerto 80 del servidor EC2 al puerto 8080 de Nginx.
+      # Único punto de entrada público.
       - "80:8080"
     networks:
       - validador-net-prod
@@ -30,7 +26,6 @@ services:
     restart: always
     env_file:
       - .env.prod
-    # No se exponen puertos al exterior; solo Nginx (frontend) habla con el backend.
     networks:
       - validador-net-prod
     depends_on:
@@ -45,27 +40,34 @@ services:
     env_file:
       - .env.prod
     environment:
-      # Las variables se cargan desde env_file, pero se listan aquí para claridad.
-      # El entrypoint.sh dentro de la imagen usará estas para el setup.
-      N8N_OWNER_EMAIL: ${N8N_OWNER_EMAIL}
-      N8N_OWNER_PASSWORD: ${N8N_OWNER_PASSWORD}
-      # Configuración de la base de datos
+      # --- VARIABLES ESENCIALES PARA EL SERVIDOR N8N ---
+      # No se necesitan variables de 'OWNER' ya que el setup inicial es manual
+      # y los despliegues posteriores usan la base de datos existente.
+      
+      # Configuración de la base de datos (obligatoria)
       DB_TYPE: postgresdb
       DB_POSTGRESDB_HOST: postgres
       DB_POSTGRESDB_DATABASE: ${POSTGRES_DB}
       DB_POSTGRESDB_USER: ${POSTGRES_USER}
       DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD}
-      # Clave de cifrado y configuración de proxy
+      
+      # Clave de cifrado y configuración de proxy (obligatorias para producción)
       N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
       GENERIC_TIMEZONE: ${GENERIC_TIMEZONE}
       N8N_PROXY_MODE: ${N8N_PROXY_MODE}
       WEBHOOK_URL: ${WEBHOOK_URL}
       N8N_PATH: ${N8N_PATH}
+      
     volumes:
+      # Persiste la configuración interna de n8n, logs, etc.
       - n8n_data_prod:/home/node/.n8n
-      - ./n8n_workflows:/home/node/workflows:ro
-    secrets:
-      - n8n_credentials
+      # YA NO SE MONTA LA CARPETA DE WORKFLOWS. La base de datos es ahora
+      # la única fuente de verdad para los workflows en ejecución. Git y el pipeline
+      # son la fuente de verdad para las ACTUALIZACIONES vía API.
+      
+    # YA NO SE NECESITAN SECRETS. Las credenciales se gestionan manualmente en la UI
+    # de producción, siguiendo las mejores prácticas de seguridad.
+    
     networks:
       - validador-net-prod
     depends_on:
@@ -73,7 +75,6 @@ services:
 
   #--- SERVICIO DE BASE DE DATOS (POSTGRESQL) ---
   postgres:
-    # Este servicio no cambia, siempre usa una imagen pública de Docker Hub.
     image: postgres:13
     container_name: validador_qm_postgres_prod
     restart: always
@@ -84,6 +85,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
+      # Este volumen es el corazón del sistema. Persiste todo el estado.
       - postgres_data_prod:/var/lib/postgresql/data
     networks:
       - validador-net-prod
@@ -95,7 +97,3 @@ networks:
 volumes:
   n8n_data_prod:
   postgres_data_prod:
-
-secrets:
-  n8n_credentials:
-    file: ./n8n_credentials.json
