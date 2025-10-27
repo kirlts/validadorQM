@@ -4,7 +4,7 @@
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "8cdc026a-7fac-4bdf-b014-fbd5680e3d6d",
+        "path": "interaccion-ia",
         "responseMode": "responseNode",
         "options": {}
       },
@@ -450,10 +450,10 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "aacc0d97-e6f0-45c4-90d4-df098b49e338",
+  "versionId": "e4ad7de9-807f-42dd-bd75-6a54fe44619d",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "81f9aa344da0912f901e07498089d3dd54ba6d767dbe4d581a261cb5d8886bb9"
+    "instanceId": "8991d57cc3be404c4c8d6951306c68fa6ee93d0a9fcfe54908cc27cc5546f205"
   },
   "id": "SwcZQBq59C3kBS6a",
   "tags": []

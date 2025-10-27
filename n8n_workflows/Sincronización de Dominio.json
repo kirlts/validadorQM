@@ -216,7 +216,7 @@
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "0a8dc9cd-15c3-4da8-b780-03f3cd9953e5",
+        "path": "sincronizar-dominio",
         "options": {}
       },
       "type": "n8n-nodes-base.webhook",
@@ -352,10 +352,10 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "9be2a76f-d2d9-4c68-b07c-a3635e53c53a",
+  "versionId": "bd447004-82a1-4d71-b460-20ba3b02e69c",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "81f9aa344da0912f901e07498089d3dd54ba6d767dbe4d581a261cb5d8886bb9"
+    "instanceId": "8991d57cc3be404c4c8d6951306c68fa6ee93d0a9fcfe54908cc27cc5546f205"
   },
   "id": "QW6PU1gau3zdu8ul",
   "tags": []
