@@ -11,8 +11,8 @@ jobs:
   detect-workflow-changes:
     runs-on: ubuntu-latest
     outputs:
-      # Generamos una matriz (lista) de los archivos de workflow que han cambiado.
-      changed_workflows: ${{ steps.changed-files.outputs.all_changed_files }}
+      # ¡CAMBIO CLAVE! Usamos el output que ya está formateado como JSON.
+      changed_workflows_json: ${{ steps.changed-files.outputs.all_changed_files_as_json }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -26,12 +26,13 @@ jobs:
   # Job que se ejecuta para CADA workflow que ha cambiado.
   deploy-workflows:
     needs: detect-workflow-changes
-    if: needs.detect-workflow-changes.outputs.changed_workflows != ''
+    # ¡CAMBIO CLAVE! La condición ahora comprueba si el array JSON no está vacío.
+    if: needs.detect-workflow-changes.outputs.changed_workflows_json != '[]'
     runs-on: ubuntu-latest
-    # La matriz de workflows cambiados se usa para paralelizar el trabajo.
     strategy:
       matrix:
-        workflow: ${{ fromJson(needs.detect-workflow-changes.outputs.changed_workflows) }}
+        # Usamos el output JSON correcto para construir la matriz.
+        workflow: ${{ fromJson(needs.detect-workflow-changes.outputs.changed_workflows_json) }}
 
     steps:
       - uses: actions/checkout@v4
@@ -55,7 +56,8 @@ jobs:
           
           # Usamos PUT para actualizar el workflow existente por su ID.
           # Esto es seguro y no afecta a otros workflows.
-          curl --fail -X PUT "${N8N_URL}/api/v1/workflows/${WORKFLOW_ID}" \
+          # Añadimos la opción -S para mostrar errores de curl pero no la barra de progreso.
+          curl --fail -S -X PUT "${N8N_URL}/api/v1/workflows/${WORKFLOW_ID}" \
             -H "Authorization: Bearer ${N8N_API_KEY}" \
             -H "Content-Type: application/json" \
             -d @"${{ matrix.workflow }}"
