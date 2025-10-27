@@ -71,7 +71,13 @@ jobs:
             # Navegar al directorio de la aplicación
             cd ~/validadorQM
             
-            # Actualizar el código fuente desde el repositorio
+            # 1. Asegurarse de que estamos en la rama main
+            git checkout main
+            
+            # 2. Descartar cualquier cambio local que pueda haber en el servidor
+            git reset --hard
+            
+            # 3. Traer la versión más reciente de la rama main desde el origen
             git pull origin main
             
             # Crear los archivos de secretos en la instancia EC2
