@@ -10,9 +10,19 @@ jobs:
   build-push-deploy:
     runs-on: ubuntu-latest
     
+    # NUEVO: Definimos los outputs del job para comunicar qué se ha construido.
+    outputs:
+      built_frontend: ${{ steps.build_frontend.outputs.built }}
+      built_backend: ${{ steps.build_backend.outputs.built }}
+      built_n8n: ${{ steps.build_n8n.outputs.built }}
+      image_tag: ${{ steps.image_tag.outputs.tag }}
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
+        # NUEVO: Necesitamos el historial completo para comparar cambios.
+        with:
+          fetch-depth: 0 
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -29,25 +39,65 @@ jobs:
         id: image_tag
         run: echo "tag=$(echo ${GITHUB_SHA} | cut -c1-7)" >> $GITHUB_OUTPUT
 
-      # --- ETAPA DE BUILD & PUSH (EN GITHUB) ---
+      # --- ETAPA DE BUILD & PUSH SELECTIVA ---
       
+      # NUEVO: Un paso para detectar qué carpetas han cambiado.
+      - name: Detect changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v41
+        with:
+          files: |
+            frontend/**
+            backend/**
+            n8n_custom/**
+            n8n_workflows/**
+
+      # NUEVO: El paso de build del Backend solo se ejecuta si hay cambios en su carpeta.
       - name: Build and push Backend image
+        id: build_backend
+        if: steps.changed-files.outputs.any_changed == 'true' && contains(steps.changed-files.outputs.all_changed_files, 'backend/')
         run: |
+          echo "Backend files changed. Building and pushing image..."
           docker build -t ${{ steps.login-ecr.outputs.registry }}/validador-qm-backend:${{ steps.image_tag.outputs.tag }} -f backend/Dockerfile .
           docker push ${{ steps.login-ecr.outputs.registry }}/validador-qm-backend:${{ steps.image_tag.outputs.tag }}
+          echo "built=true" >> $GITHUB_OUTPUT
 
+      # NUEVO: El paso de build del Frontend solo se ejecuta si hay cambios.
       - name: Build and push Frontend image
+        id: build_frontend
+        if: steps.changed-files.outputs.any_changed == 'true' && contains(steps.changed-files.outputs.all_changed_files, 'frontend/')
         run: |
+          echo "Frontend files changed. Building and pushing image..."
           docker build -t ${{ steps.login-ecr.outputs.registry }}/validador-qm-frontend:${{ steps.image_tag.outputs.tag }} --build-arg VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }} --build-arg VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }} -f frontend/Dockerfile .
           docker push ${{ steps.login-ecr.outputs.registry }}/validador-qm-frontend:${{ steps.image_tag.outputs.tag }}
+          echo "built=true" >> $GITHUB_OUTPUT
 
+      # NUEVO: El build de n8n se ejecuta si cambia su config O los workflows.
       - name: Build and push n8n image
+        id: build_n8n
+        if: steps.changed-files.outputs.any_changed == 'true' && (contains(steps.changed-files.outputs.all_changed_files, 'n8n_custom/') || contains(steps.changed-files.outputs.all_changed_files, 'n8n_workflows/'))
         run: |
+          echo "n8n config or workflows changed. Building and pushing image..."
           docker build -t ${{ steps.login-ecr.outputs.registry }}/validador-qm-n8n:${{ steps.image_tag.outputs.tag }} -f n8n_custom/Dockerfile.prod .
           docker push ${{ steps.login-ecr.outputs.registry }}/validador-qm-n8n:${{ steps.image_tag.outputs.tag }}
+          echo "built=true" >> $GITHUB_OUTPUT
           
-      # --- ETAPA DE DEPLOY (EN EC2) ---
+  # --- NUEVO JOB: El despliegue ahora es un job separado ---
+  # Se ejecuta DESPUÉS del build y solo si es necesario.
+  deploy:
+    needs: build-push-deploy
+    runs-on: ubuntu-latest
+    # Se ejecuta si se ha construido al menos una imagen.
+    if: needs.build-push-deploy.outputs.built_frontend == 'true' || needs.build-push-deploy.outputs.built_backend == 'true' || needs.build-push-deploy.outputs.built_n8n == 'true'
 
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          
       - name: Deploy to EC2
         uses: appleboy/ssh-action@master
         with:
@@ -55,31 +105,40 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # ¡NUEVO! Salir inmediatamente si cualquier comando falla.
             set -e
-
             cd ~/validadorQM
-            git checkout main
-            # Usamos 'git reset --hard' para asegurar un estado limpio
-            git reset --hard origin/main
             git pull origin main
             
-            # Crear los archivos de secretos
+            # Los secretos se actualizan en cada despliegue.
             echo "${{ secrets.ENV_PROD_CONTENT }}" > .env.prod
             echo "${{ secrets.N8N_CREDENTIALS_JSON }}" | base64 --decode > n8n_credentials.json  
                       
-            # Exportar variables
-            export IMAGE_TAG=${{ steps.image_tag.outputs.tag }}
-            export ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
+            export IMAGE_TAG=${{ needs.build-push-deploy.outputs.image_tag }}
+            export ECR_REGISTRY=${{ secrets.AWS_ECR_REGISTRY }}
           
-            # Autenticar Docker con ECR. Si esto falla, el script se detendrá.
-            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
+            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ECR_REGISTRY }}
             
-            # Descargar las nuevas imágenes.
-            # ¡CAMBIO! Añadimos el --env-file para eliminar las advertencias.
-            docker compose -p validadorqm_prod -f docker-compose.prod.yml --env-file .env.prod pull
+            # Definimos los servicios que podrían necesitar actualización.
+            SERVICES_TO_UPDATE=""
+            if [ "${{ needs.build-push-deploy.outputs.built_frontend }}" == "true" ]; then
+              SERVICES_TO_UPDATE="$SERVICES_TO_UPDATE frontend"
+            fi
+            if [ "${{ needs.build-push-deploy.outputs.built_backend }}" == "true" ]; then
+              SERVICES_TO_UPDATE="$SERVICES_TO_UPDATE backend"
+            fi
+            # NUEVO: Ahora el --force-recreate solo se aplicará a n8n si es necesario.
+            if [ "${{ needs.build-push-deploy.outputs.built_n8n }}" == "true" ]; then
+              SERVICES_TO_UPDATE="$SERVICES_TO_UPDATE n8n"
+            fi
             
-            # Reiniciar los servicios.
-            docker compose -p validadorqm_prod -f docker-compose.prod.yml --env-file .env.prod up -d --force-recreate
+            # Descargamos las imágenes de los servicios que han cambiado.
+            if [ -n "$SERVICES_TO_UPDATE" ]; then
+              docker compose -p validadorqm_prod -f docker-compose.prod.yml pull $SERVICES_TO_UPDATE
+            fi
+            
+            # ¡CAMBIO CLAVE! Ya no usamos --force-recreate en todo.
+            # 'docker compose up' es inteligente: solo recreará los
+            # contenedores cuyas imágenes han sido actualizadas por el 'pull'.
+            docker compose -p validadorqm_prod -f docker-compose.prod.yml up -d
             
             docker image prune -f
