@@ -26,8 +26,8 @@
       "name": "RAG de Dominio",
       "credentials": {
         "supabaseApi": {
-          "id": "m0DUcQthM94wIR7O",
-          "name": "Supabase account"
+          "id": "1",
+          "name": "Supabase API"
         }
       }
     },
@@ -43,7 +43,7 @@
       "name": "Embeddings Google Gemini",
       "credentials": {
         "googlePalmApi": {
-          "id": "1fRbxclakan4SB2c",
+          "id": "2",
           "name": "Api 1"
         }
       }
@@ -65,7 +65,7 @@
       "name": "Google Gemini Chat Model",
       "credentials": {
         "googlePalmApi": {
-          "id": "1fRbxclakan4SB2c",
+          "id": "2",
           "name": "Api 1"
         }
       }
@@ -185,7 +185,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const itemData = $('Procesar Uno por Uno').first().json;\nconst { objetivo_actual } = itemData;\n\nconst promptBase = `Eres un experto en evaluación de competencias profesionales del modelo UNAB. Tu tarea es deconstruir una habilidad compleja en 2 o 3 procesos clave o hitos de desempeño observables.`;\n\nconst tareaTexto = `Para el siguiente objetivo, que describe una competencia profesional, identifica los 2 o 3 **procesos clave** que un profesional debe ejecutar para demostrar maestría. Para cada proceso, especifica el verbo de acción observable más importante.\n\n### FILOSOFÍA DE DECONSTRUCCIÓN:\nPiensa en las grandes fases o entregables del trabajo de un experto. No en un andamiaje para novatos.\n- **ENFOQUE:** Deconstrucción del proceso experto (ej. Analizar el problema -> Diseñar la solución -> Justificar el diseño).\n\n### REGLA DE VERBOS OBSERVABLES:\nEstán prohibidos los verbos de procesos internos: **conocer, comprender, analizar, reflexionar, valorar**. Usa alternativas que describan la evidencia de esos procesos.\n\n### OBJETIVO A DESGLOSAR:\n\"${objetivo_actual.texto}\"\n\n### FORMATO DE SALIDA OBLIGATORIO:\nTu respuesta DEBE SER ÚNICAMENTE un array JSON de objetos, donde cada objeto tiene dos claves: \"paso\" (la descripción del proceso) y \"verbo_principal\" (el verbo observable).\nEjemplo de salida:\n[\n  { \"paso\": \"Comparar el desempeño y necesidades de los estudiantes utilizando registros de aula\", \"verbo_principal\": \"Comparar\" },\n  { \"paso\": \"Elaborar una propuesta de unidad didáctica ajustada a la diversidad del grupo\", \"verbo_principal\": \"Elaborar\" },\n  { \"paso\": \"Argumentar la selección de estrategias en la unidad, demostrando su impacto\", \"verbo_principal\": \"Argumentar\" }\n]\n`;\n\nconst promptFinal = `${promptBase}\\n\\n${tareaTexto}`;\n\nreturn [{ json: { prompt: promptFinal, ...itemData } }];"
+        "jsCode": "const itemData = $('Procesar Uno por Uno').first().json;\nconst { objetivo_actual } = itemData;\n\nconst promptBase = `Eres un experto en evaluación de competencias profesionales del modelo UNAB. Tu tarea es deconstruir una habilidad compleja en 2 o 3 procesos clave o hitos de desempeño observables, pero JAMAS expresando finalidad. La finalidad está dada por el objetivo a desglosar, y los procesos clave son sus partes constituyentes. No pueden expresar finalidad con palabras como \"para\", \"con el fin de\", \"con el objetivo de\", y similares.`;\n\nconst tareaTexto = `Para el siguiente objetivo, que describe una competencia profesional, identifica los 2 o 3 **procesos clave**, observables y medibles, que un profesional debe ejecutar para llevar a cabo el objetivo mayor. Para cada proceso, especifica el verbo de acción observable más importante.\n\n### FILOSOFÍA DE DECONSTRUCCIÓN:\nPiensa en las grandes fases o entregables del trabajo de un experto. No en un andamiaje para novatos.\n- **ENFOQUE:** Deconstrucción del proceso experto (ej. Analizar el problema -> Diseñar la solución -> Justificar el diseño).\n\n### REGLA DE VERBOS OBSERVABLES:\nEstán prohibidos los verbos de procesos internos: **conocer, comprender, analizar, reflexionar, valorar**. Usa alternativas que describan la evidencia de esos procesos, que deben poder ser observables y medibles por un tercero. Por la misma razon, estos procesos internos no deben redactarse desde su finalidad, sino desde la observación y medición del proceso mismo, buscando ser la evidencia de un proceso sistemático.\n\n### OBJETIVO A DESGLOSAR:\n\"${objetivo_actual.texto}\"\n\n### FORMATO DE SALIDA OBLIGATORIO:\nTu respuesta DEBE SER ÚNICAMENTE un array JSON de objetos, donde cada objeto tiene dos claves: \"paso\" (la descripción del proceso) y \"verbo_principal\" (el verbo observable).\nEjemplo de salida:\n[\n  { \"paso\": \"Comparar el desempeño y necesidades de los estudiantes utilizando registros de aula\", \"verbo_principal\": \"Comparar\" },\n  { \"paso\": \"Elaborar una propuesta de unidad didáctica ajustada a la diversidad del grupo\", \"verbo_principal\": \"Elaborar\" },\n  { \"paso\": \"Argumentar la selección de estrategias en la unidad, demostrando su impacto\", \"verbo_principal\": \"Argumentar\" }\n]\n`;\n\nconst promptFinal = `${promptBase}\\n\\n${tareaTexto}`;\n\nreturn [{ json: { prompt: promptFinal, ...itemData } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -279,47 +279,20 @@
       ],
       "id": "91f9da41-c700-495d-b3b9-bf1262bdfcf6",
       "name": "Constructor de Prompt (Agente 2 - Redactor Bruto)"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1072,
+        1600
+      ],
+      "id": "af0ef72c-fde3-42e2-851b-63cb896ab314",
+      "name": "Sticky Note"
     }
   ],
-  "pinData": {
-    "Webhook": [
-      {
-        "json": {
-          "headers": {
-            "host": "n8n:5678",
-            "user-agent": "python-requests/2.32.5",
-            "accept-encoding": "gzip, deflate",
-            "accept": "*/*",
-            "connection": "keep-alive",
-            "content-length": "664",
-            "content-type": "application/json"
-          },
-          "params": {},
-          "query": {},
-          "body": {
-            "estructuraMEI": "MEI-Antiguo",
-            "resultadosAprendizaje": [
-              {
-                "id": "RA-1",
-                "texto": "Integrar conocimientos pedagógicos, estrategias inclusivas y teorías del aprendizaje para planificar y orientar experiencias educativas que promuevan el aprendizaje significativo y el desarrollo integral de los estudiantes en Educación Básica."
-              }
-            ],
-            "aprendizajesEsperados": [
-              {
-                "id": "AE-1",
-                "tributaA": [
-                  "RA-1"
-                ],
-                "texto": "Diseñar unidades didácticas fundamentadas en estrategias pedagógicas inclusivas y teorías del aprendizaje, con el propósito de potenciar el aprendizaje significativo y el desarrollo integral de los estudiantes."
-              }
-            ]
-          },
-          "webhookUrl": "http://localhost:5678/webhook/0b0f8ddd-f0bb-476b-ac21-9e81f74f2c6c",
-          "executionMode": "production"
-        }
-      }
-    ]
-  },
+  "pinData": {},
   "connections": {
     "RAG de Dominio": {
       "main": [
@@ -530,10 +503,10 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "991a46bb-50e3-43b9-a721-20cfc95ec673",
+  "versionId": "e7dc29cf-10ef-40c8-9af5-d922e0b11312",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "8991d57cc3be404c4c8d6951306c68fa6ee93d0a9fcfe54908cc27cc5546f205"
+    "instanceId": "4e1225f5d32bb09f8259c37f6605f39f123857e20a352a5f418289b5b42cd64d"
   },
   "id": "ChIBB6KiCNlHa36x",
   "tags": []
