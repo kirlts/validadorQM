@@ -7,13 +7,31 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build-push-deploy:
+  # UN ÚNICO JOB, MÁS SIMPLE Y ROBUSTO
+  build-and-deploy:
     runs-on: ubuntu-latest
     
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 
 
+      - name: Detect Changed Files
+        id: changed-files
+        uses: tj-actions/changed-files@v41
+        with:
+          # Monitoreamos todo lo que puede requerir una acción
+          files: |
+            backend/**
+            frontend/**
+            n8n_custom/**
+            n8n_workflows/**
+            docker-compose.prod.yml
+            .github/workflows/deploy.yml
+
+      # --- ETAPA DE BUILD & PUSH SELECTIVA ---
+      
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -27,29 +45,37 @@ jobs:
 
       - name: Set Image Tag
         id: image_tag
-        run: echo "tag=$(echo ${GITHUB_SHA} | cut -c1-7)" >> $GITHUB_OUTPUT
+        run: echo "tag=$(echo ${GITHUB_SHA} | cut-c1-7)" >> $GITHUB_OUTPUT
         
-      # --- ETAPA DE BUILD & PUSH (SIEMPRE SE EJECUTA) ---
-      
-      - name: Build, tag, and push images
+      # Construimos solo las imágenes que han cambiado
+      - name: Build and push changed images
+        # Este paso solo se ejecuta si hay cambios en las carpetas de las apps
+        if: contains(steps.changed-files.outputs.all_changed_files, 'backend/') || contains(steps.changed-files.outputs.all_changed_files, 'frontend/') || contains(steps.changed-files.outputs.all_changed_files, 'n8n_custom/')
         run: |
           ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG=${{ steps.image_tag.outputs.tag }}
 
-          echo "Building and pushing all images..."
-
-          docker build -t $ECR_REGISTRY/validador-qm-backend:$IMAGE_TAG -t $ECR_REGISTRY/validador-qm-backend:latest -f backend/Dockerfile .
-          docker push $ECR_REGISTRY/validador-qm-backend --all-tags
-
-          docker build -t $ECR_REGISTRY/validador-qm-frontend:$IMAGE_TAG -t $ECR_REGISTRY/validador-qm-frontend:latest --build-arg VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }} --build-arg VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }} -f frontend/Dockerfile .
-          docker push $ECR_REGISTRY/validador-qm-frontend --all-tags
-
-          docker build -t $ECR_REGISTRY/validador-qm-n8n:$IMAGE_TAG -t $ECR_REGISTRY/validador-qm-n8n:latest -f n8n_custom/Dockerfile.prod .
-          docker push $ECR_REGISTRY/validador-qm-n8n --all-tags
-
-      # --- ETAPA DE DEPLOY (SIEMPRE SE EJECUTA) ---
+          if [[ "${{ contains(steps.changed-files.outputs.all_changed_files, 'backend/') }}" == "true" ]]; then
+            echo "Building backend..."
+            docker build -t $ECR_REGISTRY/validador-qm-backend:$IMAGE_TAG -t $ECR_REGISTRY/validador-qm-backend:latest -f backend/Dockerfile .
+            docker push $ECR_REGISTRY/validador-qm-backend --all-tags
+          fi
+          if [[ "${{ contains(steps.changed-files.outputs.all_changed_files, 'frontend/') }}" == "true" ]]; then
+            echo "Building frontend..."
+            docker build -t $ECR_REGISTRY/validador-qm-frontend:$IMAGE_TAG -t $ECR_REGISTRY/validador-qm-frontend:latest --build-arg VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }} --build-arg VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }} -f frontend/Dockerfile .
+            docker push $ECR_REGISTRY/validador-qm-frontend --all-tags
+          fi
+          if [[ "${{ contains(steps.changed-files.outputs.all_changed_files, 'n8n_custom/') }}" == "true" ]]; then
+            echo "Building n8n..."
+            docker build -t $ECR_REGISTRY/validador-qm-n8n:$IMAGE_TAG -t $ECR_REGISTRY/validador-qm-n8n:latest -f n8n_custom/Dockerfile.prod .
+            docker push $ECR_REGISTRY/validador-qm-n8n --all-tags
+          fi
+          
+      # --- ETAPA DE DEPLOY (EN EC2) ---
       
+      # Este paso se ejecuta SIEMPRE que haya un cambio en CUALQUIER archivo monitoreado
       - name: Deploy to EC2
+        if: steps.changed-files.outputs.any_changed == 'true'
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -68,9 +94,27 @@ jobs:
           
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin $ECR_REGISTRY
             
+            # Descargamos las imágenes 'latest' que puedan haber cambiado
             docker compose -p validadorqm_prod -f docker-compose.prod.yml pull
             
-            # El --env-file es crucial
-            docker compose -p validadorqm_prod -f docker-compose.prod.yml --env-file .env.prod up -d
+            # --- LÓGICA DE REINICIO INTELIGENTE ---
+            # Guardamos la lista de archivos cambiados en una variable de bash
+            CHANGED_FILES="${{ steps.changed-files.outputs.all_changed_files }}"
+
+            # Si el docker-compose.prod.yml o el propio deploy.yml cambiaron,
+            # es más seguro forzar la recreación de todo para aplicar cambios estructurales.
+            if echo "$CHANGED_FILES" | grep -q "docker-compose.prod.yml" || echo "$CHANGED_FILES" | grep -q ".github/workflows/deploy.yml"; then
+              echo "Infrastructure file changed. Forcing recreation of all services..."
+              docker compose -p validadorqm_prod -f docker-compose.prod.yml --env-file .env.prod up -d --force-recreate
+            else
+              # Si no, dejamos que 'up -d' sea inteligente
+              docker compose -p validadorqm_prod -f docker-compose.prod.yml --env-file .env.prod up -d
+            fi
+            
+            # La lógica para los workflows se mantiene: si cambian, se reinicia n8n
+            if echo "$CHANGED_FILES" | grep -q "n8n_workflows/"; then
+              echo "Workflow files changed. Forcing n8n container recreation..."
+              docker compose -p validadorqm_prod -f docker-compose.prod.yml --env-file .env.prod up -d --force-recreate n8n
+            fi
             
             docker image prune -f
