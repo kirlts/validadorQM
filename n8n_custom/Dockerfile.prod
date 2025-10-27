@@ -1,25 +1,10 @@
-# n8n_custom/Dockerfile.prod
-# Esta imagen prepara el entorno de n8n para producción
-# e instala el script de aprovisionamiento (entrypoint).
-# NO incluye los workflows, ya que se montarán como un volumen.
+# n8n_custom/Dockerfile.prod (VERSIÓN SIMPLE)
 
 FROM n8nio/n8n:latest
 
 USER root
-
-# Instalamos las dependencias de sistema necesarias para los nodos
-# y para que el script de entrypoint funcione correctamente.
-RUN apk add --no-cache pandoc poppler-utils curl grep dos2unix
-
-# Copiamos el script de entrypoint al contenedor.
-COPY ./n8n_custom/entrypoint.sh /usr/local/bin/
-
-# Le damos permisos de ejecución y corregimos posibles problemas de finales de línea.
-RUN dos2unix /usr/local/bin/entrypoint.sh && \
-    chmod +x /usr/local/bin/entrypoint.sh
+# Solo instalamos lo que los nodos necesitan para ejecutarse.
+RUN apk add --no-cache pandoc poppler-utils
 
 USER node
-
-# Establecemos nuestro script como el punto de entrada que se ejecutará
-# cada vez que el contenedor se inicie.
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+# No hay ENTRYPOINT. Usamos el 'n8n start' por defecto de la imagen base.
