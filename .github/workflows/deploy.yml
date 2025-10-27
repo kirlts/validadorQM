@@ -130,7 +130,7 @@ jobs:
             echo "Found Workflow ID: $WORKFLOW_ID"
             
             curl --fail -S -X PUT "${N8N_URL}/api/v1/workflows/${WORKFLOW_ID}" \
-              -H "Authorization: Bearer ${N8N_API_KEY}" \
+              -H "X-N8N-API-KEY: ${N8N_API_KEY}" \
               -H "Content-Type: application/json" \
               -d @"$workflow_file"
           done
