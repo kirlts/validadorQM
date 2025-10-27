@@ -1,9 +1,9 @@
 {
-  "name": "Test 2",
+  "name": "realTest",
   "nodes": [
     {
       "parameters": {
-        "path": "d1aad867-693a-4c8f-8fdb-5089c9665527",
+        "path": "62bf1ded-c4e8-4448-b718-dd5232db1c72",
         "options": {}
       },
       "type": "n8n-nodes-base.webhook",
@@ -12,18 +12,18 @@
         0,
         0
       ],
-      "id": "087b0dd4-a308-45b9-a58a-9887451aa118",
+      "id": "1e10e413-7a33-4160-8518-78478fd1f6a2",
       "name": "Webhook",
-      "webhookId": "d1aad867-693a-4c8f-8fdb-5089c9665527"
+      "webhookId": "62bf1ded-c4e8-4448-b718-dd5232db1c72"
     },
     {
       "parameters": {
         "assignments": {
           "assignments": [
             {
-              "id": "afe70efd-f5b9-457d-aedd-2064462874ab",
-              "name": "Datos",
-              "value": "mmaa",
+              "id": "5991f2df-8be1-4c29-bcbc-e6f40da4d183",
+              "name": "data",
+              "value": "try",
               "type": "string"
             }
           ]
@@ -36,8 +36,8 @@
         208,
         0
       ],
-      "id": "cf1cf21c-c27b-4519-8836-2734ef621588",
-      "name": "Data 2"
+      "id": "9d30a33f-4ff9-4258-acdb-27f8bac2af7c",
+      "name": "Edit Fields"
     }
   ],
   "pinData": {},
@@ -46,7 +46,7 @@
       "main": [
         [
           {
-            "node": "Data 2",
+            "node": "Edit Fields",
             "type": "main",
             "index": 0
           }
@@ -54,14 +54,14 @@
       ]
     }
   },
-  "active": true,
+  "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "85b20cff-ccb7-4532-a4a8-9a4c8a4d23e1",
+  "versionId": "cc3ef1ba-f568-4d09-9c5f-6c883ae74d24",
   "meta": {
     "instanceId": "8991d57cc3be404c4c8d6951306c68fa6ee93d0a9fcfe54908cc27cc5546f205"
   },
-  "id": "e5lpGRINqz7nypVC",
+  "id": "iLllYAyvmVcffQSA",
   "tags": []
 }
