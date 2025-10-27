@@ -110,7 +110,8 @@ jobs:
           script: |
             set -e
             cd ~/validadorQM
-            git pull origin main
+            git fetch origin
+            git reset --hard origin/main
             
             echo "${{ secrets.ENV_PROD_CONTENT }}" > .env.prod
             echo "${{ secrets.N8N_CREDENTIALS_JSON }}" | base64 --decode > n8n_credentials.json  
