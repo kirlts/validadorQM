@@ -55,26 +55,31 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            # ¡NUEVO! Salir inmediatamente si cualquier comando falla.
+            set -e
+
             cd ~/validadorQM
             git checkout main
+            # Usamos 'git reset --hard' para asegurar un estado limpio
+            git reset --hard origin/main
             git pull origin main
             
             # Crear los archivos de secretos
             echo "${{ secrets.ENV_PROD_CONTENT }}" > .env.prod
             echo "${{ secrets.N8N_CREDENTIALS_JSON }}" > n8n_credentials.json
             
-            # Exportar variables para que docker-compose las use
+            # Exportar variables
             export IMAGE_TAG=${{ steps.image_tag.outputs.tag }}
             export ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
-           
-            # Autenticar Docker con ECR en la instancia EC2
+          
+            # Autenticar Docker con ECR. Si esto falla, el script se detendrá.
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
             
-            # Descargar las nuevas imágenes versionadas desde ECR
-            docker compose -p validadorqm_prod -f docker-compose.prod.yml pull
+            # Descargar las nuevas imágenes.
+            # ¡CAMBIO! Añadimos el --env-file para eliminar las advertencias.
+            docker compose -p validadorqm_prod -f docker-compose.prod.yml --env-file .env.prod pull
             
-            # Reiniciar los servicios usando las imágenes recién descargadas
-            docker compose -p validadorqm_prod -f docker-compose.prod.yml up -d --force-recreate
+            # Reiniciar los servicios.
+            docker compose -p validadorqm_prod -f docker-compose.prod.yml --env-file .env.prod up -d --force-recreate
             
-            # Limpiar imágenes antiguas para liberar espacio
             docker image prune -f
