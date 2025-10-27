@@ -1,9 +1,16 @@
-# docker-compose.prod.yml (VERSIÓN COMPLETA Y FINAL)
+# docker-compose.prod.yml (VERSIÓN FINAL PARA CI/CD Y DESPLIEGUE EN AWS)
+
+# Esta versión está diseñada para ser usada por el pipeline de CI/CD.
+# No construye las imágenes en el servidor, sino que las descarga desde un
+# registro de contenedores (ECR) donde el pipeline las ha subido previamente.
 
 services:
   #--- SERVICIO DE BACKEND (FLASK) ---
   backend:
-    build: ./backend
+    # La directiva 'build' se reemplaza por 'image'.
+    # Las variables ${ECR_REGISTRY} y ${IMAGE_TAG} serán exportadas
+    # en el servidor EC2 por el script del pipeline de GitHub Actions.
+    image: ${ECR_REGISTRY}/validador-qm-backend:${IMAGE_TAG}
     container_name: validador_qm_backend_prod
     env_file:
       - .env.prod
@@ -18,10 +25,11 @@ services:
 
   #--- SERVICIO DE FRONTEND (VUE) ---
   frontend:
-    build: ./frontend
+    # Reemplazamos 'build' por la imagen pre-construida de ECR.
+    image: ${ECR_REGISTRY}/validador-qm-frontend:${IMAGE_TAG}
     container_name: validador_qm_frontend_prod
     ports:
-      - "8080:8080"
+      - "8080:8080" # Mantenemos el puerto 8080 para consistencia, el Reverse Proxy de AWS lo redirigirá.
     restart: always
     networks:
       - validador-net-prod
@@ -30,9 +38,8 @@ services:
 
   #--- SERVICIO DE ORQUESTACIÓN (N8N) ---
   n8n:
-    build:
-      context: .
-      dockerfile: ./n8n_custom/Dockerfile.prod
+    # Reemplazamos el bloque 'build' completo por la imagen de ECR.
+    image: ${ECR_REGISTRY}/validador-qm-n8n:${IMAGE_TAG}
     container_name: validador_qm_n8n_prod
     env_file:
       - .env.prod
@@ -40,10 +47,7 @@ services:
     ports:
       - "5678:5678"
     environment:
-      # Las variables para el entrypoint se cargan desde .env.prod
-      #N8N_OWNER_EMAIL: ${N8N_OWNER_EMAIL}
-      #N8N_OWNER_PASSWORD: ${N8N_OWNER_PASSWORD}
-      # Configuración de la base de datos
+      # Todas las configuraciones de runtime se mantienen.
       DB_TYPE: postgresdb
       DB_POSTGRESDB_HOST: postgres
       DB_POSTGRESDB_DATABASE: ${POSTGRES_DB}
@@ -63,6 +67,7 @@ services:
 
   #--- SERVICIO DE BASE DE DATOS (POSTGRESQL) ---
   postgres:
+    # Este servicio no cambia, ya que siempre usa una imagen pública de Docker Hub.
     image: postgres:13
     container_name: validador_qm_postgres_prod
     env_file:

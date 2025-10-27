@@ -1,0 +1,102 @@
+# .github/workflows/deploy.yml
+
+name: Deploy Validador QM to AWS EC2
+
+# Se activa en cada push a la rama 'main'
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Set Image Tag
+        id: image_tag
+        run: echo "tag=$(echo ${GITHUB_SHA} | cut -c1-7)" >> $GITHUB_OUTPUT
+
+      # --- Construir y Subir las 3 Imágenes ---
+      
+      - name: Build and push Backend image
+        run: |
+          docker build \
+            -t ${{ secrets.AWS_ECR_REGISTRY }}/validador-qm-backend:${{ steps.image_tag.outputs.tag }} \
+            -f backend/Dockerfile \
+            .
+          docker push ${{ secrets.AWS_ECR_REGISTRY }}/validador-qm-backend:${{ steps.image_tag.outputs.tag }}
+
+      - name: Build and push Frontend image
+        run: |
+          docker build \
+            -t ${{ secrets.AWS_ECR_REGISTRY }}/validador-qm-frontend:${{ steps.image_tag.outputs.tag }} \
+            --build-arg VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }} \
+            --build-arg VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }} \
+            -f frontend/Dockerfile \
+            .
+          docker push ${{ secrets.AWS_ECR_REGISTRY }}/validador-qm-frontend:${{ steps.image_tag.outputs.tag }}
+
+      - name: Build and push n8n image
+        run: |
+          docker build \
+            -t ${{ secrets.AWS_ECR_REGISTRY }}/validador-qm-n8n:${{ steps.image_tag.outputs.tag }} \
+            -f n8n_custom/Dockerfile.prod \
+            .
+          docker push ${{ secrets.AWS_ECR_REGISTRY }}/validador-qm-n8n:${{ steps.image_tag.outputs.tag }}
+          
+      # --- Desplegar en la Instancia EC2 ---
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            # Navegar al directorio de la aplicación
+            cd ~/validadorQM
+            
+            # Actualizar el código fuente desde el repositorio
+            git pull origin main
+            
+            # Crear los archivos de secretos en la instancia EC2
+            # Usamos 'cat <<EOF' para manejar correctamente múltiples líneas y caracteres especiales
+            cat <<EOF > .env.prod
+            ${{ secrets.ENV_PROD_CONTENT }}
+            EOF
+            
+            cat <<EOF > n8n_credentials.json
+            ${{ secrets.N8N_CREDENTIALS_JSON }}
+            EOF
+            
+            # Exportar variables para que docker-compose las utilice al reemplazar en el yml
+            export IMAGE_TAG=$(echo ${{ github.sha }} | cut -c1-7)
+            export ECR_REGISTRY=${{ secrets.AWS_ECR_REGISTRY }}
+           
+            # Autenticar Docker con ECR en la instancia EC2
+            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ECR_REGISTRY }}
+            
+            # Descargar las nuevas imágenes
+            docker compose -p validadorqm_prod -f docker-compose.prod.yml pull
+            
+            # Reiniciar los servicios con las nuevas imágenes
+            # El flag --env-file ya no es necesario si el yml lo define, pero lo mantenemos por robustez
+            docker compose -p validadorqm_prod -f docker-compose.prod.yml --env-file .env.prod up -d
+            
+            # Limpiar imágenes antiguas para liberar espacio
+            docker image prune -a -f
