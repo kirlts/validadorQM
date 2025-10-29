@@ -1,26 +1,26 @@
-# frontend/Dockerfile
+# frontend/Dockerfile (VERSIÓN SIMPLE Y FUNCIONAL PARA PRODUCCIÓN)
 
-# --- Etapa 1: Build ---
-FROM node:20-alpine AS build-stage
+FROM node:20-alpine
+
 WORKDIR /app
+
+# Pasamos las claves de Supabase como argumentos de build
 ARG VITE_SUPABASE_URL
 ARG VITE_SUPABASE_ANON_KEY
+ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
+ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
 
-# ¡CAMBIO! La ruta ahora es relativa a la raíz del proyecto.
-COPY ./frontend/package*.json ./
+COPY package*.json ./
 RUN npm install
+COPY . .
 
-# ¡CAMBIO! Copiamos solo el contenido de la carpeta frontend.
-COPY ./frontend/ .
-
+# 1. Construimos los archivos de producción
 RUN npm run build
 
-# --- Etapa 2: Serve ---
-FROM nginx:stable-alpine AS production-stage
-COPY --from=build-stage /app/dist /usr/share/nginx/html
-
-# Esta ruta ya era correcta, la mantenemos.
-COPY ./frontend/nginx/default.conf /etc/nginx/conf.d/default.conf
-
+# 2. Exponemos el puerto que usará el servidor de preview de Vite
 EXPOSE 8080
-CMD ["nginx", "-g", "daemon off;"]
+
+# 3. ¡CAMBIO CLAVE! Usamos 'npm run preview' con --host
+# Este comando sirve los archivos de la carpeta 'dist/'
+# de una manera que respeta el enrutamiento de Vue.
+CMD ["npm", "run", "preview", "--", "--host", "0.0.0.0", "--port", "8080"]
