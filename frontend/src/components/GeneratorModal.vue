@@ -7,7 +7,6 @@
       <v-card-text>
         <v-container>
           <v-form ref="form" v-model="valid">
-            <!-- Paso 1: Selección de Estructura -->
             <v-select
               v-model="formData.estructuraMEI"
               :items="estructuras"
@@ -17,13 +16,31 @@
               required
               :rules="[v => !!v || 'La estructura es requerida']"
               class="mb-4"
+              variant="outlined"
             ></v-select>
 
-            <!-- ============================================= -->
-            <!-- == CAMPOS DINÁMICOS PARA MEI-ACTUALIZADO == -->
-            <!-- ============================================= -->
+            <v-text-field
+              v-model="formData.nombre_curso"
+              label="Nombre del Curso"
+              required
+              :rules="[v => !!v && v.trim() !== '' || 'El nombre del curso es requerido']"
+              class="mb-4"
+              variant="outlined"
+              autofocus
+            ></v-text-field>
+            
+            <v-text-field
+              v-model.number="formData.trimestre"
+              label="Trimestre (Opcional)"
+              type="number"
+              :rules="[
+                v => v === null || v === '' || (Number.isInteger(Number(v)) && Number(v) > 0) || 'Debe ser un número positivo'
+              ]"
+              clearable
+              class="mb-4"
+              variant="outlined"
+            ></v-text-field>
             <div v-if="formData.estructuraMEI === 'MEI-Actualizado'">
-              <!-- Resultados Formativos (RF) -->
               <div v-for="(rf, index) in formData.resultadosFormativos" :key="rf.id" class="d-flex align-start mb-2">
                 <v-textarea
                   v-model="rf.texto"
@@ -33,12 +50,12 @@
                   rows="2"
                   auto-grow
                   class="flex-grow-1"
+                  variant="outlined"
                 ></v-textarea>
                 <v-btn v-if="formData.resultadosFormativos.length > 1" icon="mdi-close" variant="text" @click="removeRF(index)" class="ml-2 mt-2"></v-btn>
               </div>
               <v-btn size="small" variant="tonal" @click="addRF" class="mb-6"><v-icon left>mdi-plus</v-icon> Agregar RF</v-btn>
 
-              <!-- Resultados de Aprendizaje (RA) -->
               <div v-for="(ra, index) in formData.resultadosAprendizaje" :key="ra.id" class="mb-4 pa-4 border rounded">
                 <div class="d-flex align-start">
                   <v-textarea
@@ -49,20 +66,17 @@
                     rows="2"
                     auto-grow
                     class="flex-grow-1"
+                    variant="outlined"
                   ></v-textarea>
                   <v-btn v-if="formData.resultadosAprendizaje.length > 1" icon="mdi-close" variant="text" @click="removeRA(index)" class="ml-2 mt-2"></v-btn>
                 </div>
-                <v-textarea v-model="ra.contenido" label="Contenido Principal (Opcional)" rows="1" auto-grow></v-textarea>
-                <v-textarea v-model="ra.metodologia" label="Metodología Propuesta (Opcional)" rows="1" auto-grow></v-textarea>
+                <v-textarea v-model="ra.contenido" label="Contenido Principal (Opcional)" rows="1" auto-grow variant="outlined"></v-textarea>
+                <v-textarea v-model="ra.metodologia" label="Metodología Propuesta (Opcional)" rows="1" auto-grow variant="outlined"></v-textarea>
               </div>
               <v-btn size="small" variant="tonal" @click="addRA_Updated" class="mb-4"><v-icon left>mdi-plus</v-icon> Agregar RA</v-btn>
             </div>
 
-            <!-- ========================================= -->
-            <!-- == CAMPOS DINÁMICOS PARA MEI-ANTIGUO == -->
-            <!-- ========================================= -->
             <div v-if="formData.estructuraMEI === 'MEI-Antiguo'">
-              <!-- Resultados de Aprendizaje (RA) -->
               <div v-for="(ra, index) in formData.resultadosAprendizaje" :key="ra.id" class="d-flex align-start mb-2">
                 <v-textarea
                   v-model="ra.texto"
@@ -72,12 +86,12 @@
                   rows="2"
                   auto-grow
                   class="flex-grow-1"
+                  variant="outlined"
                 ></v-textarea>
                 <v-btn v-if="formData.resultadosAprendizaje.length > 1" icon="mdi-close" variant="text" @click="removeRA(index)" class="ml-2 mt-2"></v-btn>
               </div>
               <v-btn size="small" variant="tonal" @click="addRA_Old" class="mb-6"><v-icon left>mdi-plus</v-icon> Agregar RA</v-btn>
 
-              <!-- Aprendizajes Esperados (AE) -->
               <div v-for="(ae, index) in formData.aprendizajesEsperados" :key="ae.id" class="d-flex align-start mb-2">
                 <v-textarea
                   v-model="ae.texto"
@@ -87,6 +101,7 @@
                   rows="2"
                   auto-grow
                   class="flex-grow-1"
+                  variant="outlined"
                 ></v-textarea>
                 <v-btn v-if="formData.aprendizajesEsperados.length > 1" icon="mdi-close" variant="text" @click="removeAE(index)" class="ml-2 mt-2"></v-btn>
               </div>
@@ -134,6 +149,8 @@ const estructuras = [
 
 const getInitialFormData = () => ({
   estructuraMEI: 'MEI-Actualizado',
+  nombre_curso: '', // <--- CAMPO AÑADIDO
+  trimestre: null, // <--- CAMPO AÑADIDO
   resultadosFormativos: [{ id: Date.now(), texto: '' }],
   resultadosAprendizaje: [{ id: Date.now() + 1, texto: '', contenido: '', metodologia: '' }],
   aprendizajesEsperados: [{ id: Date.now() + 2, texto: '' }],
@@ -153,11 +170,17 @@ watch(dialog, (newValue) => {
 });
 
 watch(() => formData.value.estructuraMEI, () => {
-  // Al cambiar la estructura, reseteamos los arrays para mantener la coherencia
-  // y asegurar que siempre haya al menos un campo de entrada.
+  // Mantenemos los campos de curso y trimestre, pero reseteamos los arrays
+  const nombreCurso = formData.value.nombre_curso;
+  const trimestre = formData.value.trimestre;
+  
   formData.value.resultadosFormativos = [{ id: Date.now(), texto: '' }];
   formData.value.resultadosAprendizaje = [{ id: Date.now() + 1, texto: '', contenido: '', metodologia: '' }];
   formData.value.aprendizajesEsperados = [{ id: Date.now() + 2, texto: '' }];
+
+  // Restauramos los valores
+  formData.value.nombre_curso = nombreCurso;
+  formData.value.trimestre = trimestre;
 });
 
 // --- Funciones para agregar elementos ---
@@ -202,7 +225,14 @@ async function submit() {
 
 function buildPayload() {
   const data = formData.value;
-  const payload = { estructuraMEI: data.estructuraMEI };
+  
+  // --- PAYLOAD ACTUALIZADO ---
+  // Se incluyen los nuevos campos en la raíz del payload
+  const payload = { 
+    estructuraMEI: data.estructuraMEI,
+    nombre_curso: data.nombre_curso.trim(),
+    trimestre: (data.trimestre && Number(data.trimestre)) ? Number(data.trimestre) : undefined
+  };
 
   if (data.estructuraMEI === 'MEI-Actualizado') {
     // Filtra los RFs vacíos y mapea a la estructura esperada por el workflow
