@@ -1,136 +1,70 @@
 # .github/workflows/deploy.yml
 
-name: Deploy Full Application to AWS EC2
+name: Deploy App (Frontend & Backend) to AWS EC2
 
 on:
   push:
     branches: [ "main" ]
 
 jobs:
-  # JOB 1: Detecta qué ha cambiado.
-  detect-changes:
+  # Un único job, simple y lineal, que se enfoca solo en la aplicación.
+  build-and-deploy-app:
     runs-on: ubuntu-latest
-    outputs:
-      app_changed: ${{ steps.changed-files-app.outputs.any_changed }}
-      # El output ahora es una cadena multilínea
-      workflows_changed: ${{ steps.changed-files-workflows.outputs.all_changed_files }}
+    
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Find changed application files
-        id: changed-files-app
-        uses: tj-actions/changed-files@v41
-        with:
-          files: |
-            backend/**
-            frontend/**
-            n8n_custom/**
-      - name: Find changed workflow files
-        id: changed-files-workflows
-        uses: tj-actions/changed-files@v41
-        with:
-          files: n8n_workflows/**.json
-          # ¡CAMBIO! Usamos nueva línea como separador para manejar espacios en nombres.
-          separator: '\n'
+      - name: Checkout Repository
+        uses: actions/checkout@v3
 
-  # JOB 2: Construye y sube las imágenes de la app, SI ES NECESARIO.
-  build-and-push-app:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.app_changed == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Configure AWS Credentials & Login
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
-      
-      - name: Build, tag, and push images
-        run: |
-          ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
-          docker build -t $ECR_REGISTRY/validador-qm-backend:latest -f backend/Dockerfile .
-          docker build -t $ECR_REGISTRY/validador-qm-frontend:latest --build-arg VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }} --build-arg VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }} -f frontend/Dockerfile .
-          docker build -t $ECR_REGISTRY/validador-qm-n8n:latest -f n8n_custom/Dockerfile.prod .
-          
-          docker push $ECR_REGISTRY/validador-qm-backend:latest
-          docker push $ECR_REGISTRY/validador-qm-frontend:latest
-          docker push $ECR_REGISTRY/validador-qm-n8n:latest
-
-  # JOB 3: Despliega los contenedores de la app en EC2, SI ES NECESARIO.
-  deploy-app-containers:
-    needs: [detect-changes, build-and-push-app]
-    if: needs.detect-changes.outputs.app_changed == 'true'
-    runs-on: ubuntu-latest
-    steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      # --- ETAPA DE BUILD & PUSH (SOLO FRONTEND Y BACKEND) ---
+      
+      - name: Build and push Backend image
+        run: |
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/validador-qm-backend:latest -f backend/Dockerfile .
+          docker push ${{ steps.login-ecr.outputs.registry }}/validador-qm-backend:latest
+
+      - name: Build and push Frontend image
+        run: |
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/validador-qm-frontend:latest --build-arg VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }} --build-arg VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }} -f frontend/Dockerfile .
+          docker push ${{ steps.login-ecr.outputs.registry }}/validador-qm-frontend:latest
+          
+      # --- ETAPA DE DEPLOY (EN EC2) ---
+      
       - name: Deploy to EC2
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC_USERNAME }}
+          username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             set -e
             cd ~/validadorQM
             git pull origin main
             
+            # Los secretos se siguen actualizando por si cambian.
             echo "${{ secrets.ENV_PROD_CONTENT }}" > .env.prod
             
+            # Exportamos las variables que docker-compose necesita para encontrar las imágenes.
             export IMAGE_TAG=latest
-            export ECR_REGISTRY=${{ secrets.AWS_ECR_REGISTRY }}
+            export ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
           
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin $ECR_REGISTRY
             
-            docker compose -p validadorqm_prod -f docker-compose.prod.yml pull
-            docker compose -p validadorqm_prod -f docker-compose.prod.yml --env-file .env.prod up -d --force-recreate
+            # Descargamos las nuevas imágenes de frontend y backend.
+            docker compose -p validadorqm_prod -f docker-compose.prod.yml pull frontend backend
+            
+            # Reiniciamos los servicios. Docker Compose solo recreará frontend y backend
+            # porque son los únicos cuyas imágenes han cambiado. n8n y postgres no se tocarán.
+            docker compose -p validadorqm_prod -f docker-compose.prod.yml --env-file .env.prod up -d
+            
             docker image prune -f
-
-  # JOB 4: Despliega los workflows vía API, SI ES NECESARIO.
-  deploy-workflows:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.workflows_changed != ''
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Deploy Changed Workflows
-        env:
-          N8N_API_KEY: ${{ secrets.N8N_PROD_API_KEY }}
-          N8N_URL: http://44.209.113.21/n8n
-          CHANGED_WORKFLOWS: ${{ needs.detect-changes.outputs.workflows_changed }}
-        run: |
-          # ¡CAMBIO! Configuramos IFS y usamos un bucle while read para leer línea por línea.
-          # Esto maneja correctamente nombres de archivo con espacios.
-          echo "$CHANGED_WORKFLOWS" | while IFS= read -r workflow_file; do
-            # Ignorar líneas vacías que puedan venir en la variable
-            if [ -z "$workflow_file" ]; then
-              continue
-            fi
-
-            echo "Deploying workflow: '$workflow_file'"
-            
-            # Usamos comillas dobles en "$workflow_file" para preservar los espacios
-            WORKFLOW_ID=$(grep '"id":' "$workflow_file" | head -n 1 | awk -F'"' '{print $4}')
-            
-            if [ -z "$WORKFLOW_ID" ]; then
-              echo "Error: Could not find workflow ID in '$workflow_file'"
-              exit 1
-            fi
-            
-            echo "Found Workflow ID: $WORKFLOW_ID"
-            
-            curl --fail -S -X PUT "${N8N_URL}/api/v1/workflows/${WORKFLOW_ID}" \
-              -H "X-N8N-API-KEY: ${N8N_API_KEY}" \
-              -H "Content-Type: application/json" \
-              -d @"$workflow_file"
-          done
