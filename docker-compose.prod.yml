@@ -7,7 +7,7 @@ services:
     restart: always
     ports: ["80:8080"]
     networks: ["validador-net-prod"]
-    depends_on: [backend] # n8n ya no es una dependencia directa del frontend
+    depends_on: [backend, n8n]
 
   backend:
     image: ${ECR_REGISTRY}/validador-qm-backend:${IMAGE_TAG}
@@ -18,14 +18,11 @@ services:
     depends_on: [n8n, postgres]
 
   n8n:
-    # Usamos la imagen que ya está en ECR. No la reconstruimos.
-    image: 637423427532.dkr.ecr.us-east-1.amazonaws.com/validador-qm-n8n:latest
+    image: ${ECR_REGISTRY}/validador-qm-n8n:${IMAGE_TAG}
     container_name: validador_qm_n8n_prod
     restart: always
     env_file: [".env.prod"]
-    ports: ["5678:5678"] # Lo exponemos directamente
     environment:
-      # Las variables se cargan desde el env_file
       DB_TYPE: postgresdb
       DB_POSTGRESDB_HOST: postgres
       DB_POSTGRESDB_DATABASE: ${POSTGRES_DB}
@@ -33,6 +30,9 @@ services:
       DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD}
       N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
       GENERIC_TIMEZONE: ${GENERIC_TIMEZONE}
+      N8N_PROXY_MODE: ${N8N_PROXY_MODE}
+      WEBHOOK_URL: ${WEBHOOK_URL}
+      N8N_PATH: ${N8N_PATH}
     volumes: ["n8n_data_prod:/home/node/.n8n"]
     networks: ["validador-net-prod"]
     depends_on: [postgres]
