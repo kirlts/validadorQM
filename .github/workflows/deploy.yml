@@ -11,15 +11,21 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - uses: actions/checkout@v4
-      - uses: aws-actions/configure-aws-credentials@v2
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
+
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
+
+      # --- ETAPA DE BUILD & PUSH (SOLO FRONTEND Y BACKEND) ---
       
       - name: Build and push Backend image
         run: |
@@ -31,6 +37,8 @@ jobs:
           docker build -t ${{ steps.login-ecr.outputs.registry }}/validador-qm-frontend:latest --build-arg VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }} --build-arg VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }} -f frontend/Dockerfile .
           docker push ${{ steps.login-ecr.outputs.registry }}/validador-qm-frontend:latest
           
+      # --- ETAPA DE DEPLOY (EN EC2) ---
+      
       - name: Deploy to EC2
         uses: appleboy/ssh-action@master
         with:
@@ -52,7 +60,7 @@ jobs:
             # Descargamos solo las imágenes que nos importan
             docker compose -p validadorqm_prod -f docker-compose.prod.yml pull frontend backend
             
-            # 'up -d' reiniciará solo frontend y backend
+            # 'up -d' reiniciará solo frontend y backend. N8N NO SE TOCA.
             docker compose -p validadorqm_prod -f docker-compose.prod.yml --env-file .env.prod up -d
             
             docker image prune -f
