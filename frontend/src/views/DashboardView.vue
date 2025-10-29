@@ -3,7 +3,6 @@
     <v-row justify="center">
       <v-col cols="12" md="8">
 
-        <!-- SECCIÓN DE HERRAMIENTAS DE GENERACIÓN -->
         <v-card class="mb-6">
           <v-card-title>Herramientas de Generación</v-card-title>
           <v-card-text>
@@ -17,7 +16,6 @@
           </v-card-actions>
         </v-card>
 
-        <!-- SECCIÓN: MIS GENERACIONES GUARDADAS -->
         <v-card class="mb-6">
           <v-card-title class="d-flex align-center">
             <span class="headline">Mis Generaciones Guardadas</span>
@@ -34,7 +32,6 @@
 
           <v-list v-else lines="one">
             <template v-if="generations.length > 0">
-              <!-- CORRECCIÓN CLAVE: El @click ahora pasa el objeto 'gen' completo -->
               <v-list-item
                 v-for="gen in generations" 
                 :key="gen.id"
@@ -51,7 +48,6 @@
                 <v-list-item-subtitle>{{ gen.input_data.estructuraMEI }}</v-list-item-subtitle>
                 
                 <template v-slot:append>
-                  <!-- CORRECCIÓN CLAVE: El @click.stop también pasa el objeto 'gen' completo -->
                   <v-btn icon="mdi-eye" variant="text" @click.stop="viewGeneration(gen)" title="Visualizar Resultado"></v-btn>
                   <v-btn icon="mdi-pencil" variant="text" @click.stop="promptRename(gen)" title="Renombrar Generación"></v-btn>
                   <v-btn icon="mdi-delete" variant="text" @click.stop="promptDeleteGeneration(gen)" title="Eliminar Generación"></v-btn>
@@ -64,7 +60,6 @@
           </v-list>
         </v-card>
 
-        <!-- SECCIÓN DE DISEÑOS INSTRUCCIONALES -->
         <v-card>
           <v-card-title class="d-flex align-center">
             <span class="headline">Mis Diseños Instruccionales</span>
@@ -129,7 +124,6 @@
       </v-col>
     </v-row>
     
-    <!-- DIÁLOGO DE ELIMINACIÓN (GENERALIZADO) -->
     <v-dialog v-model="deleteDialog.show" max-width="500px" persistent>
       <v-card>
         <v-card-title class="headline">Confirmar Eliminación</v-card-title>
@@ -142,30 +136,27 @@
       </v-card>
     </v-dialog>
     
-    <!-- DIÁLOGO DE VISUALIZACIÓN DE DI (EXISTENTE) -->
     <v-dialog v-model="viewerDialog.show" fullscreen scrollable>
        <v-card>
-        <v-toolbar color="primary" dark>
-          <v-toolbar-title>{{ viewerDialog.itemName }}</v-toolbar-title>
-          <v-spacer></v-spacer>
-          <v-btn icon @click="viewerDialog.show = false"><v-icon>mdi-close</v-icon></v-btn>
-        </v-toolbar>
-        <v-card-text class="pa-0" style="height: calc(100vh - 64px);">
-          <div v-if="!viewerDialog.url" class="d-flex justify-center align-center h-100">
-            <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
-          </div>
-          <iframe v-else :src="viewerDialog.url" width="100%" height="100%" frameborder="0"></iframe>
-        </v-card-text>
-      </v-card>
+         <v-toolbar color="primary" dark>
+           <v-toolbar-title>{{ viewerDialog.itemName }}</v-toolbar-title>
+           <v-spacer></v-spacer>
+           <v-btn icon @click="viewerDialog.show = false"><v-icon>mdi-close</v-icon></v-btn>
+         </v-toolbar>
+         <v-card-text class="pa-0" style="height: calc(100vh - 64px);">
+           <div v-if="!viewerDialog.url" class="d-flex justify-center align-center h-100">
+             <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
+           </div>
+           <iframe v-else :src="viewerDialog.url" width="100%" height="100%" frameborder="0"></iframe>
+         </v-card-text>
+       </v-card>
     </v-dialog>
 
-    <!-- MODAL DE GENERACIÓN -->
     <GeneratorModal
       v-model="isGeneratorModalOpen"
       @generation-complete="handleGenerationComplete"
     />
 
-    <!-- MODAL PARA MOSTRAR RESULTADOS DE GENERACIÓN (VERSIÓN FINAL CON INPUTS) -->
     <v-dialog v-model="isResultModalOpen" max-width="1200px">
       <v-card>
         <v-toolbar color="white" density="compact">
@@ -177,10 +168,18 @@
         <v-card-text style="max-height: 80vh; overflow-y: auto;">
           <div v-if="activeGeneration">
             
-            <!-- SECCIÓN DE DATOS DE ENTRADA -->
             <div class="mb-6">
               <div class="text-overline">Datos de Entrada</div>
-              <!-- MEI Actualizado Inputs -->
+              
+              <div class="mb-2">
+                <strong>Curso:</strong>
+                <p class="text-body-2">{{ activeGeneration.input_data.nombre_curso }}</p>
+              </div>
+              <div v-if="activeGeneration.input_data.trimestre" class="mb-2">
+                <strong>Trimestre:</strong>
+                <p class="text-body-2">{{ activeGeneration.input_data.trimestre }}</p>
+              </div>
+
               <div v-if="activeGeneration.input_data.estructuraMEI === 'MEI-Actualizado'">
                 <div v-for="(rf, i) in activeGeneration.input_data.resultadosFormativos" :key="`rf-${i}`" class="mb-2">
                   <strong>Resultado Formativo {{ i + 1 }}:</strong>
@@ -191,7 +190,6 @@
                   <p class="text-body-2">{{ ra.texto }}</p>
                 </div>
               </div>
-              <!-- MEI Antiguo Inputs -->
               <div v-if="activeGeneration.input_data.estructuraMEI === 'MEI-Antiguo'">
                  <div v-for="(ra, i) in activeGeneration.input_data.resultadosAprendizaje" :key="`ra-${i}`" class="mb-2">
                   <strong>Resultado de Aprendizaje {{ i + 1 }}:</strong>
@@ -205,32 +203,37 @@
             </div>
             <v-divider class="mb-4"></v-divider>
 
-            <!-- SECCIÓN DE INDICADORES GENERADOS -->
             <div class="text-overline mb-2">Indicadores Generados</div>
+            
             <div v-for="(item, index) in (activeGeneration.output_data.analisisResultadosAprendizaje || activeGeneration.output_data.analisisAprendizajesEsperados)" :key="index" class="mb-6">
-              <h3 class="text-h6 mb-2">
+              
+              <h3 class="text-h6 mb-3">
                 {{ activeGeneration.output_data.estructuraMEI === 'MEI-Actualizado' ? `Para el Resultado de Aprendizaje ${index + 1}:` : `Para el Aprendizaje Esperado ${index + 1}:`}}
               </h3>
-              <p class="font-italic mb-3 bg-grey-lighten-4 pa-3 rounded">{{ item.texto }}</p>
 
-              <!-- VISTA PARA MEI-ACTUALIZADO (PANELES EXPANDIBLES) -->
               <v-expansion-panels v-if="activeGeneration.output_data.estructuraMEI === 'MEI-Actualizado'">
                 <v-expansion-panel v-for="(indicador, i) in item.indicadoresGenerados" :key="i">
+                  
                   <v-expansion-panel-title>
                     <v-icon left class="mr-2" color="primary">mdi-lightbulb-on-outline</v-icon>
                     <span class="font-weight-bold mr-2">ID {{ index + 1 }}.{{ i + 1 }}:</span>
-                    <span>{{ indicador.indicador }}</span>
+                    <span>{{ indicador.id_texto }}</span>
                   </v-expansion-panel-title>
+                  
                   <v-expansion-panel-text class="bg-grey-lighten-5">
                       <v-list-item class="pa-2">
-                        <v-list-item-title class="font-weight-bold">Justificación Pedagógica:</v-list-item-title>
-                        <v-list-item-subtitle class="text-wrap">{{ indicador.justificacionPedagogica }}</v-list-item-subtitle>
+                        <v-list-item-title class="font-weight-bold">Verbo Utilizado:</v-list-item-title>
+                        <v-list-item-subtitle class="text-wrap">{{ indicador.verbo_utilizado }}</v-list-item-subtitle>
+                      </v-list-item>
+                      <v-list-item class="pa-2">
+                        <v-list-item-title class="font-weight-bold">Nivel Taxonómico (Bloom):</v-list-item-title>
+                        <v-list-item-subtitle class="text-wrap">Nivel {{ indicador.nivel_verbo }}</v-list-item-subtitle>
                       </v-list-item>
                   </v-expansion-panel-text>
+
                 </v-expansion-panel>
               </v-expansion-panels>
               
-              <!-- VISTA PARA MEI-ANTIGUO (TABLA DE OBJETOS) -->
               <v-table v-else class="border rounded">
                 <thead>
                   <tr>
@@ -249,13 +252,13 @@
                   </tr>
                 </tbody>
               </v-table>
+
             </div>
-          </div>
+            </div>
         </v-card-text>
       </v-card>
     </v-dialog>
 
-    <!-- DIÁLOGO PARA RENOMBRAR GENERACIÓN -->
     <v-dialog v-model="renameDialog.show" max-width="500px" persistent>
       <v-card>
         <v-card-title class="headline">Renombrar Generación</v-card-title>
