@@ -77,28 +77,19 @@ export function getDis() {
   return fetchWithAuth('dis');
 }
 
-export async function uploadDi(file, estructuraMEI) {
+export function uploadDi(file, estructuraMEI) {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('estructuraMEI', estructuraMEI); 
 
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) throw new Error('No hay sesión de usuario activa.');
-
-  // Nota: esta función usa su propia lógica de fetch, la actualizamos también.
-  const response = await fetch(`${API_URL}/dis`, {
+  // REFACTOR: Usar fetchWithAuth para consistencia y manejo de errores
+  return fetchWithAuth('dis', {
     method: 'POST',
-    headers: { 'Authorization': `Bearer ${session.access_token}` },
     body: formData,
+    // No es necesario 'Content-Type', fetchWithAuth lo omite
+    // automáticamente para FormData, permitiendo al navegador
+    // establecer el 'boundary' correcto.
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    const error = new Error(errorData.message || errorData.error || `Error: ${response.statusText}`);
-    error.status = response.status;
-    throw error;
-  }
-  return response.json();
 }
 
 export function deleteDi(diId) {

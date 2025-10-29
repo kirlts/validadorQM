@@ -81,19 +81,33 @@ export const useAppStore = defineStore('app', {
             const payload = message.payload;
             console.log('[Realtime-Broadcast] Mensaje recibido:', payload);
             
+            // *** INICIO DE LA MODIFICACIÓN ***
+            // VVerificar que el payload (y sus datos) existan y pertenezcan
+            // a este usuario antes de modificar el estado local.
+            if (!payload || !this.user) return;
+            
+            const userId = this.user.id;
+            // *** FIN DE LA MODIFICACIÓN ***
+
             switch (payload.eventType) {
               case 'INSERT':
-                if (!this.designs.some(d => d.id_di === payload.new.id_di)) {
+                // *** MODIFICACIÓN: Añadir chequeo de usuario ***
+                if (payload.new?.id_usuario === userId && !this.designs.some(d => d.id_di === payload.new.id_di)) {
                     this.designs.unshift(payload.new);
                 }
                 break;
               case 'UPDATE':
-                const index = this.designs.findIndex(d => d.id_di === payload.new.id_di);
-                if (index !== -1) {
-                  this.designs[index] = payload.new;
+                // *** MODIFICACIÓN: Añadir chequeo de usuario ***
+                if (payload.new?.id_usuario === userId) {
+                  const index = this.designs.findIndex(d => d.id_di === payload.new.id_di);
+                  if (index !== -1) {
+                    this.designs[index] = payload.new;
+                  }
                 }
                 break;
               case 'DELETE':
+                // Nota: El delete es seguro porque no añade datos, 
+                // solo filtra el array local por un ID.
                 this.designs = this.designs.filter(d => d.id_di !== payload.old.id_di);
                 break;
             }
