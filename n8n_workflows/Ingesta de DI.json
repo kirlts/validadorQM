@@ -42,7 +42,7 @@
       "name": "Get a row",
       "credentials": {
         "supabaseApi": {
-          "id": "m0DUcQthM94wIR7O",
+          "id": "5fVLDvpdaTRvwHil",
           "name": "Supabase account"
         }
       }
@@ -70,7 +70,7 @@
       "name": "HTTP Request",
       "credentials": {
         "supabaseApi": {
-          "id": "m0DUcQthM94wIR7O",
+          "id": "5fVLDvpdaTRvwHil",
           "name": "Supabase account"
         }
       }
@@ -84,21 +84,21 @@
       "type": "n8n-nodes-base.readWriteFile",
       "typeVersion": 1,
       "position": [
-        656,
-        -224
+        880,
+        -320
       ],
       "id": "7ec9e0a1-3bda-4c50-be1f-9a451a264d0f",
       "name": "Write Binary File"
     },
     {
       "parameters": {
-        "command": "={{ `pandoc -s \"${$('Write Binary File').item.json.fileName}\" -t html -o \"${$('Write Binary File').item.json.fileName}.html\"` }}"
+        "command": "=FILE_PATH=\"{{ $('Write Binary File').item.json.fileName }}\";\nOUTPUT_PATH=\"${FILE_PATH}.html\";\n\n# Usamos un 'case' para determinar la acción basada en la extensión\ncase \"$FILE_PATH\" in\n  *.pdf)\n    echo \"Convirtiendo PDF a HTML...\"\n    pandoc -s \"$FILE_PATH\" -t html -o \"$OUTPUT_PATH\"\n    ;;\n  *.docx | *.doc)\n    echo \"Convirtiendo DOC/DOCX a HTML...\"\n    pandoc -s \"$FILE_PATH\" -t html -o \"$OUTPUT_PATH\"\n    ;;\n  *)\n    echo \"Error: Tipo de archivo no soportado: $FILE_PATH\" >&2\n    exit 1\n    ;;\nesac"
       },
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
       "position": [
-        880,
-        -224
+        1104,
+        -320
       ],
       "id": "1067b30e-bdb0-4840-998a-05e8f7c8e9bb",
       "name": "Convertir"
@@ -111,8 +111,8 @@
       "type": "n8n-nodes-base.readWriteFile",
       "typeVersion": 1,
       "position": [
-        1104,
-        -224
+        1328,
+        -320
       ],
       "id": "5bcbd1af-084c-4696-bdb1-07eac782c063",
       "name": "Leer output"
@@ -125,7 +125,7 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.4,
       "position": [
-        2336,
+        2800,
         -224
       ],
       "id": "191bd605-e595-42ad-8863-ffa851c6b9f3",
@@ -138,8 +138,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1328,
-        -224
+        1552,
+        -320
       ],
       "id": "bf9e7e4b-b0fa-4a46-86e0-4625b65f0d85",
       "name": "Extraer Texto"
@@ -152,15 +152,15 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        1840,
+        2304,
         0
       ],
       "id": "508b1e93-e614-49bc-86bd-3a63d2222816",
       "name": "Classifier Model",
       "credentials": {
         "googlePalmApi": {
-          "id": "1fRbxclakan4SB2c",
-          "name": "Api 1"
+          "id": "0iqywUDpc1FpZaGU",
+          "name": "Google Gemini(PaLM) Api account"
         }
       }
     },
@@ -184,7 +184,7 @@
       "type": "@n8n/n8n-nodes-langchain.textClassifier",
       "typeVersion": 1.1,
       "position": [
-        1760,
+        2224,
         -224
       ],
       "id": "9eacdd23-d2d3-485d-98a3-5b2838d3daba",
@@ -219,14 +219,14 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        2112,
+        2576,
         -320
       ],
       "id": "c34b72ae-1fa0-4de3-bb26-bc6cb6c629d6",
       "name": "Update Success",
       "credentials": {
         "supabaseApi": {
-          "id": "m0DUcQthM94wIR7O",
+          "id": "5fVLDvpdaTRvwHil",
           "name": "Supabase account"
         }
       }
@@ -260,14 +260,14 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        2112,
+        2576,
         -128
       ],
       "id": "dd18c148-a894-4ccd-8007-3d460851186d",
       "name": "Update Not DI",
       "credentials": {
         "supabaseApi": {
-          "id": "m0DUcQthM94wIR7O",
+          "id": "5fVLDvpdaTRvwHil",
           "name": "Supabase account"
         }
       }
@@ -279,11 +279,114 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1536,
-        -224
+        1776,
+        -320
       ],
       "id": "74b7cdac-bdc9-4ec5-af0d-e22fda8bd009",
       "name": "Limpiar y Simplificar HTML"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Get a row').item.json.nombre_archivo }}",
+                    "rightValue": ".docx",
+                    "operator": {
+                      "type": "string",
+                      "operation": "endsWith"
+                    },
+                    "id": "4d0d76a7-ddaa-4865-b2a8-91d84c86847a"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "DOCX"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "38315e4b-8dcd-4859-b40d-55b33b074520",
+                    "leftValue": "={{ $('Get a row').item.json.nombre_archivo }}",
+                    "rightValue": ".pdf",
+                    "operator": {
+                      "type": "string",
+                      "operation": "endsWith"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "PDF"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        656,
+        -224
+      ],
+      "id": "30771a00-4b92-4f67-810f-4fffd386e7b2",
+      "name": "Detect Format"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        1552,
+        -128
+      ],
+      "id": "390f97d6-91c0-4e90-bf17-093d0855ed2c",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Recibe {\"json\": {\"text\": \"...\"}}\nconst text = $input.first().json.text;\n\nif (!text) {\n  return { json: { simplifiedHtml: \"<p>Documento PDF vacío o no legible.</p>\" } };\n}\n\n// Convierte el texto plano a un HTML simple\n// Reemplaza saltos de línea con etiquetas <p>\nconst html = text\n  .split('\\n')\n  .filter(p => p.trim() !== '') // Elimina líneas vacías\n  .map(p => `<p>${p.trim()}</p>`) // Envuelve cada línea en un párrafo\n  .join('\\n');\n\n// Devuelve la misma estructura que el nodo \"Limpiar y Simplificar HTML\"\nreturn { \n  json: { \n    simplifiedHtml: html \n  } \n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1776,
+        -128
+      ],
+      "id": "c76b0a7c-0bf8-4fe3-91dd-d041f05b6cb5",
+      "name": "Formatear PDF a HTML"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2000,
+        -224
+      ],
+      "id": "7a2e3721-57ad-40d5-bcf8-11c9f67d3652",
+      "name": "Merge"
     }
   ],
   "pinData": {
@@ -296,16 +399,16 @@
             "accept-encoding": "gzip, deflate",
             "accept": "*/*",
             "connection": "keep-alive",
-            "content-length": "86",
+            "content-length": "81",
             "content-type": "application/json"
           },
           "params": {},
           "query": {},
           "body": {
-            "di_id": "e295553f-0463-42c8-8735-d4301307a65d",
-            "paradigma": "CentradoEnAsignatura"
+            "di_id": "696d76fd-3aca-4d8a-b8f5-bd8c63c16259",
+            "estructuraMEI": "MEI-Antiguo"
           },
-          "webhookUrl": "http://localhost:5678/webhook/e71af77b-8c5f-4f15-af5a-f0fa2d75d279",
+          "webhookUrl": "http://localhost:5678/webhook/ingesta-di",
           "executionMode": "production"
         }
       }
@@ -338,7 +441,7 @@
       "main": [
         [
           {
-            "node": "Write Binary File",
+            "node": "Detect Format",
             "type": "main",
             "index": 0
           }
@@ -444,9 +547,60 @@
       "main": [
         [
           {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect Format": {
+      "main": [
+        [
+          {
+            "node": "Write Binary File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Formatear PDF a HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
             "node": "Clasificador",
             "type": "main",
             "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear PDF a HTML": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
           }
         ]
       ]
@@ -456,7 +610,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "95c5c149-2447-4854-b1aa-d3a45e4a5afe",
+  "versionId": "0c030a67-e060-4f14-8164-33f4342013a6",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "8991d57cc3be404c4c8d6951306c68fa6ee93d0a9fcfe54908cc27cc5546f205"
