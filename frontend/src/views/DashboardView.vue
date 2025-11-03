@@ -117,7 +117,7 @@
               <input type="file" id="fileInput" @change="handleFileUpload" hidden accept=".doc,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.pdf,application/pdf">            
               <v-btn color="primary" variant="flat" @click="triggerFileInput" :loading="isUploading" :disabled="isActionInProgress || !selectedEstructuraMEI">
               <v-icon left>mdi-upload</v-icon>
-              Subir Nuevo DI
+              Subir Archivo
             </v-btn>
           </v-card-actions>
         </v-card>
