@@ -221,6 +221,23 @@
                   </v-expansion-panel-title>
                   
                   <v-expansion-panel-text class="bg-grey-lighten-5">
+                      
+                      <v-list-item class="pa-2">
+                        <template v-slot:append>
+                          <v-btn 
+                            icon="mdi-content-copy" 
+                            variant="text" 
+                            size="small" 
+                            @click="copyToClipboard(indicador.id_texto)"
+                            title="Copiar texto del indicador"
+                          ></v-btn>
+                        </template>
+                        <v-list-item-title class="font-weight-bold">Texto del Indicador (ID):</v-list-item-title>
+                        <v-list-item-subtitle class="text-wrap">
+                          {{ indicador.id_texto }}
+                        </v-list-item-subtitle>
+                      </v-list-item>
+                      <v-divider></v-divider>
                       <v-list-item class="pa-2">
                         <v-list-item-title class="font-weight-bold">Verbo Utilizado:</v-list-item-title>
                         <v-list-item-subtitle class="text-wrap">{{ indicador.verbo_utilizado }}</v-list-item-subtitle>
@@ -229,30 +246,70 @@
                         <v-list-item-title class="font-weight-bold">Nivel Taxonómico (Bloom):</v-list-item-title>
                         <v-list-item-subtitle class="text-wrap">Nivel {{ indicador.nivel_verbo }}</v-list-item-subtitle>
                       </v-list-item>
+                      
+                      <v-divider></v-divider>
+                      <v-list-item class="pa-2">
+                        <v-list-item-title class="font-weight-bold">Justificación Pedagógica:</v-list-item-title>
+                        <v-list-item-subtitle class="text-wrap">
+                          {{ indicador.justificacion_pedagogica || 'No disponible' }}
+                        </v-list-item-subtitle>
+                      </v-list-item>
                   </v-expansion-panel-text>
 
                 </v-expansion-panel>
               </v-expansion-panels>
               
-              <v-table v-else class="border rounded">
-                <thead>
-                  <tr>
-                    <th class="text-left font-weight-bold" style="width: 5%;">IL</th>
-                    <th class="text-left font-weight-bold" style="width: 20%;">Habilidad</th>
-                    <th class="text-left font-weight-bold" style="width: 35%;">Contenido</th>
-                    <th class="text-left font-weight-bold" style="width: 40%;">Condición/Contexto</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(indicador, i) in item.indicadoresGenerados" :key="i">
-                    <td class="font-weight-bold">IL {{ index + 1 }}.{{ i + 1 }}</td>
-                    <td>{{ indicador.habilidad }}</td>
-                    <td>{{ indicador.contenido }}</td>
-                    <td>{{ indicador.condicion_contexto }}</td>
-                  </tr>
-                </tbody>
-              </v-table>
+              <v-expansion-panels v-else>
+                <v-expansion-panel v-for="(indicador, i) in item.indicadoresGenerados" :key="i">
+                  
+                  <v-expansion-panel-title>
+                    <v-icon left class="mr-2" color="primary">mdi-lightbulb-on-outline</v-icon>
+                    <span class="font-weight-bold mr-2">IL {{ index + 1 }}.{{ i + 1 }}:</span>
+                    <span>{{ indicador.habilidad }} {{ indicador.contenido }}</span>
+                  </v-expansion-panel-title>
+                  
+                  <v-expansion-panel-text class="bg-grey-lighten-5">
 
+                      <v-list-item class="pa-2">
+                        <template v-slot:append>
+                          <v-btn 
+                            icon="mdi-content-copy" 
+                            variant="text" 
+                            size="small" 
+                            @click="copyToClipboard([indicador.habilidad, indicador.contenido, indicador.condicion_contexto].filter(Boolean).join(' '))"
+                            title="Copiar texto completo del indicador"
+                          ></v-btn>
+                        </template>
+                        <v-list-item-title class="font-weight-bold">Texto del Indicador (IL):</v-list-item-title>
+                        <v-list-item-subtitle class="text-wrap">
+                          {{ [indicador.habilidad, indicador.contenido, indicador.condicion_contexto].filter(Boolean).join(' ') }}
+                        </v-list-item-subtitle>
+                      </v-list-item>
+                      <v-divider></v-divider>
+                      <v-list-item class="pa-2">
+                        <v-list-item-title class="font-weight-bold">Habilidad:</v-list-item-title>
+                        <v-list-item-subtitle class="text-wrap">{{ indicador.habilidad }}</v-list-item-subtitle>
+                      </v-list-item>
+                      <v-list-item class="pa-2">
+                        <v-list-item-title class="font-weight-bold">Contenido:</v-list-item-title>
+                        <v-list-item-subtitle class="text-wrap">{{ indicador.contenido }}</v-list-item-subtitle>
+                      </v-list-item>
+                      <v-list-item class="pa-2">
+                        <v-list-item-title class="font-weight-bold">Condición/Contexto:</v-list-item-title>
+                        <v-list-item-subtitle class="text-wrap">{{ indicador.condicion_contexto || 'N/A' }}</v-list-item-subtitle>
+                      </v-list-item>
+                      
+                      <v-divider></v-divider>
+                      <v-list-item class="pa-2">
+                        <v-list-item-title class="font-weight-bold">Justificación Pedagógica:</v-list-item-title>
+                        <v-list-item-subtitle class="text-wrap">
+                          {{ indicador.justificacion_pedagogica || 'No disponible' }}
+                        </v-list-item-subtitle>
+                      </v-list-item>
+
+                  </v-expansion-panel-text>
+                </v-expansion-panel>
+              </v-expansion-panels>
             </div>
             </div>
         </v-card-text>
@@ -280,7 +337,21 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-  </v-container>
+
+    <v-snackbar
+      v-model="snackbar.show"
+      :timeout="3000"
+      color="success"
+      location="top right"
+      rounded="pill"
+    >
+      <v-icon left>mdi-check-circle</v-icon>
+      <span class="ml-2">{{ snackbar.text }}</span>
+      <template v-slot:actions>
+        <v-btn icon="mdi-close" variant="text" @click="snackbar.show = false"></v-btn>
+      </template>
+    </v-snackbar>
+    </v-container>
 </template>
 
 <script setup>
@@ -313,6 +384,10 @@
   const isGenerationsLoading = ref(false);
   const isRenaming = ref(false);
   const renameDialog = reactive({ show: false, itemId: null, currentName: '', newName: '' });
+
+  // --- INICIO DE LA CORRECCIÓN ---
+  const snackbar = reactive({ show: false, text: '' });
+  // --- FIN DE LA CORRECCIÓN ---
 
   // --- CORRECCIÓN CLAVE 1: Definir 'activeGeneration' como una ref ---
   const activeGeneration = ref(null);
@@ -412,6 +487,20 @@
       } catch (error) { console.error("Error al obtener enlace de descarga:", error); }
   }
 
+  // --- INICIO DE LA CORRECCIÓN 2 ---
+  async function copyToClipboard(textToCopy) {
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      snackbar.text = '¡Texto copiado al portapapeles!';
+      snackbar.show = true;
+    } catch (err) {
+      console.error('Error al copiar texto: ', err);
+      snackbar.text = 'Error al copiar texto.';
+      snackbar.show = true;
+    }
+  }
+  // --- FIN DE LA CORRECCIÓN 2 ---
+
   // --- Lógica para Generaciones (Completa y Corregida) ---
   async function fetchGenerations() {
     isGenerationsLoading.value = true;
@@ -429,18 +518,16 @@
 
   function openGeneratorModal() { isGeneratorModalOpen.value = true; }
 
-  // --- CORRECCIÓN CLAVE 3: La función ahora construye el objeto 'activeGeneration' directamente ---
   async function handleGenerationComplete(result) {
-    await fetchGenerations(); // Refrescamos para tener el objeto completo con ID, created_at, etc.
-    const newGen = generations.value[0]; // Asumimos que la más nueva es la primera en la lista ordenada
+    activeGeneration.value = result;
     
-    if (newGen) {
-      // Usamos el objeto completo recién obtenido de la base de datos
-      activeGeneration.value = newGen; 
-    }
-    isResultModalOpen.value = true;
-  }
+    // 2. Abre el modal.
+    isResultModalOpen.value = true; 
 
+    // 3. Ahora que el usuario está viendo el resultado correcto,
+    //    actualiza la lista de "Mis Generaciones Guardadas" en segundo plano.
+    await fetchGenerations();
+  }
   function promptRename(gen) {
     renameDialog.itemId = gen.id;
     renameDialog.currentName = gen.nombre_generacion || `Generación del ${new Date(gen.created_at).toLocaleString()}`;

@@ -37,7 +37,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// --- Inicio: Código CORREGIDO para \"Validar y Extraer Indicadores\" (ID 2615...) ---\n\n// 1. OBTENER DATOS DE ENTRADA\nconst itemData = $input.first().json;\nconst rawResponse = itemData.output;\n// *** CORRECCIÓN CLAVE ***\n// Buscamos la estructura MEI del nodo de bucle, que siempre debe tener la data\nconst estructuraMEI = $('Procesar Uno por Uno').first().json.estructuraMEI; \n\n\n// 2. FUNCIÓN DE EXTRACCIÓN (Simple)\nfunction extractJsonArray(text) {\n  const arrayStart = text.indexOf('[');\n  const arrayEnd = text.lastIndexOf(']');\n  const jsonString = text.substring(arrayStart, arrayEnd + 1);\n  return JSON.parse(jsonString);\n}\n\n// 3. PARSEAR LA RESPUESTA\nconst indicadoresGeneradosLLM = extractJsonArray(rawResponse);\n\n\n// 4. TRANSFORMACIÓN CONDICIONAL DE KRATOS (El \"Arreglo\" Final)\nlet indicadoresGenerados;\n\nif (estructuraMEI === 'MEI-Actualizado') {\n    // Mapeo para la estructura del frontend (RF-RA-ID)\n    indicadoresGenerados = indicadoresGeneradosLLM.map(indicador => {\n        return {\n            \"id_texto\": indicador.indicador_corregido || indicador.id_texto_draft,\n            \"verbo_utilizado\": indicador.verbo_utilizado,\n            \"nivel_verbo\": indicador.nivel_verbo\n        };\n    });\n} else if (estructuraMEI === 'MEI-Antiguo') {\n    // Mapeo para la estructura de la tabla del frontend (RA-AE-IL)\n    // El Agente 2 ya devolvió \"habilidad\", \"contenido\", etc. Lo pasamos directamente.\n    indicadoresGenerados = indicadoresGeneradosLLM.map(indicador => {\n        return {\n            \"habilidad\": indicador.habilidad,\n            \"contenido\": indicador.contenido,\n            \"condicion_contexto\": indicador.condicion_contexto\n        };\n    });\n} else {\n    // Falla de seguridad: si la estructura no se reconoce, devolvemos un array vacío.\n    indicadoresGenerados = [];\n}\n\n// 5. PREPARAR EL ITEM DE SALIDA (FUSIÓN)\nconst outputItem = {\n  objetivo_actual: itemData.objetivo_actual,\n  contexto_superior: itemData.contexto_superior,\n  estructuraMEI: estructuraMEI, // Usamos el dato buscado\n  indicadoresGenerados: indicadoresGenerados // El array de indicadores LIMPIO\n};\n\n// 6. DEVOLVER EL OBJETO LIMPIO\nreturn [outputItem];\n\n// --- Fin: Código CORREGIDO para \"Validar y Extraer Indicadores\" (ID 2615...) ---"
+        "jsCode": "// --- Inicio: Código CORREGIDO para \"Validar y Extraer Indicadores\" (ID 2615...) ---\n\n// 1. OBTENER DATOS DE ENTRADA\nconst itemData = $input.first().json;\nconst rawResponse = itemData.output;\n// Buscamos la estructura MEI del nodo de bucle\nconst estructuraMEI = $('Procesar Uno por Uno').first().json.estructuraMEI; \n\n// 2. FUNCIÓN DE EXTRACCIÓN (Simple)\nfunction extractJsonArray(text) {\n  const arrayStart = text.indexOf('[');\n  const arrayEnd = text.lastIndexOf(']');\n  if (arrayStart === -1 || arrayEnd === -1) {\n    throw new Error(\"Respuesta de IA no contiene un array JSON válido.\");\n  }\n  const jsonString = text.substring(arrayStart, arrayEnd + 1);\n  return JSON.parse(jsonString);\n}\n\n// 3. PARSEAR LA RESPUESTA\nconst indicadoresGeneradosLLM = extractJsonArray(rawResponse);\n\n\n// 4. TRANSFORMACIÓN CONDICIONAL\nlet indicadoresGenerados;\n\nif (estructuraMEI === 'MEI-Actualizado') {\n    // Mapeo para la estructura del frontend (RF-RA-ID)\n    indicadoresGenerados = indicadoresGeneradosLLM.map(indicador => {\n        return {\n            // *** CORRECCIÓN CLAVE ***\n            // El Agente 3 devuelve \"id_texto_original\", no \"id_texto\".\n            \"id_texto\": indicador.id_texto, \n            \n            \"verbo_utilizado\": indicador.verbo_utilizado,\n            \"nivel_verbo\": indicador.nivel_verbo,\n            \"justificacion_pedagogica\": indicador.justificacion_pedagogica\n        };\n    });\n} else if (estructuraMEI === 'MEI-Antiguo') {\n    // Mapeo para la estructura de la tabla del frontend (RA-AE-IL)\n    indicadoresGenerados = indicadoresGeneradosLLM.map(indicador => {\n        return {\n            // Usamos las claves con Mayúscula que el Agente 3 SÍ devuelve\n            \"habilidad\": indicador.Habilidad,\n            \"contenido\": indicador.Contenido,\n            \"condicion_contexto\": indicador.Condicion_Contexto,\n            \"justificacion_pedagogica\": indicador.justificacion_pedagogica\n        };\n    });\n} else {\n    indicadoresGenerados = [];\n}\n\n// 5. PREPARAR EL ITEM DE SALIDA (FUSIÓN)\nconst outputItem = {\n  objetivo_actual: itemData.objetivo_actual,\n  contexto_superior: itemData.contexto_superior,\n  estructuraMEI: estructuraMEI, \n  indicadoresGenerados: indicadoresGenerados \n};\n\n// 6. DEVOLVER EL OBJETO LIMPIO\nreturn [outputItem];\n\n// --- Fin: Código CORREGIDO para \"Validar y Extraer Indicadores\" (ID 2615...) ---"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -109,7 +109,7 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        824,
+        832,
         1696
       ],
       "id": "53d442c7-9634-46e2-8e0e-a5d3f56faffa",
@@ -349,20 +349,20 @@
       "typeVersion": 2.2,
       "position": [
         1776,
-        1396
+        1408
       ],
       "id": "3332adbf-83dd-424b-b82f-9dc9f0b2aec5",
       "name": "Agente 1 - Contextualizador de Misión"
     },
     {
       "parameters": {
-        "jsCode": "// --- Inicio: Código CORREGIDO para \"Constructor de Prompt (Agente 2 - Potente)\" ---\n\n// 1. OBTENER DATOS (Leyendo de Nodos Anteriores)\nconst estructuraMEI = $('Webhook').first().json.body.estructuraMEI;\nconst objetivo_actual = $('Procesar Uno por Uno').first().json.objetivo_actual;\nconst contexto_superior = $('Procesar Uno por Uno').first().json.contexto_superior;\n\n// *** CRÍTICO: El nivel_ra ahora es el NIVEL del objetivo principal (RA o AE) ***\nconst nivel_ra = $('Verbos y Nivel').first().json.nivel_ra;\n\nconst verbos_string = $('Verbos y Nivel').first().json.verbos;\nconst verbos_objeto = JSON.parse(verbos_string);\nconst lista_verbos_permitidos = verbos_objeto.lista_verbos_permitidos;\n\n// Datos del Agente 1 (Storytelling)\nconst itemData = $input.first().json; // Output de \"Validar Salida Agente 1\"\nconst { rol_profesional_simulado, escenario_desafio_narrativo } = itemData;\n\n// 2. PREPARAR PROMPT BASE (SYSTEM PROMPT)\nconst promptBase = `Actúa como especialista en currículo, evaluación y metodologías activas en educación superior, con formación avanzada en diseño instruccional y enfoque por competencias. Eres experto metodológico y didáctico en el curso [${rol_profesional_simulado}].\n\nTu tarea es redactar [número] indicadores de desempeño (IDs) alineados con el Resultado de Aprendizaje.\n\n### RESTRICCIÓN DE ORO (MANDATO ABSOLUTO):\n**CERO TOLERANCIA A LA FINALIDAD** [cite: 16-17, 721, 1016, 1018]. El indicador es la \"evidencia\", no el \"propósito\".\nEstá **TERMINANTEMENTE PROHIBIDO** usar las palabras \"para\", \"con el fin de\", \"con el propósito de\" o cualquier sinónimo.\n\n### TU RAZONAMIENTO (CÓMO PENSAR):\nEl aprendizaje es un \"Árbol de Dependencias\" [cite: 1-17, 1138]. Tu tarea es **inducir el árbol de dependencias lógicas** (los \"peldaños\") para construir el objetivo principal.\n- Tu meta es la **coherencia pedagógica**, no la simetría taxonómica.\n\nTu sintaxis sigue la \"Regla del Blueprint\" (El Gerundio) [cite: 46-48, 663]:\n- La \"Spec\" de desempeño se hace observable usando un **sub-proceso (gerundio)**.\n- *Ejemplo:* \"ANALIZAR las teorías (proceso), **diferenciando** (gerundio) sus componentes...\"\n`;\n\n// 3. PREPARAR TAREA (USER PROMPT)\nlet tareaTexto = \"\";\nlet contextoPrincipal = \"\";\nlet finalInstructions = \"\";\n\nif (estructuraMEI === 'MEI-Antiguo') {\n  // --- LÓGICA MEI-ANTIGUO (Aplicamos la lógica de \"Relevancia Cognitiva\") ---\n  const ras = contexto_superior.resultadosAprendizaje.map(ra => `- ${ra.texto}`).join('\\n');\n  contextoPrincipal = `### OBJETIVOS DE NIVEL SUPERIOR (RA):\\n${ras}`;\n  tareaTexto = `### OBJETIVO PRINCIPAL A CONSTRUIR (AE):\n\"${objetivo_actual.texto}\"\n`;\n  finalInstructions = `\n### INSTRUCCIONES DE GENERACIÓN (MEI ANTIGUO - INDICADORES DE LOGRO):\n1.  **Inducir Árbol:** Induce el \"Árbol de Dependencias\" (3 peldaños) para el AE. **Guía Afirmativa:** Para un AE de Nivel ${nivel_ra}, tus componentes deben ser **cognitivamente relevantes**.\n2.  **Regla de Anclaje:** El *último* indicador debe ser el que cumple el AE.\n3.  **Sintaxis (Conjugación):** Conjuga el verbo en **TERCERA PERSONA PLURAL** (ej. \"Comparan\").\n4.  **Nivel (Fidelidad):** El \"nivel_verbo\" DEBE ser el número exacto **copiado** de la \"LISTA DE MATERIALES\".\n5.  **Formato de Salida:** Responde ÚNICAMENTE con un array JSON de objetos. Cada objeto debe tener TRES claves:\n    - \"habilidad\": el verbo conjugado (Ej: \"ANALIZAN\").\n    - \"contenido\": el proceso principal.\n    - \"condicion_contexto\": la condición o sub-proceso (gerundio).\n`;\n\n} else if (estructuraMEI === 'MEI-Actualizado') {\n  // --- LÓGICA MEI-ACTUALIZADO (SIN CAMBIOS) ---\n  const rfs = contexto_superior.resultadosFormativos.map(rf => `- ${rf.texto}`).join('\\n');\n  contextoPrincipal = `### OBJETIVO DE NIVEL SUPERIOR (RF):\\n${rfs}`;\n  tareaTexto = `### STORYTELLING (CONTEXTO DEL EDIFICIO):\n- **Rol:** ${rol_profesional_simulado}\n- **Escenario:** ${escenario_desafio_narrativo}\n### PLANO MAESTRO A CONSTRUIR (RA):\n\"${objetivo_actual.texto}\"\n`;\n  finalInstructions = `\n### INSTRUCCIONES DE GENERACIÓN (MEI ACTUALIZADO):\n1.  **Inducir Árbol:** Induce el \"Árbol de Dependencias\" (2-3 peldaños) para el RA. **Guía Afirmativa:** Para un RA de alto nivel (como este, Nivel ${nivel_ra}), tus componentes deben ser **cognitivamente relevantes** (ej. APLICAR, ANALIZAR, EVALUAR).\n2.  **Regla de Anclaje:** El *último* indicador debe ser el que cumple el RA (ej. usando 'DISEÑAR' para un RA de 'Diseñar').\n3.  **Sintaxis (Gerundio):** APLICA LA REGLA AFIRMATIVA DEL BLUEPRINT [cite: 46-48, 663]. Añade un **sub-proceso (gerundio)** (ej. 'comparando', 'diferenciando', 'integrando').\n4.  **Nivel (Fidelidad):** El \"nivel_verbo\" DEBE ser el número exacto **copiado** de la \"LISTA DE MATERIALES\".\n5.  **Formato de Salida:** Responde ÚNICAMENTE con un array JSON de objetos. Cada objeto debe tener TRES claves:\n    - \"id_texto_draft\": la frase completa (la \"Spec\") ensamblada.\n    - \"verbo_utilizado\": el verbo en infinitivo (ej. \"ANALIZAR\").\n    - \"nivel_verbo\": el número de nivel (ej. 4) copiado de la lista.\n`;\n}\n\n// 4. ENSAMBLAR Y DEVOLVER\nconst promptFinal = `\n${promptBase}\n${contextoPrincipal}\n${tareaTexto}\n\n### LISTA DE MATERIALES (VERBOS PERMITIDOS CON NIVEL):\n${JSON.stringify(lista_verbos_permitidos, null, 2)}\n\n${finalInstructions}\n\n### TU TAREA:\nGenera el array JSON de indicadores (ILs o IDs) según la estructura MEI, aplicando tu razonamiento.\n`;\n\nreturn [{ \n  json: { \n    prompt: promptFinal, \n    ...itemData // Pasa todos los datos que ya teníamos\n  } \n}];\n\n// --- Fin: Código CORREGIDO para \"Constructor de Prompt (Agente 2)\" ---"
+        "jsCode": "// --- Inicio: Código CORREGIDO para \"Constructor de Prompt (Agente 2 - Potente)\" ---\n\n// 1. OBTENER DATOS (Leyendo de Nodos Anteriores)\nconst estructuraMEI = $('Webhook').first().json.body.estructuraMEI;\nconst objetivo_actual = $('Procesar Uno por Uno').first().json.objetivo_actual;\nconst contexto_superior = $('Procesar Uno por Uno').first().json.contexto_superior;\n\n// *** CRÍTICO: El nivel_ra ahora es el NIVEL del objetivo principal (RA o AE) ***\nconst nivel_ra = $('Verbos y Nivel').first().json.nivel_ra;\n\nconst verbos_string = $('Verbos y Nivel').first().json.verbos;\nconst verbos_objeto = JSON.parse(verbos_string);\nconst lista_verbos_permitidos = verbos_objeto.lista_verbos_permitidos;\n\n// Datos del Agente 1 (Storytelling)\nconst itemData = $input.first().json; // Output de \"Validar Salida Agente 1\"\nconst { rol_profesional_simulado, escenario_desafio_narrativo } = itemData;\n\n// 2. PREPARAR PROMPT BASE (SYSTEM PROMPT)\nconst promptBase = `Actúa como especialista en currículo, evaluación y metodologías activas en educación superior, con formación avanzada en diseño instruccional y enfoque por competencias. Eres experto metodológico y didáctico en el curso [${rol_profesional_simulado}].\n\nTu tarea es redactar [número] indicadores de desempeño (IDs) alineados con el Resultado de Aprendizaje.\n\n### RESTRICCIÓN DE ORO (MANDATO ABSOLUTO):\n**CERO TOLERANCIA A LA FINALIDAD**. El indicador es la \"evidencia\", no el \"propósito\".\nEstá **TERMINANTEMENTE PROHIBIDO** usar las palabras \"para\", \"con el fin de\", \"con el propósito de\" o cualquier sinónimo.\n\n### TU RAZONAMIENTO (CÓMO PENSAR):\nEl aprendizaje es un \"Árbol de Dependencias\". Tu tarea es **inducir el árbol de dependencias lógicas** (los \"peldaños\") para construir el objetivo principal.\n- Tu meta es la **coherencia pedagógica**, no la simetría taxonómica.\n\nTu sintaxis sigue la \"Regla del Blueprint\" (El Gerundio):\n- La \"Spec\" de desempeño se hace observable usando un **sub-proceso (gerundio)**.\n- *Ejemplo:* \"ANALIZAR las teorías (proceso), **diferenciando** (gerundio) sus componentes...\"\n`;\n\n// 3. PREPARAR TAREA (USER PROMPT)\nlet tareaTexto = \"\";\nlet contextoPrincipal = \"\";\nlet finalInstructions = \"\";\n\nif (estructuraMEI === 'MEI-Antiguo') {\n  // --- LÓGICA MEI-ANTIGUO (Aplicamos la lógica de \"Relevancia Cognitiva\") ---\n  const ras = contexto_superior.resultadosAprendizaje.map(ra => `- ${ra.texto}`).join('\\n');\n  contextoPrincipal = `### OBJETIVOS DE NIVEL SUPERIOR (RA):\\n${ras}`;\n  tareaTexto = `### OBJETIVO PRINCIPAL A CONSTRUIR (AE):\n\"${objetivo_actual.texto}\"\n`;\n  finalInstructions = `\n### INSTRUCCIONES DE GENERACIÓN (MEI ANTIGUO - INDICADORES DE LOGRO):\n1.  **Inducir Árbol:** Induce el \"Árbol de Dependencias\" (3 peldaños) para el AE. **Guía Afirmativa:** Para un AE de Nivel ${nivel_ra}, tus componentes deben ser **cognitivamente relevantes**.\n2.  **Regla de Anclaje:** El *último* indicador debe ser el que cumple el AE.\n3.  **Sintaxis (Conjugación):** Conjuga el verbo en **TERCERA PERSONA PLURAL** (ej. \"Comparan\").\n4.  **Nivel (Fidelidad):** El \"nivel_verbo\" DEBE ser el número exacto **copiado** de la \"LISTA DE MATERIALES\".\n5.  **Formato de Salida:** Responde ÚNICAMENTE con un array JSON de objetos. Cada objeto debe tener TRES claves:\n    - \"habilidad\": el verbo conjugado (Ej: \"ANALIZAN\").\n    - \"contenido\": el proceso principal.\n    - \"condicion_contexto\": la condición o sub-proceso (gerundio).\n`;\n\n} else if (estructuraMEI === 'MEI-Actualizado') {\n  // --- LÓGICA MEI-ACTUALIZADO (SIN CAMBIOS) ---\n  const rfs = contexto_superior.resultadosFormativos.map(rf => `- ${rf.texto}`).join('\\n');\n  contextoPrincipal = `### OBJETIVO DE NIVEL SUPERIOR (RF):\\n${rfs}`;\n  tareaTexto = `### STORYTELLING (CONTEXTO DEL EDIFICIO):\n- **Rol:** ${rol_profesional_simulado}\n- **Escenario:** ${escenario_desafio_narrativo}\n### PLANO MAESTRO A CONSTRUIR (RA):\n\"${objetivo_actual.texto}\"\n`;\n  finalInstructions = `\n### INSTRUCCIONES DE GENERACIÓN (MEI ACTUALIZADO):\n1.  **Inducir Árbol:** Induce el \"Árbol de Dependencias\" (2-3 peldaños) para el RA. **Guía Afirmativa:** Para un RA de alto nivel (como este, Nivel ${nivel_ra}), tus componentes deben ser **cognitivamente relevantes** (ej. APLICAR, ANALIZAR, EVALUAR).\n2.  **Regla de Anclaje:** El *último* indicador debe ser el que cumple el RA (ej. usando 'DISEÑAR' para un RA de 'Diseñar').\n3.  **Sintaxis (Gerundio):** APLICA LA REGLA AFIRMATIVA DEL BLUEPRINT. Añade un **sub-proceso (gerundio)** (ej. 'comparando', 'diferenciando', 'integrando').\n4.  **Nivel (Fidelidad):** El \"nivel_verbo\" DEBE ser el número exacto **copiado** de la \"LISTA DE MATERIALES\".\n5.  **Formato de Salida:** Responde ÚNICAMENTE con un array JSON de objetos. Cada objeto debe tener TRES claves:\n    - \"id_texto\": la frase completa (la \"Spec\") ensamblada.\n    - \"verbo_utilizado\": el verbo en infinitivo (ej. \"ANALIZAR\").\n    - \"nivel_verbo\": el número de nivel (ej. 4) copiado de la lista.\n    - \"justificacion_pedagogica\". En ella, explica en 1 a 2 oraciones cómo este indicador se relaciona con el RA y qué tipo de proceso y/o producto mide.\n`;\n}\n\n// 4. ENSAMBLAR Y DEVOLVER\nconst promptFinal = `\n${promptBase}\n${contextoPrincipal}\n${tareaTexto}\n\n### LISTA DE MATERIALES (VERBOS PERMITIDOS CON NIVEL):\n${JSON.stringify(lista_verbos_permitidos, null, 2)}\n\n${finalInstructions}\n\n### TU TAREA:\nGenera el array JSON de indicadores (ILs o IDs) según la estructura MEI, aplicando tu razonamiento.\n`;\n\nreturn [{ \n  json: { \n    prompt: promptFinal, \n    ...itemData // Pasa todos los datos que ya teníamos\n  } \n}];\n\n// --- Fin: Código CORREGIDO para \"Constructor de Prompt (Agente 2)\" ---"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         2352,
-        1396
+        1408
       ],
       "id": "91f9da41-c700-495d-b3b9-bf1262bdfcf6",
       "name": "Constructor de Prompt (Agente 2)"
@@ -377,20 +377,20 @@
       "typeVersion": 2.2,
       "position": [
         2576,
-        1396
+        1408
       ],
       "id": "c51f017d-7c17-4adf-99ae-2548ef9aaa0c",
       "name": "Agente 2 - Arquitecto de Secuencia"
     },
     {
       "parameters": {
-        "jsCode": "// --- Inicio: Código para \"Constructor de Prompt (Agente 3 - Supervisor)\" ---\n\n// 1. OBTENER DATOS\nconst itemData = $input.first().json;\nconst { \n  estructuraMEI, \n  objetivo_actual, \n  contexto_superior, \n  borrador_indicadores // El JSON \"casi listo\" del Agente 2\n} = itemData;\n\n// 2. PREPARAR PROMPT BASE (SYSTEM PROMPT)\nconst promptBase = `Eres un \"Supervisor de Calidad\" de UNAB [cite: 141-147]. Tu trabajo es tomar un **borrador** de indicadores y aplicar la **REGLA DE ORO** final.\n\n### RESTRICCIÓN DE ORO (MANDATO ABSOLUTO):\n**CERO TOLERANCIA A LA FINALIDAD** [cite: 16-17, 721, 1016, 1018]. El indicador es la \"evidencia\", no el \"propósito\".\nEstá **TERMINANTEMENTE PROHIBIDO** usar las palabras \"para\", \"con el fin de\", \"con el propósito de\" o cualquier sinónimo.\n\n### RESTRICCIÓN DE SINTAXIS (MANDATO ABSOLUTO):\n**Corrección Afirmativa:** Asegúrate de que los indicadores sean una acción verbal correcta. Corrige cualquier error de sustantivo (Ej: 'ANÁLISIS...' debe ser 'ANALIZAR...' o 'ANALIZAN' según el modo).\n`;\n\n// 3. PREPARAR TAREA (USER PROMPT)\nlet finalInstructions = \"\";\n\nif (estructuraMEI === 'MEI-Antiguo') {\n  // --- LÓGICA MEI-ANTIGUO ---\n  finalInstructions = `\n### INSTRUCCIONES DE CORRECCIÓN (MEI ANTIGUO):\nRevisa cada objeto en el \"BORRADOR DE INDICADORES\" (claves: habilidad, contenido, condicion_contexto).\n1.  **Validar Finalidad:** Revisa las claves. Si encuentras CUALQUIER palabra de finalidad (como \"para\"), **reescribe** la frase para eliminarla.\n2.  **Validar Sintaxis (Crucial):** Asegúrate de que el contenido de \"habilidad\" sea un verbo en **TERCERA PERSONA PLURAL** (Ej: \"ANALIZAN\"). Si es un sustantivo, corrígelo.\n3.  **Formato de Salida:** Devuelve ÚNICAMENTE el array JSON corregido y perfecto.\n`;\n} else if (estructuraMEI === 'MEI-Actualizado') {\n  // --- LÓGICA MEI-ACTUALIZADO ---\n  finalInstructions = `\n### INSTRUCCIONES DE CORRECCIÓN (MEI ACTUALIZADO):\nRevisa cada objeto en el \"BORRADOR DE INDICADORES\" (claves: id_texto_draft, verbo_utilizado, nivel_verbo).\n1.  **Validar Finalidad (REGLA DE ORO):** Revisa el \"id_texto_draft\". Si encuentras CUALQUIER palabra de finalidad (como \"para\"), **reescribe** esa frase para eliminarla.\n2.  **Validar Sintaxis (Crucial):** Asegúrate de que el \"id_texto_draft\" comience con el verbo en **INFINITIVO** (copiado de \"verbo_utilizado\"). Si no lo es, corrígelo.\n3.  **Ensamblar:** Renombra la clave \"id_texto_draft\" a \"id_texto\".\n4.  **Formato de Salida:** Devuelve ÚNICAMENTE el array JSON corregido y perfecto.\n`;\n}\n\n// 4. ENSAMBLAR Y DEVOLVER\nconst promptFinal = `\n${promptBase}\n\n### BORRADOR DE INDICADORES (A CORREGIR):\n${JSON.stringify(borrador_indicadores, null, 2)}\n\n${finalInstructions}\n\n### TU TAREA:\nEjecuta la corrección. Devuelve solo el array JSON final.\n`;\n\n// 5. DEVOLVER PROMPT Y PRESERVAR DATOS\nreturn [{ \n  json: { \n    prompt: promptFinal,\n    estructuraMEI: estructuraMEI,\n    objetivo_actual: objetivo_actual,\n    contexto_superior: contexto_superior\n  } \n}];\n\n// --- Fin: Código para \"Constructor de Prompt (Agente 3 - Supervisor)\" ---"
+        "jsCode": "// --- Inicio: Código CORREGIDO para \"Constructor de Prompt (Agente 3 - Supervisor)\" ---\n\n// 1. OBTENER DATOS\n// El input SÓLO tiene el borrador del agente anterior\nconst inputData = $input.first().json;\nconst { borrador_indicadores } = inputData;\n\n// El contexto (estructura, objetivo) se lee del NODO DE BUCLE 'Procesar Uno por Uno'\nconst loopData = $('Procesar Uno por Uno').first().json;\nconst { \n  estructuraMEI, \n  objetivo_actual, \n  contexto_superior \n} = loopData;\n\n// VERIFICACIÓN DE SEGURIDAD\nif (!estructuraMEI) {\n  throw new Error(\"Error Crítico: 'estructuraMEI' no se pudo leer desde el nodo 'Procesar Uno por Uno'.\");\n}\nif (!borrador_indicadores) {\n  throw new Error(\"Error Crítico: 'borrador_indicadores' no fue recibido del nodo anterior.\");\n}\n\n\n// 2. PREPARAR PROMPT BASE (SYSTEM PROMPT)\nconst promptBase = `Eres un \"Supervisor de Calidad\" de UNAB. Tu trabajo es tomar un **borrador** de indicadores y aplicar la **REGLA DE ORO** final.\n\n### RESTRICCIÓN DE ORO (MANDATO ABSOLUTO):\n**CERO TOLERANCIA A LA FINALIDAD**. El indicador es la \"evidencia\", no el \"propósito\".\nEstá **TERMINANTEMENTE PROHIBIDO** usar las palabras \"para\", \"con el fin de\", \"con el propósito de\" o cualquier sinónimo.\n\n### RESTRICCIÓN DE ESTRUCTURA (MANDATO CRÍTICO):\nDEBES mantener la estricta separación de los tres componentes (Habilidad, Contenido, Condición/Contexto) en claves separadas. NO FUSIONES el contenido y la condición/contexto.\n`;\n\n// 3. PREPARAR TAREA (USER PROMPT)\nlet finalInstructions = \"\";\n\nif (estructuraMEI === 'MEI-Antiguo') {\n  // --- LÓGICA MEI-ANTIGUO ---\n  finalInstructions = `\n### INSTRUCCIONES DE CORRECCIÓN (MEI ANTIGUO):\nRevisa cada objeto en el \"BORRADOR DE INDICADORES\".\n1.  **Validar Finalidad:** Si encuentras CUALQUIER palabra de finalidad (como \"para\") en \"habilidad\", \"contenido\" o \"condicion_contexto\", **reescribe** esa clave para eliminarla.\n2.  **Validar Sintaxis (Crucial):** Asegúrate de que \"habilidad\" sea un verbo en **TERCERA PERSONA PLURAL** (Ej: \"ANALIZAN\").\n3.  **Preservar Datos (MANDATORIO):** Mantén intactas las claves **verbo_utilizado**, **nivel_verbo** y **justificacion_pedagogica** del borrador original.\n4.  **Formato de Salida:** Devuelve ÚNICAMENTE el array JSON corregido.\n\n### EJEMPLO DE OBJETO JSON DE SALIDA (MEI ANTIGUO):\n[\n  {\n    \"habilidad\": \"ANALIZAN las teorías...\",\n    \"contenido\": \"El contenido sin finalidad...\",\n    \"condicion_contexto\": \"El contexto sin finalidad...\",\n    \"verbo_utilizado\": \"ANALIZAR\",\n    \"nivel_verbo\": 4,\n    \"justificacion_pedagogica\": \"Texto de justificación preservado.\"\n  }\n]\n`;\n} else if (estructuraMEI === 'MEI-Actualizado') {\n  // --- LÓGICA MEI-ACTUALIZADO ---\n  // (Este es el código exacto que tú proporcionaste, ahora funcionará)\n  finalInstructions = `\n### INSTRUCCIONES DE CORRECCIÓN:\nRevisa cada objeto en el \"BORRADOR DE INDICADORES\".\n\n1.  **Validar Finalidad (REGLA DE ORO):** Revisa el \"id_texto\". Si encuentras CUALQUIER palabra de finalidad (como \"para\"), **reescribe** esa frase para eliminarla.\n2.  **Validar Sintaxis:** Asegúrate de que \"id_texto\" comience con el verbo en **INFINITIVO**.\n\n3.  **Preservar Datos (MANDATORIO):** Debes mantener intactas las siguientes claves del borrador original en tu JSON de salida:\n    * **id_texto** (El texto original o corregido)\n    * **verbo_utilizado**\n    * **nivel_verbo**\n    * **justificacion_pedagogica**\n\n4.  **Separar Componentes (MANDATORIO):** Crea las claves **Habilidad**, **Contenido** y **Condición/Contexto** descomponiendo el \"id_texto\" (ya sea el original o el que corregiste).\n5.  **Formato de Salida:** Devuelve ÚNICAMENTE el array JSON corregido.\n\n### EJEMPLO DE OBJETO JSON DE SALIDA:\n[\n  {\n    \"id_texto\": \"CLASIFICAR las principales teorías del comercio...\",\n    \"verbo_utilizado\": \"CLASIFICAR\",\n    \"nivel_verbo\": 2,\n    \"justificacion_pedagogica\": \"Este indicador mide el peldaño...\",\n    \"Habilidad\": \"CLASIFICAR\",\n    \"Contenido\": \"Las principales teorías del comercio internacional (clásicas, neoclásicas y modernas).\",\n    \"Condición/Contexto\": \"Incluyendo la explicación de sus postulados centrales...\"\n  }\n]\n`;\n}\n\n// 4. ENSAMBLAR Y DEVOLVER\nconst promptFinal = `\n${promptBase}\n\n### BORRADOR DE INDICADORES (A CORREGIR):\n${JSON.stringify(borrador_indicadores, null, 2)}\n\n${finalInstructions}\n\n### TU TAREA:\nEjecuta la corrección. Devuelve solo el array JSON final.\n`;\n\n// 5. DEVOLVER PROMPT Y PRESERVAR DATOS\n// Devolvemos solo el prompt. El siguiente nodo (Validador)\n// también leerá el contexto desde 'Procesar Uno por Uno'.\nreturn [{ \n  json: { \n    prompt: promptFinal\n    // Ya no es necesario pasar el contexto aquí\n  } \n}];\n\n// --- Fin: Código CORREGIDO para \"Constructor de Prompt (Agente 3 - Supervisor)\" ---"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         3152,
-        1392
+        1408
       ],
       "id": "3f507d9c-b2d2-445e-ba15-44f0218c26eb",
       "name": "Constructor de Prompt (Agente 3)"
@@ -405,7 +405,7 @@
       "typeVersion": 2.2,
       "position": [
         3376,
-        1396
+        1408
       ],
       "id": "015ac096-7490-4ed7-a96e-432d1cd5ba42",
       "name": "Agente 3 - Ingeniero de Indicadores"
@@ -418,7 +418,7 @@
       "typeVersion": 2,
       "position": [
         2128,
-        1396
+        1408
       ],
       "id": "4eb8d761-f0a5-4cee-874c-ea45364b8808",
       "name": "Validar Salida Agente 1"
@@ -431,7 +431,7 @@
       "typeVersion": 2,
       "position": [
         2928,
-        1396
+        1408
       ],
       "id": "1938b2d4-e562-4f07-9f75-a978abea6493",
       "name": "Validar Salida Agente 2"
@@ -460,7 +460,7 @@
       "typeVersion": 3.4,
       "position": [
         1328,
-        1396
+        1408
       ],
       "id": "9bdf3455-484b-468b-997c-ddf2ac911e8e",
       "name": "Verbos y Nivel"
@@ -473,7 +473,7 @@
       "typeVersion": 2,
       "position": [
         1552,
-        1396
+        1408
       ],
       "id": "8d2be496-6975-4c15-a4ac-ed1bd8351a95",
       "name": "Constructor de Prompt (Agente 1)"
@@ -488,8 +488,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        1848,
-        1620
+        1856,
+        1632
       ],
       "id": "5367768d-96e8-4c35-8d2c-350a9f17f62e",
       "name": "Gemini Flash Lite",
@@ -508,8 +508,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        2648,
-        1620
+        2656,
+        1632
       ],
       "id": "7bf895da-47e3-4d78-9c4a-2e2d2064f337",
       "name": "Gemini Flash",
@@ -531,28 +531,34 @@
             "accept-encoding": "gzip, deflate",
             "accept": "*/*",
             "connection": "keep-alive",
-            "content-length": "770",
+            "content-length": "1600",
             "content-type": "application/json"
           },
           "params": {},
           "query": {},
           "body": {
-            "estructuraMEI": "MEI-Antiguo",
-            "nombre_curso": "Teorías y Diseño Curricular de la Educación Básica",
-            "trimestre": 4,
+            "estructuraMEI": "MEI-Actualizado",
+            "nombre_curso": "COMERCIO INTERNACIONAL",
+            "resultadosFormativos": [
+              {
+                "id": "RF-1",
+                "texto": "Evaluar el entorno y las tendencias del mercado global, identificando riesgos, oportunidades y amenazas, para la toma de decisiones estratégicas, considerando el comportamiento e influencia de los actores clave que participan en él y el marco del sistema internacional que los regula."
+              },
+              {
+                "id": "RF-2",
+                "texto": "Formular estrategias de negocios internacionales, integrando herramientas analíticas, fundamentos y normativas del comercio exterior, para enfrentar desafíos propios de la profesión en entornos globales dinámicos."
+              }
+            ],
             "resultadosAprendizaje": [
               {
                 "id": "RA-1",
-                "texto": "Integrar conocimientos pedagógicos, estrategias inclusivas y teorías del aprendizaje para planificar y orientar experiencias educativas que promuevan el aprendizaje significativo y el desarrollo integral de los estudiantes en Educación Básica."
-              }
-            ],
-            "aprendizajesEsperados": [
-              {
-                "id": "AE-1",
                 "tributaA": [
-                  "RA-1"
+                  "RF-1",
+                  "RF-2"
                 ],
-                "texto": "Diseñar unidades didácticas fundamentadas en estrategias pedagógicas inclusivas y teorías del aprendizaje, con el propósito de potenciar el aprendizaje significativo y el desarrollo integral de los estudiantes."
+                "texto": "Analizar las bases teóricas y normativas que sustentan el comercio internacional y la inserción de Chile en los mercados globales, considerando las principales teorías del intercambio comercial y el funcionamiento del sistema multilateral de comercio.",
+                "contenido": "UNIDAD I: FUNDAMENTOS DEL COMERCIO INTERNACIONAL Y SISTEMA MULTILATERAL\\\\n- Conceptos y evolución del comercio internacional. - Principales teorías del comercio exterior (Ventajas comparativas, Heckscher-Ohlin, modelos modernos). - Estructura y funcionamiento del sistema multilateral (OMC, acuerdos de libre comercio). - Rol de Chile en el comercio internacional y su apertura económica.",
+                "metodologia": "Estudios de Casos,Aprendizaje Basado en Problemas,Aprendizaje Colaborativo,Orientaciones para el estudio autónomo"
               }
             ]
           },
@@ -890,7 +896,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "15d1a4f8-695d-4716-ab2b-49a00f57ea9c",
+  "versionId": "e9063bcd-9015-4b13-aa4a-219cad864bc4",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "8991d57cc3be404c4c8d6951306c68fa6ee93d0a9fcfe54908cc27cc5546f205"
