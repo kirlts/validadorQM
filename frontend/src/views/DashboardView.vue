@@ -384,12 +384,9 @@
   const isGenerationsLoading = ref(false);
   const isRenaming = ref(false);
   const renameDialog = reactive({ show: false, itemId: null, currentName: '', newName: '' });
-
-  // --- INICIO DE LA CORRECCIÓN ---
+  
+  // --- Estado para Snackbar y Copiar ---
   const snackbar = reactive({ show: false, text: '' });
-  // --- FIN DE LA CORRECCIÓN ---
-
-  // --- CORRECCIÓN CLAVE 1: Definir 'activeGeneration' como una ref ---
   const activeGeneration = ref(null);
   
   const isActionInProgress = computed(() => isUploading.value || !!isDeleting.value || isGenerationsLoading.value || isRenaming.value);
@@ -487,7 +484,6 @@
       } catch (error) { console.error("Error al obtener enlace de descarga:", error); }
   }
 
-  // --- INICIO DE LA CORRECCIÓN 2 ---
   async function copyToClipboard(textToCopy) {
     try {
       await navigator.clipboard.writeText(textToCopy);
@@ -499,9 +495,8 @@
       snackbar.show = true;
     }
   }
-  // --- FIN DE LA CORRECCIÓN 2 ---
 
-  // --- Lógica para Generaciones (Completa y Corregida) ---
+  // --- Lógica para Generaciones ---
   async function fetchGenerations() {
     isGenerationsLoading.value = true;
     try {
@@ -510,7 +505,6 @@
     finally { isGenerationsLoading.value = false; }
   }
 
-  // --- CORRECCIÓN CLAVE 2: La función ahora usa la ref 'activeGeneration' ---
   function viewGeneration(generationObject) { 
     activeGeneration.value = generationObject; 
     isResultModalOpen.value = true; 
@@ -518,16 +512,33 @@
 
   function openGeneratorModal() { isGeneratorModalOpen.value = true; }
 
+  // --- INICIO DE LA CORRECCIÓN ---
   async function handleGenerationComplete(result) {
-    activeGeneration.value = result;
-    
-    // 2. Abre el modal.
-    isResultModalOpen.value = true; 
-
-    // 3. Ahora que el usuario está viendo el resultado correcto,
-    //    actualiza la lista de "Mis Generaciones Guardadas" en segundo plano.
+    // 1. Actualiza la lista de generaciones desde la BD.
+    // Esto asegura que 'generations.value' contiene el ítem que 
+    // GeneratorModal acaba de guardar.
     await fetchGenerations();
+
+    // 2. Ordena la lista para encontrar la generación MÁS RECIENTE.
+    // Asumimos que la API no garantiza el orden, así que lo forzamos.
+    const sortedGens = [...generations.value].sort((a, b) => 
+      new Date(b.created_at) - new Date(a.created_at)
+    );
+    
+    const newGen = sortedGens[0]; // Esta es la generación que acabamos de crear
+
+    // 3. Asigna el objeto COMPLETO y abre el modal.
+    if (newGen) {
+      // 'newGen' tiene la forma { id, input_data, output_data, ... }
+      // que es la que el template del modal espera.
+      activeGeneration.value = newGen;
+      isResultModalOpen.value = true;
+    } else {
+      console.error("No se pudo encontrar la nueva generación después de completarse.");
+    }
   }
+  // --- FIN DE LA CORRECCIÓN ---
+
   function promptRename(gen) {
     renameDialog.itemId = gen.id;
     renameDialog.currentName = gen.nombre_generacion || `Generación del ${new Date(gen.created_at).toLocaleString()}`;
