@@ -128,7 +128,7 @@
       </v-col>
     </v-row>
     
-    <v-dialog v-model="deleteDialog.show" max-width="500px" persistent>
+    <v-dialog v-model="deleteDialog.show" max-width="500px">
       <v-card>
         <v-card-title class="headline">Confirmar Eliminación</v-card-title>
         <v-card-text>¿Estás seguro de que quieres eliminar <strong>{{ deleteDialog.itemName }}</strong>?</v-card-text>
@@ -374,7 +374,7 @@
         </v-card-text>
       </v-card>
     </v-dialog>
-    <v-dialog v-model="renameDialog.show" max-width="500px" persistent>
+    <v-dialog v-model="renameDialog.show" max-width="500px">
       <v-card>
         <v-card-title class="headline">Renombrar Generación</v-card-title>
         <v-card-text>

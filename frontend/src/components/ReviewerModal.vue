@@ -1,5 +1,5 @@
 <template>
-  <v-dialog :model-value="modelValue" @update:model-value="closeModal" max-width="900px" persistent>
+  <v-dialog :model-value="modelValue" @update:model-value="closeModal" max-width="900px">
     <v-card>
       <v-toolbar color="white" density="compact">
         <v-toolbar-title>
