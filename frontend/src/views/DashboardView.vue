@@ -20,49 +20,83 @@
           </v-card-actions>
         </v-card>
 
-        <v-card class="mb-6">
-          <v-card-title class="d-flex align-center">
-            <span class="headline">Mis Generaciones Guardadas</span>
-            <v-spacer></v-spacer>
-            <v-btn icon variant="text" @click="fetchGenerations" :loading="isGenerationsLoading">
-              <v-icon>mdi-refresh</v-icon>
-            </v-btn>
-          </v-card-title>
-          <v-card-subtitle>
-            Revisa las generaciones de indicadores que has creado anteriormente.
-          </v-card-subtitle>
-          
-          <v-progress-linear v-if="isGenerationsLoading && generations.length === 0" indeterminate color="primary"></v-progress-linear>
-
-          <v-list v-else lines="one">
-            <template v-if="generations.length > 0">
-              <v-list-item
-                v-for="gen in generations" 
-                :key="gen.id"
-                @click="viewGeneration(gen)"
-                link
-              >
-                <template v-slot:prepend>
-                  <v-avatar color="primary">
-                    <v-icon>mdi-text-box-check-outline</v-icon>
-                  </v-avatar>
+        <v-expansion-panels variant="accordion" class="mb-6">
+          <v-expansion-panel>
+            <v-expansion-panel-title class="text-h6 d-flex align-center">
+              <v-icon left class="mr-3">mdi-text-box-check-outline</v-icon>
+              Mis Generaciones Guardadas
+              <v-chip size="small" color="primary" class="ml-3">{{ generacionesGuardadas.length }}</v-chip>
+              <v-spacer></v-spacer>
+              <v-btn icon variant="text" @click.stop="fetchGenerations" :loading="isGenerationsLoading" :disabled="isActionInProgress" title="Refrescar lista">
+                <v-icon>mdi-refresh</v-icon>
+              </v-btn>
+            </v-expansion-panel-title>
+            <v-expansion-panel-text>
+              <v-progress-linear v-if="isGenerationsLoading && generations.length === 0" indeterminate color="primary"></v-progress-linear>
+              <v-list v-else lines="one">
+                <template v-if="generacionesGuardadas.length > 0">
+                  <v-list-item
+                    v-for="gen in generacionesGuardadas" 
+                    :key="gen.id"
+                    @click="viewGeneration(gen)"
+                    link
+                  >
+                    <v-list-item-title>{{ gen.nombre_generacion || `Generación del ${new Date(gen.created_at).toLocaleString()}` }}</v-list-item-title>
+                    <v-list-item-subtitle>{{ gen.input_data.estructuraMEI }}</v-list-item-subtitle>
+                    
+                    <template v-slot:append>
+                      <v-btn icon="mdi-eye" variant="text" @click.stop="viewGeneration(gen)" title="Visualizar Resultado"></v-btn>
+                      <v-btn icon="mdi-pencil" variant="text" @click.stop="promptRename(gen)" title="Renombrar Generación"></v-btn>
+                      <v-btn icon="mdi-delete" variant="text" @click.stop="promptDeleteGeneration(gen)" title="Eliminar Generación"></v-btn>
+                    </template>
+                  </v-list-item>
                 </template>
-
-                <v-list-item-title>{{ gen.nombre_generacion || `Generación del ${new Date(gen.created_at).toLocaleString()}` }}</v-list-item-title>
-                <v-list-item-subtitle>{{ gen.input_data.estructuraMEI }}</v-list-item-subtitle>
-                
-                <template v-slot:append>
-                  <v-btn icon="mdi-eye" variant="text" @click.stop="viewGeneration(gen)" title="Visualizar Resultado"></v-btn>
-                  <v-btn icon="mdi-pencil" variant="text" @click.stop="promptRename(gen)" title="Renombrar Generación"></v-btn>
-                  <v-btn icon="mdi-delete" variant="text" @click.stop="promptDeleteGeneration(gen)" title="Eliminar Generación"></v-btn>
+                <v-card-text v-else class="text-center py-4">
+                  No has guardado ninguna generación todavía.
+                </v-card-text>
+              </v-list>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
+        
+        <v-expansion-panels variant="accordion" class="mb-6">
+          <v-expansion-panel>
+            <v-expansion-panel-title class="text-h6 d-flex align-center">
+              <v-icon left class="mr-3">mdi-check-decagram-outline</v-icon>
+              Mis Revisiones Guardadas
+              <v-chip size="small" color="blue-darken-2" class="ml-3">{{ revisionesGuardadas.length }}</v-chip>
+              <v-spacer></v-spacer>
+              <v-btn icon variant="text" @click.stop="fetchGenerations" :loading="isGenerationsLoading" :disabled="isActionInProgress" title="Refrescar lista">
+                <v-icon>mdi-refresh</v-icon>
+              </v-btn>
+            </v-expansion-panel-title>
+            <v-expansion-panel-text>
+              <v-progress-linear v-if="isGenerationsLoading && generations.length === 0" indeterminate color="primary"></v-progress-linear>
+              <v-list v-else lines="one">
+                <template v-if="revisionesGuardadas.length > 0">
+                  <v-list-item
+                    v-for="rev in revisionesGuardadas" 
+                    :key="rev.id"
+                    @click="viewGeneration(rev)"
+                    link
+                  >
+                    <v-list-item-title>{{ rev.nombre_generacion || `Revisión del ${new Date(rev.created_at).toLocaleString()}` }}</v-list-item-title>
+                    <v-list-item-subtitle>{{ rev.input_data.estructuraMEI }}</v-list-item-subtitle>
+                    
+                    <template v-slot:append>
+                      <v-btn icon="mdi-eye" variant="text" @click.stop="viewGeneration(rev)" title="Visualizar Resultado"></v-btn>
+                      <v-btn icon="mdi-pencil" variant="text" @click.stop="promptRename(rev)" title="Renombrar Generación"></v-btn>
+                      <v-btn icon="mdi-delete" variant="text" @click.stop="promptDeleteGeneration(rev)" title="Eliminar Generación"></v-btn>
+                    </template>
+                  </v-list-item>
                 </template>
-              </v-list-item>
-            </template>
-            <v-card-text v-else class="text-center py-4">
-              No has guardado ninguna generación todavía.
-            </v-card-text>
-          </v-list>
-        </v-card>
+                <v-card-text v-else class="text-center py-4">
+                  No has guardado ninguna revisión todavía.
+                </v-card-text>
+              </v-list>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
 
         <v-card>
           <v-card-title class="d-flex align-center">
@@ -128,7 +162,7 @@
       </v-col>
     </v-row>
     
-    <v-dialog v-model="deleteDialog.show" max-width="500px">
+    <v-dialog v-model="deleteDialog.show" max-width="500px" persistent>
       <v-card>
         <v-card-title class="headline">Confirmar Eliminación</v-card-title>
         <v-card-text>¿Estás seguro de que quieres eliminar <strong>{{ deleteDialog.itemName }}</strong>?</v-card-text>
@@ -318,6 +352,7 @@
                         </v-list-item-subtitle>
                       </v-list-item>
                       <v-divider></v-divider>
+
                       <v-list-item class="pa-2">
                         <v-list-item-title class="font-weight-bold">Verbo Observable:</v-list-item-title>
                         <v-list-item-subtitle class="text-wrap" :class="{ 'text-error': indicador.verbo_observable.startsWith('FALLA') }">
@@ -374,7 +409,7 @@
         </v-card-text>
       </v-card>
     </v-dialog>
-    <v-dialog v-model="renameDialog.show" max-width="500px">
+    <v-dialog v-model="renameDialog.show" max-width="500px" persistent>
       <v-card>
         <v-card-title class="headline">Renombrar Generación</v-card-title>
         <v-card-text>
@@ -414,19 +449,18 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'; 
 import { useRouter } from 'vue-router';
 import { useAppStore } from '@/stores/appStore';
 import { storeToRefs } from 'pinia';
 import { uploadDi, getDownloadUrl, deleteDi, getGenerations, deleteGeneration, renameGeneration } from '@/services/apiService';
 import GeneratorModal from '@/components/GeneratorModal.vue';
-// --- INICIO CAMBIO 1: Importar nuevo modal ---
 import ReviewerModal from '@/components/ReviewerModal.vue';
-// --- FIN CAMBIO 1 ---
 
 const router = useRouter();
 const appStore = useAppStore();
-const { designs, isLoading } = storeToRefs(appStore);
+// Desestructuramos para obtener 'supabase' (que es una ref/computed)
+const { designs, isLoading, supabase } = storeToRefs(appStore); 
 
 // --- Estado para DIs ---
 const isUploading = ref(false);
@@ -441,30 +475,93 @@ const estructuraMEIOptions = [
 
 // --- Estado para Generaciones y Revisiones ---
 const isGeneratorModalOpen = ref(false);
-// --- INICIO CAMBIO 2: Añadir estado para nuevo modal ---
 const isReviewerModalOpen = ref(false);
-// --- FIN CAMBIO 2 ---
 const isResultModalOpen = ref(false);
-const generations = ref([]);
+const generations = ref([]); 
 const isGenerationsLoading = ref(false);
 const isRenaming = ref(false);
 const renameDialog = reactive({ show: false, itemId: null, currentName: '', newName: '' });
 
-// Este 'activeGeneration' ahora guardará tanto Generaciones como Revisiones
 const activeGeneration = ref(null); 
 const snackbar = reactive({ show: false, text: '' });
+let generationsChannel = null; // Para guardar la referencia al canal
+
+// --- Función helper para determinar el tipo de item ---
+const isRevision = (gen) => {
+  return gen.output_data.analisisResultadosAprendizaje?.[0]?.indicadoresGenerados?.[0]?.verbo_observable || 
+         gen.output_data.analisisAprendizajesEsperados?.[0]?.indicadoresGenerados?.[0]?.verbo_observable;
+};
+
+// 1. Lista Computada para "Mis Generaciones"
+const generacionesGuardadas = computed(() => {
+  return generations.value.filter(gen => !isRevision(gen));
+});
+
+// 2. Lista Computada para "Mis Revisiones"
+const revisionesGuardadas = computed(() => {
+  return generations.value.filter(gen => isRevision(gen));
+});
 
 const isActionInProgress = computed(() => isUploading.value || !!isDeleting.value || isGenerationsLoading.value || isRenaming.value);
 
+
+// --- INICIO DE LA CORRECCIÓN DEL REALTIME ---
+const subscribeToGenerations = () => {
+    // Verificar si supabase.value es accesible y no undefined
+    if (!supabase.value) {
+        console.error("[Realtime] Supabase no está inicializado. No se puede conectar al canal.");
+        return;
+    }
+    
+    // Desuscribirse de un canal anterior si existe (mantiene la integridad)
+    if (generationsChannel) {
+      supabase.value.removeChannel(generationsChannel);
+    }
+    
+    // 1. Listener para Generaciones/Revisiones (Canal 'generaciones_ia')
+    generationsChannel = supabase.value
+      .channel('generaciones_ia_changes')
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'generaciones_ia' 
+        }, 
+        (payload) => {
+          console.log('[Realtime-Generaciones] Cambio detectado:', payload);
+          fetchGenerations(); 
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('[Realtime-Generaciones] ¡Conectado y escuchando cambios en generaciones_ia!');
+        }
+      });
+}
+
 onMounted(async () => {
   if (appStore.isLoggedIn) {
+      // 1. Carga inicial de la lista
       await fetchGenerations();
+      
+      // 2. Conectar Realtime
+      subscribeToGenerations();
+      
+      // La suscripción a DI ya se maneja en appStore.initialize()
   }
 });
 
+// Desuscribirse del canal de generaciones al desmontar
+onUnmounted(() => {
+  if (generationsChannel) {
+    supabase.value.removeChannel(generationsChannel);
+  }
+});
+// --- FIN DE LA CORRECCIÓN DEL REALTIME ---
+
+
 // --- Lógica de DIs (Sin cambios) ---
 const isProcessing = (design) => design.proceso_actual?.estado === 'processing';
-
 const getStatusIcon = (design) => {
     const proceso = design.proceso_actual;
     if (proceso?.nombre === 'consulta') {
@@ -475,7 +572,6 @@ const getStatusIcon = (design) => {
     if (estado === 'error') return 'mdi-alert-circle';
     return 'mdi-file-question';
 };
-
 const getStatusColor = (design) => {
     const proceso = design.proceso_actual;
     if (proceso?.nombre === 'consulta') {
@@ -487,7 +583,6 @@ const getStatusColor = (design) => {
     if (estado === 'processing') return 'blue-grey';
     return 'grey';
 };
-
 const getStatusText = (design) => {
     const proceso = design.proceso_actual;
     const createdAt = design.created_at;
@@ -517,11 +612,9 @@ const getStatusText = (design) => {
         default: return `Estado desconocido. ${createdText}`;
     }
 };
-
 function handleRefresh() { appStore.fetchDesigns(); }
 function viewDetails(design) { if (isProcessing(design)) return; router.push({ name: 'detail', params: { id: design.id_di } }); }
 function triggerFileInput() { document.getElementById('fileInput').click(); }
-
 async function handleFileUpload(event) {
   const file = event.target.files[0];
   if (!file || !selectedEstructuraMEI.value) return;
@@ -531,7 +624,6 @@ async function handleFileUpload(event) {
   } catch (error) { console.error("Error al subir:", error); } 
   finally { isUploading.value = false; event.target.value = ''; selectedEstructuraMEI.value = 'MEI-Antiguo'; }
 }
-
 async function handleView(design) {
   viewerDialog.itemName = design.nombre_archivo;
   viewerDialog.url = '';
@@ -541,14 +633,12 @@ async function handleView(design) {
     viewerDialog.url = `https://docs.google.com/gview?url=${encodeURIComponent(response.signedURL)}&embedded=true`;
   } catch (error) { console.error("Error al obtener la URL de visualización:", error); viewerDialog.show = false; }
 }
-
 async function handleDownload(design) {
     try {
         const { signedURL } = await getDownloadUrl(design.id_di);
         window.open(signedURL, '_blank');
     } catch (error) { console.error("Error al obtener enlace de descarga:", error); }
 }
-
 async function copyToClipboard(textToCopy) {
   try {
     await navigator.clipboard.writeText(textToCopy);
@@ -570,63 +660,50 @@ async function fetchGenerations() {
   finally { isGenerationsLoading.value = false; }
 }
 
-// Esta función ahora abre tanto generaciones guardadas como revisiones completadas
 function viewGeneration(generationObject) { 
   activeGeneration.value = generationObject; 
   isResultModalOpen.value = true; 
 }
 
 function openGeneratorModal() { isGeneratorModalOpen.value = true; }
-
-// --- INICIO CAMBIO 3: Añadir funciones para nuevo modal ---
 function openReviewerModal() { isReviewerModalOpen.value = true; }
 
-/**
- * Se llama cuando ReviewerModal emite 'review-complete'.
- * @param {object} result - El objeto de resultado (input_data, output_data)
- */
-function handleReviewComplete(result) {
-  // 'result' es el objeto que construimos dentro de ReviewerModal
-  // que simula una 'generación' para que el modal de resultados lo muestre.
-  activeGeneration.value = result;
-  isResultModalOpen.value = true; 
-  
-  // No llamamos a fetchGenerations() aquí porque la revisión es efímera
-  // y no se guarda en la base de datos (según el MVP).
-}
-// --- FIN CAMBIO 3 ---
+// --- Lógica "Emitir y Recargar" (Sin cambios) ---
+async function handleGenerationComplete() {
+  await fetchGenerations(); 
 
-/**
- * Se llama cuando GeneratorModal emite 'generation-complete'.
- * @param {object} result - El objeto de generación guardado
- */
-async function handleGenerationComplete(result) {
-  // 1. Actualiza la lista para obtener el ID y created_at
-  await fetchGenerations();
-
-  // 2. Busca la generación más reciente
   const sortedGens = [...generations.value].sort((a, b) => 
     new Date(b.created_at) - new Date(a.created_at)
   );
   
-  const newGen = sortedGens[0]; // Esta es la generación que acabamos de crear
+  const newGen = sortedGens.find(gen => !isRevision(gen)); 
 
-  // 3. Asigna el objeto COMPLETO y abre el modal.
   if (newGen) {
     activeGeneration.value = newGen;
     isResultModalOpen.value = true;
   } else {
     console.error("No se pudo encontrar la nueva generación después de completarse.");
-    // Fallback: mostrar el resultado crudo aunque no esté guardado (raro)
-    activeGeneration.value = {
-      input_data: result.input_data,
-      output_data: result.output_data,
-      created_at: new Date().toISOString(),
-      nombre_generacion: "Generación (no guardada)"
-    };
-    isResultModalOpen.value = true;
   }
 }
+
+async function handleReviewComplete() {
+  await fetchGenerations(); 
+
+  const sortedGens = [...generations.value].sort((a, b) => 
+    new Date(b.created_at) - new Date(a.created_at)
+  );
+  
+  const newReview = sortedGens.find(gen => isRevision(gen)); 
+
+  if (newReview) {
+    activeGeneration.value = newReview;
+    isResultModalOpen.value = true;
+  } else {
+    console.error("No se pudo encontrar la nueva revisión después de completarse.");
+  }
+}
+// --- Fin Lógica "Emitir y Recargar" ---
+
 
 function promptRename(gen) {
   renameDialog.itemId = gen.id;
@@ -636,11 +713,11 @@ function promptRename(gen) {
 }
 
 async function confirmRename() {
-  if (!renameDialog.newName || renameDialog.newName.trim() === '') return;
+  if (!renameDialog.newName || !renameDialog.newName.trim() === '') return;
   isRenaming.value = true;
   try {
     await renameGeneration(renameDialog.itemId, renameDialog.newName.trim());
-    await fetchGenerations();
+    await fetchGenerations(); 
   } catch (error) { console.error("Error al renombrar:", error); } 
   finally { isRenaming.value = false; renameDialog.show = false; }
 }
@@ -670,7 +747,7 @@ async function confirmDelete() {
       await deleteDi(id);
     } else if (type === 'generation') {
       await deleteGeneration(id);
-      await fetchGenerations();
+      await fetchGenerations(); 
     }
   } catch (error) { console.error("Error al eliminar:", error); } 
   finally { isDeleting.value = null; deleteDialog.show = false; }
