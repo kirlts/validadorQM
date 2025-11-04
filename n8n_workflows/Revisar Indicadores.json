@@ -1,0 +1,952 @@
+{
+  "name": "Revisar Indicadores",
+  "nodes": [
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $('Formatear Salida Final').first().json }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1280,
+        672
+      ],
+      "id": "cee5a678-f52c-4bf0-9bb2-006f4a261d42",
+      "name": "Respuesta Exitosa (200)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// --- Inicio: Código ROBUSTO para \"Validar y Extraer Indicadores\" (ID 2615...) ---\n\n// 1. OBTENER DATOS\nconst rawResponse = $input.first().json.output; // El JSON de reportes del Agente 3\nconst loopData = $('Procesar Uno por Uno').first().json; // El contexto del bucle\n\n// 2. FUNCIÓN DE EXTRACCIÓN (Simple)\nfunction extractJsonArray(text) {\n  const arrayStart = text.indexOf('[');\n  const arrayEnd = text.lastIndexOf(']');\n  if (arrayStart === -1 || arrayEnd === -1) {\n    const codeBlockMatch = text.match(/```json\\s*(\\[[\\s\\S]*?\\])\\s*```/);\n    if (codeBlockMatch && codeBlockMatch[1]) {\n      return JSON.parse(codeBlockMatch[1]);\n    }\n    throw new Error(\"Respuesta de IA (Agente 3) no contiene un array JSON válido.\");\n  }\n  const jsonString = text.substring(arrayStart, arrayEnd + 1);\n  return JSON.parse(jsonString);\n}\n\n// 3. PARSEAR LA RESPUESTA\nconst reportesDesdeLLM = extractJsonArray(rawResponse);\n\n// 4. *** LIMPIEZA DE PREFIJOS (ROBUSTA) ***\n// Mapeamos el array para renombrar las claves.\n// Usamos el operador '??' (Nullish Coalescing) para buscar la clave CON prefijo\n// y, si es null/undefined, usar la clave SIN prefijo.\nconst reportesGenerados = reportesDesdeLLM.map(reporte => {\n  return {\n    \"verbo_observable\": reporte.clave_verbo_observable ?? reporte.verbo_observable,\n    \"producto_o_proceso\": reporte.clave_producto_o_proceso ?? reporte.producto_o_proceso,\n    \"condicion_de_calidad_o_contexto\": reporte.clave_condicion_de_calidad_o_contexto ?? reporte.condicion_de_calidad_o_contexto,\n    \"alineamiento\": reporte.clave_alineamiento ?? reporte.alineamiento\n  };\n});\n// --- FIN DE LA LIMPIEZA ---\n\n// 5. PREPARAR EL ITEM DE SALIDA (FUSIÓN)\nconst outputItem = {\n  objetivo_original: loopData.objetivo_actual, \n  estructuraMEI: loopData.estructuraMEI,\n  indicadoresGenerados: reportesGenerados // Array con claves limpias\n};\n\n// 6. DEVOLVER EL OBJETO LIMPIO\nreturn [outputItem];\n// --- Fin: Código ROBUSTO para \"Validar y Extraer Indicadores\" (ID 2615...) ---"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3680,
+        1952
+      ],
+      "id": "b303702b-1c54-49b9-a400-f49394185151",
+      "name": "Validar y Extraer Indicadores"
+    },
+    {
+      "parameters": {
+        "jsCode": "// --- INICIO CÓDIGO CORREGIDO ---\n// 1. Acceder al 'body' del webhook\nconst payload = $input.first().json.body;\n// --- FIN CÓDIGO CORREGIDO ---\n\nconst estructuraMEI = payload.estructuraMEI;\nconst items = [];\n\nlet objetivosADesglosar = [];\nlet contextoNivelSuperior = {};\n\nif (estructuraMEI === 'MEI-Antiguo') {\n  objetivosADesglosar = payload.aprendizajesEsperados;\n  contextoNivelSuperior = { resultadosAprendizaje: payload.resultadosAprendizaje };\n} else if (estructuraMEI === 'MEI-Actualizado') {\n  objetivosADesglosar = payload.resultadosAprendizaje;\n  contextoNivelSuperior = { resultadosFormativos: payload.resultadosFormativos };\n} else {\n  throw new Error(`Estructura MEI no soportada: ${estructuraMEI}`);\n}\n\n// Esta lógica es correcta. 'objetivo' ahora incluirá\n// { id: \"RA-1\", texto: \"qwe\", indicadores_a_revisar: [\"qwe\"] }\nfor (const objetivo of objetivosADesglosar) {\n  items.push({\n    json: {\n      objetivo_actual: objetivo,\n      contexto_superior: contextoNivelSuperior,\n      estructuraMEI: estructuraMEI\n    }\n  });\n}\n\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        256,
+        1440
+      ],
+      "id": "d489aa70-fb16-41ad-960e-d6ee9fb22f56",
+      "name": "Desglosar Objetivos en Items"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        480,
+        1440
+      ],
+      "id": "67469eb3-b865-45e0-b6e4-29cba363da4a",
+      "name": "Procesar Uno por Uno"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        768,
+        672
+      ],
+      "id": "d4f6951d-50e9-4bcc-8a20-468c4e099562",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "jsCode": "const aggregatedResults = $input.first().json.data;\n\n// --- INICIO CORRECCIÓN ---\n// Leemos del nodo \"Webhook\" y accedemos a la propiedad \".body\"\n// que contiene el payload real enviado desde app.py\nconst originalPayload = $('Webhook').first().json.body;\n// --- FIN CORRECCIÓN ---\n\nconst { estructuraMEI } = originalPayload;\n\nlet finalOutput = { estructuraMEI };\n\nif (estructuraMEI === 'MEI-Antiguo') {\n  finalOutput.resultadosAprendizaje = originalPayload.resultadosAprendizaje;\n  finalOutput.analisisAprendizajesEsperados = [];\n} else if (estructuraMEI === 'MEI-Actualizado') {\n  finalOutput.resultadosFormativos = originalPayload.resultadosFormativos;\n  finalOutput.analisisResultadosAprendizaje = [];\n}\n\n// Iteramos sobre los resultados agregados, que contienen los datos de cada loop.\nfor (const result of aggregatedResults) {\n  // Manejo de errores\n  if (result.error) {\n      if (!finalOutput.errors) finalOutput.errors = [];\n      finalOutput.errors.push({\n          objetivoFallido: result.objetivo_original,\n          detalleError: result.error\n      });\n      continue; // Salta al siguiente resultado\n  }\n\n  // Construimos el objeto final fusionando el 'objetivo_original' (que contiene id, texto, indicadores_a_revisar)\n  // con la nueva propiedad 'indicadoresGenerados' (que ahora contiene los REPORTES).\n  const resultadoConIndicadores = {\n    ...result.objetivo_original, \n    indicadoresGenerados: result.indicadoresGenerados \n  };\n\n  if (estructuraMEI === 'MEI-Antiguo') {\n    finalOutput.analisisAprendizajesEsperados.push(resultadoConIndicadores);\n  } else if (estructuraMEI === 'MEI-Actualizado') {\n    finalOutput.analisisResultadosAprendizaje.push(resultadoConIndicadores);\n  }\n}\n\nreturn finalOutput;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1056,
+        672
+      ],
+      "id": "114508ef-b23c-4328-a94d-a4099701daef",
+      "name": "Formatear Salida Final"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        784,
+        1824
+      ],
+      "id": "d66a5730-31a2-41fa-8e73-ea85283198f5",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "0iqywUDpc1FpZaGU",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "inputText": "={{ $json.objetivo_actual.texto }}",
+        "categories": {
+          "categories": [
+            {
+              "category": "Reconocer",
+              "description": "Recordar o reconocer información, hechos básicos y terminología. Contexto de Ambigüedad: Busca verbos como 'Identificar', 'Describir' o 'Listar' cuando se refieren a un simple acto de señalar, nombrar o recordar (ej. \"Identificar las partes de...\", \"Listar los pasos de...\").  (Verbos Clave: Reconocer, Recordar, Definir, Listar, Nombrar)"
+            },
+            {
+              "category": "Entender",
+              "description": "Demostrar comprensión, interpretar, explicar o resumir información. Contexto de Ambigüedad: Busca verbos como 'Identificar' o 'Clasificar' cuando implican agrupar, comparar o entender la relación entre hechos (ej. \"Identificar los tipos de...\", \"Explicar la diferencia...\", \"Resumir el texto...\").  (Verbos Clave: Comprender, Explicar, Resumir, Relacionar, Comparar, Clasificar)"
+            },
+            {
+              "category": "Aplicar",
+              "description": "Usar un procedimiento, método o conocimiento en una situación concreta o nueva. Contexto de Ambigüedad: Busca verbos como 'Resolver' o 'Demostrar' cuando se refieren a la ejecución de una rutina o un procedimiento conocido (ej. \"Aplicar la fórmula para...\", \"Resolver la ecuación...\", \"Usar el software para...\").  (Verbos Clave: Aplicar, Usar, Implementar, Resolver (procedimental), Ejecutar, Calcular)"
+            },
+            {
+              "category": "Analizar",
+              "description": "Descomponer la información en sus partes para entender su estructura, motivos o causas. Contexto de Ambigüedad: Busca verbos como 'Identificar', 'Comparar' o 'Analizar' cuando implican encontrar patrones, causas ocultas o supuestos (ej. \"Identificar las causas de...\", \"Analizar la estructura de...\", \"Comparar los argumentos...\").  (Verbos Clave: Analizar, Diferenciar, Organizar, Comparar (estructural), Identificar (complejo))"
+            },
+            {
+              "category": "Evaluar",
+              "description": "Emitir juicios de valor, criticar o tomar decisiones basándose en criterios y estándares. Contexto de Ambigüedad: Busca verbos como 'Justificar' o 'Criticar' cuando requieren una defensa, juicio o priorización (ej. \"Evaluar la efectividad de...\", \"Justificar la decisión...\", \"Criticar la validez de...\").  (Verbos Clave: Evaluar, Juzgar, Criticar, Justificar, Defender, Priorizar, Valorar)"
+            },
+            {
+              "category": "Crear",
+              "description": "Generar, diseñar, producir o construir algo nuevo y original. Reorganizar elementos en una nueva estructura. Contexto de Ambigüedad: Busca verbos como 'Diseñar' o 'Proponer' cuando implican la generación de una solución o producto novedoso (ej. \"Diseñar un nuevo plan...\", \"Proponer una solución alternativa...\", \"Elaborar un proyecto...\").  (Verbos Clave: Crear, Diseñar, Proponer, Formular, Construir, Elaborar)"
+            },
+            {
+              "category": "Otro",
+              "description": "Verbo ilegible o imposible de categorizar razonablemente en una de las categorías previas."
+            }
+          ]
+        },
+        "options": {
+          "systemPromptTemplate": "Eres un \"Clasificador Taxonómico Experto\" especializado en la Taxonomía Cognitiva UNAB. Recibirás un Resultado de Aprendizaje (RA) completo.\n\nTu única tarea es analizar el RA para determinar su nivel cognitivo (ej. RECONOCER, ENTENDER, etc.).\n\n### REGLA CRÍTICA: RESOLUCIÓN DE AMBIGÜEDAD\nNo te bases *solo* en el primer verbo (ej. \"Identificar\", \"Analizar\"), ya que muchos verbos son ambiguos y pueden pertenecer a múltiples niveles.\n\nPara resolver la ambigüedad, DEBES analizar el *complemento* del verbo (el objeto y el contexto de la frase) y compararlo con las descripciones de las 6 categorías.\n\n**Ejemplo de tu lógica interna:**\n-   Si el RA es \"Identificar las partes de una célula\", el complemento (\"partes de una célula\") es un simple recuerdo. El nivel es **RECONOCER**.\n-   Si el RA es \"Identificar las causas de la crisis financiera\", el complemento (\"causas de la crisis\") requiere descomponer un problema. El nivel es **ANALIZAR**.\n\nCompara el RA completo con las 6 categorías siguientes y responde *únicamente* con el nombre de la categoría que mejor corresponda."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "position": [
+        704,
+        1440
+      ],
+      "id": "246f45e6-2a32-4056-97e3-3a279eebf8d9",
+      "name": "Clasificar Nivel"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0655c9db-c3fe-4917-92cd-c9b8f9a1c4e2",
+              "name": "Verbos",
+              "value": "={\n  \"lista_verbos_permitidos\": [\n    {\"verbo\": \"ANOTAR\", \"nivel\": 1},\n    {\"verbo\": \"CITAR\", \"nivel\": 1},\n    {\"verbo\": \"DEFINIR\", \"nivel\": 1},\n    {\"verbo\": \"DENOMINAR\", \"nivel\": 1},\n    {\"verbo\": \"DESCRIBIR\", \"nivel\": 1},\n    {\"verbo\": \"ENUMERAR\", \"nivel\": 1},\n    {\"verbo\": \"IDENTIFICAR\", \"nivel\": 1},\n    {\"verbo\": \"INDICAR\", \"nivel\": 1},\n    {\"verbo\": \"LISTAR\", \"nivel\": 1},\n    {\"verbo\": \"MARCAR\", \"nivel\": 1},\n    {\"verbo\": \"MENCIONAR\", \"nivel\": 1},\n    {\"verbo\": \"MOSTRAR\", \"nivel\": 1},\n    {\"verbo\": \"NOMBRAR\", \"nivel\": 1},\n    {\"verbo\": \"RECONOCER\", \"nivel\": 1},\n    {\"verbo\": \"RECORDAR\", \"nivel\": 1},\n    {\"verbo\": \"ROTULAR\", \"nivel\": 1},\n    {\"verbo\": \"SEÑALAR\", \"nivel\": 1},\n    {\"verbo\": \"UBICAR\", \"nivel\": 1}\n  ]\n}",
+              "type": "object"
+            },
+            {
+              "id": "f9a869e8-29db-4c79-b3c1-4d7ed739a56f",
+              "name": "nivel_ra",
+              "value": "1",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1056,
+        864
+      ],
+      "id": "327e974a-dd8f-487d-847a-1e883a5a5594",
+      "name": "Verbos Reconocer"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0655c9db-c3fe-4917-92cd-c9b8f9a1c4e2",
+              "name": "Verbos",
+              "value": "={\n  \"lista_verbos_permitidos\": [\n    {\"verbo\": \"ANOTAR\", \"nivel\": 1},\n    {\"verbo\": \"CITAR\", \"nivel\": 1},\n    {\"verbo\": \"DEFINIR\", \"nivel\": 1},\n    {\"verbo\": \"DENOMINAR\", \"nivel\": 1},\n    {\"verbo\": \"DESCRIBIR\", \"nivel\": 1},\n    {\"verbo\": \"ENUMERAR\", \"nivel\": 1},\n    {\"verbo\": \"IDENTIFICAR\", \"nivel\": 1},\n    {\"verbo\": \"INDICAR\", \"nivel\": 1},\n    {\"verbo\": \"LISTAR\", \"nivel\": 1},\n    {\"verbo\": \"MARCAR\", \"nivel\": 1},\n    {\"verbo\": \"MENCIONAR\", \"nivel\": 1},\n    {\"verbo\": \"MOSTRAR\", \"nivel\": 1},\n    {\"verbo\": \"NOMBRAR\", \"nivel\": 1},\n    {\"verbo\": \"RECONOCER\", \"nivel\": 1},\n    {\"verbo\": \"RECORDAR\", \"nivel\": 1},\n    {\"verbo\": \"ROTULAR\", \"nivel\": 1},\n    {\"verbo\": \"SEÑALAR\", \"nivel\": 1},\n    {\"verbo\": \"UBICAR\", \"nivel\": 1},\n    {\"verbo\": \"ASOCIAR\", \"nivel\": 2},\n    {\"verbo\": \"CLASIFICAR\", \"nivel\": 2},\n    {\"verbo\": \"COMPARAR\", \"nivel\": 2},\n    {\"verbo\": \"DISTINGUIR\", \"nivel\": 2},\n    {\"verbo\": \"EJEMPLIFICAR\", \"nivel\": 2},\n    {\"verbo\": \"EXPLICAR\", \"nivel\": 2},\n    {\"verbo\": \"INTERPRETAR\", \"nivel\": 2},\n    {\"verbo\": \"ORGANIZAR\", \"nivel\": 2},\n    {\"verbo\": \"RELACIONAR\", \"nivel\": 2}\n  ]\n}",
+              "type": "object"
+            },
+            {
+              "id": "16a628d7-4c98-4cb0-a16c-f7ba5bce565c",
+              "name": "nivel_ra",
+              "value": "2",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1056,
+        1056
+      ],
+      "id": "4c74cbe7-8f63-4de8-bf9e-99681ce1e5fc",
+      "name": "Verbos Entender"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0655c9db-c3fe-4917-92cd-c9b8f9a1c4e2",
+              "name": "Verbos",
+              "value": "={\n  \"lista_verbos_permitidos\": [\n    {\"verbo\": \"ANOTAR\", \"nivel\": 1},\n    {\"verbo\": \"CITAR\", \"nivel\": 1},\n    {\"verbo\": \"DEFINIR\", \"nivel\": 1},\n    {\"verbo\": \"DENOMINAR\", \"nivel\": 1},\n    {\"verbo\": \"DESCRIBIR\", \"nivel\": 1},\n    {\"verbo\": \"ENUMERAR\", \"nivel\": 1},\n    {\"verbo\": \"IDENTIFICAR\", \"nivel\": 1},\n    {\"verbo\": \"INDICAR\", \"nivel\": 1},\n    {\"verbo\": \"LISTAR\", \"nivel\": 1},\n    {\"verbo\": \"MARCAR\", \"nivel\": 1},\n    {\"verbo\": \"MENCIONAR\", \"nivel\": 1},\n    {\"verbo\": \"MOSTRAR\", \"nivel\": 1},\n    {\"verbo\": \"NOMBRAR\", \"nivel\": 1},\n    {\"verbo\": \"RECONOCER\", \"nivel\": 1},\n    {\"verbo\": \"RECORDAR\", \"nivel\": 1},\n    {\"verbo\": \"ROTULAR\", \"nivel\": 1},\n    {\"verbo\": \"SEÑALAR\", \"nivel\": 1},\n    {\"verbo\": \"UBICAR\", \"nivel\": 1},\n    {\"verbo\": \"ASOCIAR\", \"nivel\": 2},\n    {\"verbo\": \"CLASIFICAR\", \"nivel\": 2},\n    {\"verbo\": \"COMPARAR\", \"nivel\": 2},\n    {\"verbo\": \"DISTINGUIR\", \"nivel\": 2},\n    {\"verbo\": \"EJEMPLIFICAR\", \"nivel\": 2},\n    {\"verbo\": \"EXPLICAR\", \"nivel\": 2},\n    {\"verbo\": \"INTERPRETAR\", \"nivel\": 2},\n    {\"verbo\": \"ORGANIZAR\", \"nivel\": 2},\n    {\"verbo\": \"RELACIONAR\", \"nivel\": 2},\n    {\"verbo\": \"RESUMIR\", \"nivel\": 2},\n    {\"verbo\": \"APLICAR\", \"nivel\": 3},\n    {\"verbo\": \"CALCULAR\", \"nivel\": 3},\n    {\"verbo\": \"COMPUTAR\", \"nivel\": 3},\n    {\"verbo\": \"DEMOSTRAR\", \"nivel\": 3},\n    {\"verbo\": \"EJECUTAR\", \"nivel\": 3},\n    {\"verbo\": \"EMPLEAR\", \"nivel\": 3},\n    {\"verbo\": \"EXPERIMENTAR\", \"nivel\": 3},\n    {\"verbo\": \"HACER USO\", \"nivel\": 3},\n    {\"verbo\": \"IMPLEMENTAR\", \"nivel\": 3},\n    {\"verbo\": \"MANEJAR\", \"nivel\": 3},\n    {\"verbo\": \"MANIPULAR\", \"nivel\": 3},\n    {\"verbo\": \"MODELAR\", \"nivel\": 3},\n    {\"verbo\": \"OPERAR\", \"nivel\": 3},\n    {\"verbo\": \"REALIZAR\", \"nivel\": 3},\n    {\"verbo\": \"RESOLVER\", \"nivel\": 3},\n    {\"verbo\": \"SELECCIONAR\", \"nivel\": 3},\n    {\"verbo\": \"SIMULAR\", \"nivel\": 3},\n    {\"verbo\": \"SOLUCIONAR\", \"nivel\": 3},\n    {\"verbo\": \"USAR\", \"nivel\": 3},\n    {\"verbo\": \"UTILIZAR\", \"nivel\": 3}\n  ]\n}",
+              "type": "object"
+            },
+            {
+              "id": "7b53d86e-093f-4afd-8b73-4018d0291413",
+              "name": "nivel_ra",
+              "value": "3",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1056,
+        1248
+      ],
+      "id": "0c115f20-d4fc-4d88-898f-385052fb1990",
+      "name": "Verbos Aplicar"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0655c9db-c3fe-4917-92cd-c9b8f9a1c4e2",
+              "name": "Verbos",
+              "value": "={\n  \"lista_verbos_permitidos\": [\n    {\"verbo\": \"ANOTAR\", \"nivel\": 1},\n    {\"verbo\": \"CITAR\", \"nivel\": 1},\n    {\"verbo\": \"DEFINIR\", \"nivel\": 1},\n    {\"verbo\": \"DENOMINAR\", \"nivel\": 1},\n    {\"verbo\": \"DESCRIBIR\", \"nivel\": 1},\n    {\"verbo\": \"ENUMERAR\", \"nivel\": 1},\n    {\"verbo\": \"IDENTIFICAR\", \"nivel\": 1},\n    {\"verbo\": \"INDICAR\", \"nivel\": 1},\n    {\"verbo\": \"LISTAR\", \"nivel\": 1},\n    {\"verbo\": \"MARCAR\", \"nivel\": 1},\n    {\"verbo\": \"MENCIONAR\", \"nivel\": 1},\n    {\"verbo\": \"MOSTRAR\", \"nivel\": 1},\n    {\"verbo\": \"NOMBRAR\", \"nivel\": 1},\n    {\"verbo\": \"RECONOCER\", \"nivel\": 1},\n    {\"verbo\": \"RECORDAR\", \"nivel\": 1},\n    {\"verbo\": \"ROTULAR\", \"nivel\": 1},\n    {\"verbo\": \"SEÑALAR\", \"nivel\": 1},\n    {\"verbo\": \"UBICAR\", \"nivel\": 1},\n    {\"verbo\": \"ASOCIAR\", \"nivel\": 2},\n    {\"verbo\": \"CLASIFICAR\", \"nivel\": 2},\n    {\"verbo\": \"COMPARAR\", \"nivel\": 2},\n    {\"verbo\": \"DISTINGUIR\", \"nivel\": 2},\n    {\"verbo\": \"EJEMPLIFICAR\", \"nivel\": 2},\n    {\"verbo\": \"EXPLICAR\", \"nivel\": 2},\n    {\"verbo\": \"INTERPRETAR\", \"nivel\": 2},\n    {\"verbo\": \"ORGANIZAR\", \"nivel\": 2},\n    {\"verbo\": \"RELACIONAR\", \"nivel\": 2},\n    {\"verbo\": \"RESUMIR\", \"nivel\": 2},\n    {\"verbo\": \"APLICAR\", \"nivel\": 3},\n    {\"verbo\": \"CALCULAR\", \"nivel\": 3},\n    {\"verbo\": \"COMPUTAR\", \"nivel\": 3},\n    {\"verbo\": \"DEMOSTRAR\", \"nivel\": 3},\n    {\"verbo\": \"EJECUTAR\", \"nivel\": 3},\n    {\"verbo\": \"EMPLEAR\", \"nivel\": 3},\n    {\"verbo\": \"EXPERIMENTAR\", \"nivel\": 3},\n    {\"verbo\": \"HACER USO\", \"nivel\": 3},\n    {\"verbo\": \"IMPLEMENTAR\", \"nivel\": 3},\n    {\"verbo\": \"MANEJAR\", \"nivel\": 3},\n    {\"verbo\": \"MANIPULAR\", \"nivel\": 3},\n    {\"verbo\": \"MODELAR\", \"nivel\": 3},\n    {\"verbo\": \"OPERAR\", \"nivel\": 3},\n    {\"verbo\": \"REALIZAR\", \"nivel\": 3},\n    {\"verbo\": \"RESOLVER\", \"nivel\": 3},\n    {\"verbo\": \"SELECCIONAR\", \"nivel\": 3},\n    {\"verbo\": \"SIMULAR\", \"nivel\": 3},\n    {\"verbo\": \"SOLUCIONAR\", \"nivel\": 3},\n    {\"verbo\": \"USAR\", \"nivel\": 3},\n    {\"verbo\": \"UTILIZAR\", \"nivel\": 3},\n    {\"verbo\": \"ATRIBUIR\", \"nivel\": 4},\n    {\"verbo\": \"CONTRASTAR\", \"nivel\": 4},\n    {\"verbo\": \"DEDUCIR\", \"nivel\": 4},\n    {\"verbo\": \"DETERMINAR\", \"nivel\": 4},\n    {\"verbo\": \"DIFERENCIAR\", \"nivel\": 4},\n    {\"verbo\": \"DISCRIMINAR\", \"nivel\": 4},\n    {\"verbo\": \"ESTRUCTURAR\", \"nivel\": 4},\n    {\"verbo\": \"EXAMINAR\", \"nivel\": 4},\n    {\"verbo\": \"INSPECCIONAR\", \"nivel\": 4},\n    {\"verbo\": \"INTEGRAR\", \"nivel\": 4}\n  ]\n}",
+              "type": "object"
+            },
+            {
+              "id": "e970b2d9-e6b3-4dcb-9756-d397d41e8298",
+              "name": "nivel_ra",
+              "value": "4",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1056,
+        1440
+      ],
+      "id": "ce61ecde-5142-49a1-8b75-99379737437b",
+      "name": "Verbos Analizar"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0655c9db-c3fe-4917-92cd-c9b8f9a1c4e2",
+              "name": "Verbos",
+              "value": "={\n  \"lista_verbos_permitidos\": [\n    {\"verbo\": \"ANOTAR\", \"nivel\": 1},\n    {\"verbo\": \"CITAR\", \"nivel\": 1},\n    {\"verbo\": \"DEFINIR\", \"nivel\": 1},\n    {\"verbo\": \"DENOMINAR\", \"nivel\": 1},\n    {\"verbo\": \"DESCRIBIR\", \"nivel\": 1},\n    {\"verbo\": \"ENUMERAR\", \"nivel\": 1},\n    {\"verbo\": \"IDENTIFICAR\", \"nivel\": 1},\n    {\"verbo\": \"INDICAR\", \"nivel\": 1},\n    {\"verbo\": \"LISTAR\", \"nivel\": 1},\n    {\"verbo\": \"MARCAR\", \"nivel\": 1},\n    {\"verbo\": \"MENCIONAR\", \"nivel\": 1},\n    {\"verbo\": \"MOSTRAR\", \"nivel\": 1},\n    {\"verbo\": \"NOMBRAR\", \"nivel\": 1},\n    {\"verbo\": \"RECONOCER\", \"nivel\": 1},\n    {\"verbo\": \"RECORDAR\", \"nivel\": 1},\n    {\"verbo\": \"ROTULAR\", \"nivel\": 1},\n    {\"verbo\": \"SEÑALAR\", \"nivel\": 1},\n    {\"verbo\": \"UBICAR\", \"nivel\": 1},\n    {\"verbo\": \"ASOCIAR\", \"nivel\": 2},\n    {\"verbo\": \"CLASIFICAR\", \"nivel\": 2},\n    {\"verbo\": \"COMPARAR\", \"nivel\": 2},\n    {\"verbo\": \"DISTINGUIR\", \"nivel\": 2},\n    {\"verbo\": \"EJEMPLIFICAR\", \"nivel\": 2},\n    {\"verbo\": \"EXPLICAR\", \"nivel\": 2},\n    {\"verbo\": \"INTERPRETAR\", \"nivel\": 2},\n    {\"verbo\": \"ORGANIZAR\", \"nivel\": 2},\n    {\"verbo\": \"RELACIONAR\", \"nivel\": 2},\n    {\"verbo\": \"RESUMIR\", \"nivel\": 2},\n    {\"verbo\": \"APLICAR\", \"nivel\": 3},\n    {\"verbo\": \"CALCULAR\", \"nivel\": 3},\n    {\"verbo\": \"COMPUTAR\", \"nivel\": 3},\n    {\"verbo\": \"DEMOSTRAR\", \"nivel\": 3},\n    {\"verbo\": \"EJECUTAR\", \"nivel\": 3},\n    {\"verbo\": \"EMPLEAR\", \"nivel\": 3},\n    {\"verbo\": \"EXPERIMENTAR\", \"nivel\": 3},\n    {\"verbo\": \"HACER USO\", \"nivel\": 3},\n    {\"verbo\": \"IMPLEMENTAR\", \"nivel\": 3},\n    {\"verbo\": \"MANEJAR\", \"nivel\": 3},\n    {\"verbo\": \"MANIPULAR\", \"nivel\": 3},\n    {\"verbo\": \"MODELAR\", \"nivel\": 3},\n    {\"verbo\": \"OPERAR\", \"nivel\": 3},\n    {\"verbo\": \"REALIZAR\", \"nivel\": 3},\n    {\"verbo\": \"RESOLVER\", \"nivel\": 3},\n    {\"verbo\": \"SELECCIONAR\", \"nivel\": 3},\n    {\"verbo\": \"SIMULAR\", \"nivel\": 3},\n    {\"verbo\": \"SOLUCIONAR\", \"nivel\": 3},\n    {\"verbo\": \"USAR\", \"nivel\": 3},\n    {\"verbo\": \"UTILIZAR\", \"nivel\": 3},\n    {\"verbo\": \"ATRIBUIR\", \"nivel\": 4},\n    {\"verbo\": \"CONTRASTAR\", \"nivel\": 4},\n    {\"verbo\": \"DEDUCIR\", \"nivel\": 4},\n    {\"verbo\": \"DETERMINAR\", \"nivel\": 4},\n    {\"verbo\": \"DIFERENCIAR\", \"nivel\": 4},\n    {\"verbo\": \"DISCRIMINAR\", \"nivel\": 4},\n    {\"verbo\": \"ESTRUCTURAR\", \"nivel\": 4},\n    {\"verbo\": \"EXAMINAR\", \"nivel\": 4},\n    {\"verbo\": \"INSPECCIONAR\", \"nivel\": 4},\n    {\"verbo\": \"INTEGRAR\", \"nivel\": 4},\n    {\"verbo\": \"ARGUMENTAR\", \"nivel\": 5},\n    {\"verbo\": \"CATEGORIZAR\", \"nivel\": 5},\n    {\"verbo\": \"CHEQUEAR\", \"nivel\": 5},\n    {\"verbo\": \"COMPROBAR\", \"nivel\": 5},\n    {\"verbo\": \"CRITICAR\", \"nivel\": 5},\n    {\"verbo\": \"DECIDIR\", \"nivel\": 5},\n    {\"verbo\": \"DEFENDER\", \"nivel\": 5},\n    {\"verbo\": \"DETECTAR\", \"nivel\": 5},\n    {\"verbo\": \"DIAGNOSTICAR\", \"nivel\": 5},\n    {\"verbo\": \"ESCOGER\", \"nivel\": 5},\n    {\"verbo\": \"EVALUAR\", \"nivel\": 5},\n    {\"verbo\": \"FUNDAMENTAR\", \"nivel\": 5},\n    {\"verbo\": \"JERARQUIZAR\", \"nivel\": 5},\n    {\"verbo\": \"MEDIR\", \"nivel\": 5},\n    {\"verbo\": \"MONITOREAR\", \"nivel\": 5},\n    {\"verbo\": \"PRIORIZAR\", \"nivel\": 5},\n    {\"verbo\": \"PROBAR\", \"nivel\": 5},\n    {\"verbo\": \"SINTETIZAR\", \"nivel\": 5},\n    {\"verbo\": \"VALORAR\", \"nivel\": 5}\n  ]\n}",
+              "type": "object"
+            },
+            {
+              "id": "34834b47-af25-4902-b659-33abe9974a6a",
+              "name": "nivel_ra",
+              "value": "5",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1056,
+        1632
+      ],
+      "id": "a42fbe60-110e-44a5-9a34-8152e604353e",
+      "name": "Verbos Evaluar"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0655c9db-c3fe-4917-92cd-c9b8f9a1c4e2",
+              "name": "Verbos",
+              "value": "={\n  \"lista_verbos_permitidos\": [\n    {\"verbo\": \"ANOTAR\", \"nivel\": 1},\n    {\"verbo\": \"CITAR\", \"nivel\": 1},\n    {\"verbo\": \"DEFINIR\", \"nivel\": 1},\n    {\"verbo\": \"DENOMINAR\", \"nivel\": 1},\n    {\"verbo\": \"DESCRIBIR\", \"nivel\": 1},\n    {\"verbo\": \"ENUMERAR\", \"nivel\": 1},\n    {\"verbo\": \"IDENTIFICAR\", \"nivel\": 1},\n    {\"verbo\": \"INDICAR\", \"nivel\": 1},\n    {\"verbo\": \"LISTAR\", \"nivel\": 1},\n    {\"verbo\": \"MARCAR\", \"nivel\": 1},\n    {\"verbo\": \"MENCIONAR\", \"nivel\": 1},\n    {\"verbo\": \"MOSTRAR\", \"nivel\": 1},\n    {\"verbo\": \"NOMBRAR\", \"nivel\": 1},\n    {\"verbo\": \"RECONOCER\", \"nivel\": 1},\n    {\"verbo\": \"RECORDAR\", \"nivel\": 1},\n    {\"verbo\": \"ROTULAR\", \"nivel\": 1},\n    {\"verbo\": \"SEÑALAR\", \"nivel\": 1},\n    {\"verbo\": \"UBICAR\", \"nivel\": 1},\n    {\"verbo\": \"ASOCIAR\", \"nivel\": 2},\n    {\"verbo\": \"CLASIFICAR\", \"nivel\": 2},\n    {\"verbo\": \"COMPARAR\", \"nivel\": 2},\n    {\"verbo\": \"COMPRENDER\", \"nivel\": 2},\n    {\"verbo\": \"DISTINGUIR\", \"nivel\": 2},\n    {\"verbo\": \"EJEMPLIFICAR\", \"nivel\": 2},\n    {\"verbo\": \"EXPLICAR\", \"nivel\": 2},\n    {\"verbo\": \"INFERIR\", \"nivel\": 2},\n    {\"verbo\": \"INTERPRETAR\", \"nivel\": 2},\n    {\"verbo\": \"ORGANIZAR\", \"nivel\": 2},\n    {\"verbo\": \"RELACIONAR\", \"nivel\": 2},\n    {\"verbo\": \"RESUMIR\", \"nivel\": 2},\n    {\"verbo\": \"APLICAR\", \"nivel\": 3},\n    {\"verbo\": \"CALCULAR\", \"nivel\": 3},\n    {\"verbo\": \"COMPUTAR\", \"nivel\": 3},\n    {\"verbo\": \"DEMOSTRAR\", \"nivel\": 3},\n    {\"verbo\": \"EJECUTAR\", \"nivel\": 3},\n    {\"verbo\": \"EMPLEAR\", \"nivel\": 3},\n    {\"verbo\": \"EXPERIMENTAR\", \"nivel\": 3},\n    {\"verbo\": \"HACER USO\", \"nivel\": 3},\n    {\"verbo\": \"IMPLEMENTAR\", \"nivel\": 3},\n    {\"verbo\": \"MANEJAR\", \"nivel\": 3},\n    {\"verbo\": \"MANIPULAR\", \"nivel\": 3},\n    {\"verbo\": \"MODELAR\", \"nivel\": 3},\n    {\"verbo\": \"OPERAR\", \"nivel\": 3},\n    {\"verbo\": \"REALIZAR\", \"nivel\": 3},\n    {\"verbo\": \"RESOLVER\", \"nivel\": 3},\n    {\"verbo\": \"SELECCIONAR\", \"nivel\": 3},\n    {\"verbo\": \"SIMULAR\", \"nivel\": 3},\n    {\"verbo\": \"SOLUCIONAR\", \"nivel\": 3},\n    {\"verbo\": \"USAR\", \"nivel\": 3},\n    {\"verbo\": \"UTILIZAR\", \"nivel\": 3},\n    {\"verbo\": \"ANALIZAR\", \"nivel\": 4},\n    {\"verbo\": \"ATRIBUIR\", \"nivel\": 4},\n    {\"verbo\": \"CONTRASTAR\", \"nivel\": 4},\n    {\"verbo\": \"DEDUCIR\", \"nivel\": 4},\n    {\"verbo\": \"DETERMINAR\", \"nivel\": 4},\n    {\"verbo\": \"DIFERENCIAR\", \"nivel\": 4},\n    {\"verbo\": \"DISCRIMINAR\", \"nivel\": 4},\n    {\"verbo\": \"ESTRUCTURAR\", \"nivel\": 4},\n    {\"verbo\": \"EXAMINAR\", \"nivel\": 4},\n    {\"verbo\": \"INDAGAR\", \"nivel\": 4},\n    {\"verbo\": \"INSPECCIONAR\", \"nivel\": 4},\n    {\"verbo\": \"INTEGRAR\", \"nivel\": 4},\n    {\"verbo\": \"ARGUMENTAR\", \"nivel\": 5},\n    {\"verbo\": \"CATEGORIZAR\", \"nivel\": 5},\n    {\"verbo\": \"CHEQUEAR\", \"nivel\": 5},\n    {\"verbo\": \"COMPROBAR\", \"nivel\": 5},\n    {\"verbo\": \"CONCLUIR\", \"nivel\": 5},\n    {\"verbo\": \"CRITICAR\", \"nivel\": 5},\n    {\"verbo\": \"DECIDIR\", \"nivel\": 5},\n    {\"verbo\": \"DEFENDER\", \"nivel\": 5},\n    {\"verbo\": \"DETECTAR\", \"nivel\": 5},\n    {\"verbo\": \"DIAGNOSTICAR\", \"nivel\": 5},\n    {\"verbo\": \"ESCOGER\", \"nivel\": 5},\n    {\"verbo\": \"EVALUAR\", \"nivel\": 5},\n    {\"verbo\": \"FUNDAMENTAR\", \"nivel\": 5},\n    {\"verbo\": \"INVESTIGAR\", \"nivel\": 5},\n    {\"verbo\": \"JERARQUIZAR\", \"nivel\": 5},\n    {\"verbo\": \"JUZGAR\", \"nivel\": 5},\n    {\"verbo\": \"JUSTIFICAR\", \"nivel\": 5},\n    {\"verbo\": \"MEDIR\", \"nivel\": 5},\n    {\"verbo\": \"MONITOREAR\", \"nivel\": 5},\n    {\"verbo\": \"PRIORIZAR\", \"nivel\": 5},\n    {\"verbo\": \"PROBAR\", \"nivel\": 5},\n    {\"verbo\": \"SINTETIZAR\", \"nivel\": 5},\n    {\"verbo\": \"VALORAR\", \"nivel\": 5},\n    {\"verbo\": \"CONCEBIR\", \"nivel\": 6},\n    {\"verbo\": \"CONFECCIONAR\", \"nivel\": 6},\n    {\"verbo\": \"CONSTRUIR\", \"nivel\": 6},\n    {\"verbo\": \"CREAR\", \"nivel\": 6},\n    {\"verbo\": \"DESARROLLAR\", \"nivel\": 6},\n    {\"verbo\": \"DESCUBRIR\", \"nivel\": 6},\n    {\"verbo\": \"DISEÑAR\", \"nivel\": 6},\n    {\"verbo\": \"ELABORAR\", \"nivel\": 6},\n    {\"verbo\": \"FORMAR\", \"nivel\": 6},\n    {\"verbo\": \"FORMULAR\", \"nivel\": 6},\n    {\"verbo\": \"GENERAR\", \"nivel\": 6},\n    {\"verbo\": \"IDEAR\", \"nivel\": 6},\n    {\"verbo\": \"INVENTAR\", \"nivel\": 6},\n    {\"verbo\": \"PLANIFICAR\", \"nivel\": 6},\n    {\"verbo\": \"PRODUCIR\", \"nivel\": 6},\n    {\"verbo\": \"PROGRAMAR\", \"nivel\": 6},\n    {\"verbo\": \"PROPONER\", \"nivel\": 6},\n    {\"verbo\": \"PROYECTAR\", \"nivel\": 6},\n    {\"verbo\": \"TRANSFORMAR\", \"nivel\": 6}\n  ]\n}",
+              "type": "object"
+            },
+            {
+              "id": "db316c94-aa90-4013-8483-5073da4a7fde",
+              "name": "nivel_ra",
+              "value": "6",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1056,
+        1824
+      ],
+      "id": "7722df74-d1c7-4f82-9901-fdebb8732537",
+      "name": "Verbos Crear"
+    },
+    {
+      "parameters": {
+        "jsCode": "// --- Inicio: Código para \"Constructor de Prompt (Agente 2 - Taxónomo)\" ---\n\n// 1. OBTENER DATOS\nconst inputData = $input.first().json; // Viene de \"Validar Salida (Agente 1)\"\nconst { \n  analisis_borrador, // El array de objetos deconstruidos por Agente 1\n  ...contexto // Preservamos todo lo demás (objetivo_actual, estructuraMEI, etc.)\n} = inputData;\n\n// Leemos la lista de verbos permitidos\nconst verbosData = $('Verbos y Nivel').first().json;\nconst lista_verbos_permitidos = JSON.parse(verbosData.verbos).lista_verbos_permitidos;\n\n// 2. PREPARAR PROMPT BASE (SYSTEM PROMPT)\nconst promptBase = `Eres un \"Lexicógrafo Taxonómico\" de UNAB. Eres una máquina de análisis de verbos.\nTu única tarea es tomar un \"verbo detectado\" (conjugado) y encontrar su nivel taxonómico exacto en la \"lista de materiales\" (infinitivos).`;\n\n// 3. PREPARAR TAREA (USER PROMPT)\nconst finalInstructions = `\n### REGLAS DE ANÁLISIS DE VERBOS:\n1.  **Mapeo de Infinitivo:** Para CADA objeto en el \"BORRADOR DE ANÁLISIS\", toma el \"verbo_detectado\".\n2.  **Conversión:** Convierte el verbo conjugado (ej. \"COMPARAN\", \"ELABORAN\") a su forma infinitiva (ej. \"COMPARAR\", \"ELABORAR\").\n3.  **Búsqueda:** Busca ese infinitivo en la \"LISTA DE MATERIALES\".\n4.  **Extracción:** Extrae el \"nivel\" numérico exacto de ese verbo.\n5.  **Manejo de Errores:** Si el verbo NO se encuentra en la lista, usa \"N/A\" para el infinitivo y 0 para el nivel.\n\n### FORMATO DE SALIDA OBLIGATORIO:\nDevuelve ÚNICAMENTE un array JSON.\nDebe ser una copia exacta del \"BORRADOR DE ANÁLISIS\", pero añadiendo DOS (2) nuevas claves:\n- \"verbo_infinitivo\": (El infinitivo que encontraste, ej. \"COMPARAR\")\n- \"nivel_verbo_detectado\": (El nivel numérico que extrajiste de la lista, ej. 2)\n\nREGLA DE ORO: PRESERVA todas las demás claves del borrador (indicador_original, producto_proceso_detectado, etc.) sin modificarlas.\n`;\n\n// 4. ENSAMBLAR Y DEVOLVER\nconst promptFinal = `\n${promptBase}\n\n### LISTA DE MATERIALES (VERBOS Y NIVELES OFICIALES):\n${JSON.stringify(lista_verbos_permitidos, null, 2)}\n\n### BORRADOR DE ANÁLISIS (A PROCESAR):\n${JSON.stringify(analisis_borrador, null, 2)}\n\n${finalInstructions}\n\n### TU TAREA:\nEjecuta el análisis léxico. Devuelve solo el array JSON final, enriquecido con las nuevas claves.\n`;\n\n// 5. DEVOLVER PROMPT Y PRESERVAR DATOS\nreturn [{ \n  json: { \n    prompt: promptFinal,\n    ...contexto // Pasamos el contexto original\n  } \n}];\n// --- Fin: Código para \"Constructor de Prompt (Agente 2)\" ---"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2304,
+        1504
+      ],
+      "id": "fae85369-dd7f-461f-ade0-5528d6f07962",
+      "name": "Constructor de Prompt (Agente 2)"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $input.first().json.prompt }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        2528,
+        1504
+      ],
+      "id": "ff5a2782-c098-4920-94b7-09d744458a57",
+      "name": "Agente 2 - Arquitecto de Secuencia"
+    },
+    {
+      "parameters": {
+        "jsCode": "// --- Inicio: Código \"Auditor Experto\" v2 (Lenguaje de Usuario) para \"Constructor de Prompt (Agente 3)\" ---\n\n// 1. OBTENER DATOS (Lectura de Múltiples Fuentes)\nconst inputData = $input.first().json; // El análisis enriquecido del Agente 2\nconst { \n  analisis_enriquecido // Array con {indicador_original, verbo_detectado, ...}\n} = inputData;\n\n// El contexto del bucle 'Procesar Uno por Uno' (ID f5d1...)\nconst loopData = $('Procesar Uno por Uno').first().json;\nconst { \n  estructuraMEI, \n  objetivo_actual,  // El RA/AE\n  contexto_superior // El RF\n} = loopData;\n\n// El nivel taxonómico del RA/AE\nconst nivel_ra_num = $('Verbos y Nivel').first().json.nivel_ra;\n\n// 2. PREPARAR PROMPT BASE (SYSTEM PROMPT)\nconst promptBase = `Eres un \"Auditor de Calidad Pedagógica\" de UNAB, experto en el estándar 2.2 de Quality Matters.\nTu tarea es auditar un set de indicadores basándote en un análisis estructural y taxonómico pre-procesado.\nTu reporte final debe estar escrito en un lenguaje claro y directo para docentes, evitando jerga técnica interna.`;\n\n// 3. PREPARAR TAREA (USER PROMPT)\nconst contextoRA = objetivo_actual.texto;\nlet contextoRF = \"No aplica (MEI-Antiguo)\";\nif (estructuraMEI === 'MEI-Actualizado' && contexto_superior.resultadosFormativos) {\n  contextoRF = contexto_superior.resultadosFormativos.map(rf => rf.texto).join('\\n');\n}\n\n// Estos son los principios que evitan el \"overfitting\"\nconst principiosDeRevision = `\n### PRINCIPIOS DE REVISIÓN (TU LÓGICA DE AUDITORÍA INTERNA)\n\n1.  **Análisis de Finalidad:** El RA/AE describe el *propósito*. El Indicador describe la *EVIDENCIA*. Si un indicador contiene frases de finalidad (ej. \"para\", \"con el fin de\", \"con el propósito de\"), es un FALLO ESTRUCTURAL.\n\n2.  **Análisis de Observabilidad:** Los indicadores deben ser \"medibles\" y \"observables\". Verbos abstractos (ej. 'REFLEXIONAR', 'PENSAR', 'COMPRENDER', 'SABER', 'CONOCER') o Nivel 0 son procesos internos y NO son observables. Un verbo abstracto solo se vuelve medible si el contexto lo \"ancla\" a un producto tangible (ej. \"REFLEXIONAR... *mediante un ensayo escrito*\"). Si no está anclado, es un FALLO DE OBSERVABILIDAD.\n\n3.  **Análisis de Progresividad:** El alineamiento es pedagógico. Un indicador de nivel bajo (ej. Nivel 2 'COMPARAR') SÍ tiene **ALINEAMIENTO ALTO** si es un \"peldaño\" lógico para un RA de nivel alto (ej. Nivel 6 'DISEÑAR'). El alineamiento es BAJO solo si el indicador falla el Análisis 1 o 2, o si es pedagógicamente irrelevante.\n`;\n\nconst finalInstructions = `\n### TU PROCESO DE ANÁLISIS (Chain-of-Thought Interno)\nPara CADA indicador, debes pensar en 3 pasos antes de escribir tu reporte:\n1.  **Paso 1 (Finalidad):** ¿El \"indicador_original\" contiene una frase de finalidad?\n2.  **Paso 2 (Observabilidad):** ¿El \"nivel_verbo_detectado\" es 0 o el \"verbo_infinitivo\" es abstracto? Si es así, ¿el \"condicion_contexto_detectada\" lo ancla a un producto tangible?\n3.  **Paso 3 (Progresividad):** ¿El \"nivel_verbo_detectado\" es un \"peldaño\" lógico para el \"NIVEL DEL RA ESPERADO\" (${nivel_ra_num})?\n\n### FORMATO DE REPORTE DE SALIDA (4 Claves, LENGUAJE DE USUARIO)\nBasado en tu análisis de 3 pasos, genera el reporte final.\n\n1.  **Clave \"verbo_observable\":**\n    * **Si Falla (Paso 2):** \"FALLA: El verbo '...' (Nivel 0) no es observable. Los verbos deben describir acciones medibles (ej. 'ANALIZAR', 'IDENTIFICAR').\"\n    * **Si Pasa:** \"'...' (Nivel X) es un verbo observable y medible.\"\n\n2.  **Clave \"producto_o_proceso\":**\n    * **Si Falla (Paso 2):** \"Incompleto. El verbo '...' no genera un producto o evidencia medible.\"\n    * **Si Pasa:** \"Sí, '...' es un producto/proceso claro y específico.\"\n\n3.  **Clave \"condicion_de_calidad_o_contexto\":**\n    * **Si Falla (Paso 1):** \"FALLA ESTRUCTURAL: El indicador incluye una frase de finalidad ('...'). El indicador solo debe describir la evidencia (el qué/cómo), no el propósito, que ya está en el RA/AE.\"\n    * **Si es 'null':** \"Ausente. El indicador está estructuralmente incompleto, falta una condición o contexto.\"\n    * **Si Pasa:** \"Presente. '...' es un contexto o condición clara.\"\n\n4.  **Clave \"alineamiento\":**\n    * **Si Falla (Paso 1 o 2):** \"BAJO. El indicador no es válido. [Añade la justificación de la falla, ej: 'No es medible porque usa un verbo abstracto ('REFLEXIONAR') sin un producto tangible.' o 'Incluye una frase de finalidad que lo invalida.']\"\n    * **Si Pasa (Paso 3):** \"ALTO. Es un 'peldaño' pedagógico (Nivel X) coherente y necesario para construir el RA/AE (Nivel ${nivel_ra_num}).\"\n    * **Si Pasa (Paso 3) pero está incompleto:** \"MEDIO. El verbo (Nivel X) es un peldaño coherente, pero la estructura es incompleta (falta contexto), lo que dificulta su medición.\"\n\n### FORMATO DE SALIDA OBLIGATORIO:\nDevuelve ÚNICAMENTE un array JSON con los reportes. Cada objeto debe tener EXACTAMENTE estas 4 claves.\n`;\n\n// 4. ENSAMBLAR Y DEVOLVER\nconst promptFinal = `\n${promptBase}\n\n${principiosDeRevision}\n\n### CONTEXTO PEDAGÓGICO DE LA REVISIÓN\n- **Resultado Formativo (RF) Superior:**\n  ${contextoRF}\n- **Resultado de Aprendizaje (RA/AE) a Lograr:**\n  \"${contextoRA}\"\n- **NIVEL DEL RA ESPERADO:** ${nivel_ra_num}\n\n### DATOS PRE-PROCESADOS (Input de Agentes 1 y 2):\n${JSON.stringify(analisis_enriquecido, null, 2)}\n\n${finalInstructions}\n\n### TU TAREA:\nGenera el array JSON de reportes (un reporte por cada indicador en los datos pre-procesados).\n`;\n\n// 5. DEVOLVER PROMPT\nreturn [{ \n  json: { \n    prompt: promptFinal\n  } \n}];\n// --- Fin: Código \"Auditor Experto\" v2 (Lenguaje de Usuario) para \"Constructor de Prompt (Agente 3)\" ---"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3104,
+        1504
+      ],
+      "id": "da466979-168a-4eb9-9efb-95e5fba724cf",
+      "name": "Constructor de Prompt (Agente 3)"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Constructor de Prompt (Agente 3)').first().json.prompt }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        3328,
+        1504
+      ],
+      "id": "c25e0566-b48b-4940-a127-2056cacb658d",
+      "name": "Agente 3 - Ingeniero de Indicadores"
+    },
+    {
+      "parameters": {
+        "jsCode": "// --- Inicio: Código para \"Validar Salida (Agente 1 - Deconstructor CUALITATIVO)\" ---\n\n// 1. OBTENER DATOS DE ENTRADA\nconst inputData = $input.first().json;\nconst rawResponse = inputData.output;\n\n// 2. FUNCIÓN DE EXTRACCIÓN (Busca array JSON)\nfunction extractJsonArray(text) {\n  const arrayStart = text.indexOf('[');\n  const arrayEnd = text.lastIndexOf(']');\n  \n  if (arrayStart === -1 || arrayEnd === -1) {\n    const codeBlockMatch = text.match(/```json\\s*(\\[[\\s\\S]*?\\])\\s*```/);\n    if (codeBlockMatch && codeBlockMatch[1]) {\n      return JSON.parse(codeBlockMatch[1]);\n    }\n    throw new Error(\"Respuesta de IA (Agente 1) no contiene un array JSON válido.\");\n  }\n  \n  const jsonString = text.substring(arrayStart, arrayEnd + 1);\n  return JSON.parse(jsonString);\n}\n\n// 3. PARSEAR LA RESPUESTA\n// Este es el \"análisis borrador\" con los análisis cualitativos\nconst analisis_borrador = extractJsonArray(rawResponse);\n\n// 4. PREPARAR EL ITEM DE SALIDA (FUSIÓN)\n// Preserva todo el contexto: objetivo_actual, estructuraMEI, nivel_ra_num\nconst outputItem = { ...inputData };\n\n// 5. Borrar campos innecesarios\ndelete outputItem.prompt;\ndelete outputItem.output; \n\n// 6. Añadir el nuevo array de análisis\noutputItem.analisis_borrador = analisis_borrador;\n\n// 7. DEVOLVER EL OBJETO COMPLETO Y FUSIONADO\nreturn [outputItem];\n// --- Fin: Código para \"Validar Salida (Agente 1)\" ---"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2080,
+        1504
+      ],
+      "id": "5c2e359a-28d3-482e-a44c-439a58fa596d",
+      "name": "Validar Salida Agente 1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// --- Inicio: Código para \"Validar Salida (Agente 2 - Taxónomo)\" ---\n\n// 1. OBTENER DATOS DE ENTRADA\n// 'inputData' tiene TODO: prompt, objetivo_actual, nivel_ra_num,\n// analisis_borrador (el original), Y el 'output' de la IA (Agente 2).\nconst inputData = $input.first().json;\nconst rawResponse = inputData.output;\n\n// 2. FUNCIÓN DE EXTRACCIÓN ROBUSTA (Busca array JSON)\nfunction extractJsonArray(text) {\n  const arrayStart = text.indexOf('[');\n  const arrayEnd = text.lastIndexOf(']');\n  \n  if (arrayStart === -1 || arrayEnd === -1) {\n    // Intenta buscar en un bloque de código\n    const codeBlockMatch = text.match(/```json\\s*(\\[[\\s\\S]*?\\])\\s*```/);\n    if (codeBlockMatch && codeBlockMatch[1]) {\n      return JSON.parse(codeBlockMatch[1]);\n    }\n    throw new Error(\"Respuesta de IA (Agente 2) no contiene un array JSON válido.\");\n  }\n  \n  const jsonString = text.substring(arrayStart, arrayEnd + 1);\n  return JSON.parse(jsonString);\n}\n\n// 3. PARSEAR LA RESPUESTA\n// Este es el \"análisis enriquecido\" con los niveles de los verbos\nconst analisis_enriquecido = extractJsonArray(rawResponse);\n\n// 4. PREPARAR EL ITEM DE SALIDA (FUSIÓN)\n// Empezamos creando una copia de TODOS los datos que entraron.\n// Esto preserva: objetivo_actual, contexto_superior, estructuraMEI, nivel_ra_num\nconst outputItem = { ...inputData };\n\n// 5. Borramos los campos que ya no necesitamos\ndelete outputItem.prompt;\ndelete outputItem.output; // Borramos la respuesta 'output' cruda\ndelete outputItem.analisis_borrador; // Borramos el borrador simple\n\n// 6. Agregamos el nuevo array parseado\n// Este será el input principal para el Agente 3\noutputItem.analisis_enriquecido = analisis_enriquecido;\n\n// 7. DEVOLVER EL OBJETO COMPLETO Y FUSIONADO\n// 'outputItem' contiene todo lo necesario para el Agente 3\nreturn [outputItem];\n\n// --- Fin: Código para \"Validar Salida (Agente 2 - Taxónomo)\" ---"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2880,
+        1504
+      ],
+      "id": "cb90997d-2e60-4444-819b-cd518070e2a1",
+      "name": "Validar Salida Agente 2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "84bcaeef-89ab-490b-b289-af51b89990da",
+              "name": "verbos",
+              "value": "={{ $json.Verbos }}",
+              "type": "string"
+            },
+            {
+              "id": "f36c0e85-509e-431f-8b5e-88697e4171dd",
+              "name": "nivel_ra",
+              "value": "={{ $json.nivel_ra }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1280,
+        1504
+      ],
+      "id": "002274c2-3aae-4ea7-afca-6ef3a5dc96aa",
+      "name": "Verbos y Nivel"
+    },
+    {
+      "parameters": {
+        "jsCode": "// --- Inicio: Código para \"Constructor de Prompt (Agente 1 - Deconstructor)\" ---\n\n// 1. OBTENER DATOS\nconst loopData = $('Procesar Uno por Uno').first().json;\nconst { \n  estructuraMEI, \n  objetivo_actual // Contiene { texto: \"...\", indicadores_a_revisar: [\"...\"] }\n} = loopData;\n\n// 2. PREPARAR PROMPT BASE (SYSTEM PROMPT)\nconst promptBase = `Eres un \"Analista Estructural de Indicadores\" de UNAB. Tu única tarea es \"desarmar\" (deconstruir) una lista de indicadores en sus 3 componentes estructurales.\nNO debes emitir juicios, NO debes analizar la calidad, NO debes corregir. Solo debes CLASIFICAR y EXTRAER las piezas.`;\n\n// 3. PREPARAR TAREA (USER PROMPT)\nlet finalInstructions = \"\";\nlet formatoClave = \"\";\nlet ejemploSalida = \"\";\n\n// Usamos los ejemplos de Andrea (EJEMPLOS.xlsx) para el \"few-shot learning\"\nif (estructuraMEI === 'MEI-Antiguo') {\n  formatoClave = `Formato MEI-Antiguo: \"Habilidad\" (verbo plural), \"Contenido\" (qué), \"Condicion_Contexto\" (cómo/cuándo).`;\n  // Ejemplo de EJEMPLOS.xlsx\n  ejemploSalida = `[\n  {\n    \"indicador_original\": \"DIFERENCIAN las teorías del comercio internacional, aplicando un marco comparativo.\",\n    \"verbo_detectado\": \"DIFERENCIAN\",\n    \"producto_proceso_detectado\": \"las teorías del comercio internacional\",\n    \"condicion_contexto_detectada\": \"aplicando un marco comparativo\"\n  }\n]`;\n  finalInstructions = `\n### REGLAS DE DECONSTRUCCIÓN (MEI ANTIGUO):\n1.  **\"verbo_detectado\":** Extrae el primer verbo conjugado (ej. \"ANALIZAN\").\n2.  **\"producto_proceso_detectado\":** Extrae el objeto directo del verbo (el \"qué\").\n3.  **\"condicion_contexto_detectada\":** Extrae el resto de la frase (el \"cómo\", \"cuándo\" o \"dónde\"). Si no existe, usa null.`;\n\n} else if (estructuraMEI === 'MEI-Actualizado') {\n  formatoClave = `Formato MEI-Actualizado: \"Verbo observable\" (3ra p. plural) + \"Producto o Proceso\" + \"Condición de Calidad o Contexto\".`;\n  // Ejemplo \"Perfecto\" de Andrea\n  ejemploSalida = `[\n  {\n    \"indicador_original\": \"COMPARAN el desempeño, habilidades y necesidades de aprendizaje de los estudiantes de educación básica utilizando registros de aula y resultados de evaluaciones.\",\n    \"verbo_detectado\": \"COMPARAN\",\n    \"producto_proceso_detectado\": \"el desempeño, habilidades y necesidades de aprendizaje de los estudiantes de educación básica\",\n    \"condicion_contexto_detectada\": \"utilizando registros de aula y resultados de evaluaciones\"\n  },\n  {\n    \"indicador_original\": \"ELABORAN unidades didácticas que incluyan estrategias pedagógicas inclusivas y pertinentes, ajustadas a la diversidad del grupo de estudiantes.\",\n    \"verbo_detectado\": \"ELABORAN\",\n    \"producto_proceso_detectado\": \"unidades didácticas que incluyan estrategias pedagógicas inclusivas y pertinentes\",\n    \"condicion_contexto_detectada\": \"ajustadas a la diversidad del grupo de estudiantes\"\n  }\n]`;\n  finalInstructions = `\n### REGLAS DE DECONSTRUCCIÓN (MEI ACTUALIZADO):\n1.  **\"verbo_detectado\":** Extrae el primer verbo conjugado (ej. \"ANALIZAN\").\n2.  **\"producto_proceso_detectado\":** Extrae el objeto directo del verbo (el \"qué\" se mide).\n3.  **\"condicion_contexto_detectada\":** Extrae el resto de la frase (el \"cómo\", \"cuándo\" o \"dónde\"). Si no existe, usa null.`;\n}\n\n// 4. ENSAMBLAR Y DEVOLVER\nconst promptFinal = `\n${promptBase}\n\n### ESTRUCTURA ESPERADA\n${formatoClave}\n\n### INDICADORES A DECONSTRUIR:\n${JSON.stringify(objetivo_actual.indicadores_a_revisar, null, 2)}\n\n${finalInstructions}\n\n### EJEMPLO DE SALIDA (JSON Array):\n${ejemploSalida}\n\n### TU TAREA:\nAnaliza CADA indicador de la lista \"INDICADORES A DECONSTRUIR\".\nDevuelve ÚNICAMENTE un array JSON con los objetos deconstruidos, siguiendo las reglas y el ejemplo.\nEl array de salida debe tener EXACTAMENTE el mismo número de objetos que el array de entrada.\n`;\n\n// 5. DEVOLVER PROMPT Y PRESERVAR DATOS\nreturn [{ \n  json: { \n    prompt: promptFinal,\n    ...loopData\n  } \n}];\n// --- Fin: Código para \"Constructor de Prompt (Agente 1)\" ---"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1504,
+        1504
+      ],
+      "id": "ce3d37b5-14f2-436b-8fae-c85c45023854",
+      "name": "Constructor de Prompt (Agente 1)"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash-lite",
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1808,
+        1728
+      ],
+      "id": "3c3aae65-df5f-4b70-95a5-da52dcfd9608",
+      "name": "Gemini Flash Lite",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "0iqywUDpc1FpZaGU",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-flash-latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        3408,
+        1728
+      ],
+      "id": "623350b1-35e2-4e80-9afe-413401e5496b",
+      "name": "Gemini Flash",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "0iqywUDpc1FpZaGU",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Constructor de Prompt (Agente 1)').first().json.prompt }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1728,
+        1504
+      ],
+      "id": "f273a4fc-1b90-436b-81d3-16744ca6a13f",
+      "name": "Agente 1 - Deconstructor de Piezas"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "revisar-indicadores",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        32,
+        1440
+      ],
+      "id": "f82c19a8-47a0-4e90-8409-3499d0356707",
+      "name": "Webhook",
+      "webhookId": "f8f3d11c-13b0-4545-b9a9-0b298c0d121e"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0655c9db-c3fe-4917-92cd-c9b8f9a1c4e2",
+              "name": "Verbos",
+              "value": "={\n  \"lista_verbos_permitidos\": [\n    {\"verbo\": \"VERBO NO VÁLIDO\", \"nivel\": 0}\n  ]\n}",
+              "type": "object"
+            },
+            {
+              "id": "34834b47-af25-4902-b659-33abe9974a6a",
+              "name": "nivel_ra",
+              "value": "0",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1056,
+        2016
+      ],
+      "id": "1808018e-447c-48ac-b004-7196f91f7925",
+      "name": "Verbo Inválido"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n:5678",
+            "user-agent": "python-requests/2.32.5",
+            "accept-encoding": "gzip, deflate",
+            "accept": "*/*",
+            "connection": "keep-alive",
+            "content-type": "application/json",
+            "content-length": "246"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "nombre_curso": "asdas",
+            "estructuraMEI": "MEI-Antiguo",
+            "resultadosFormativos": [],
+            "resultadosAprendizaje": [
+              {
+                "id": "RA-1",
+                "texto": "asda"
+              }
+            ],
+            "aprendizajesEsperados": [
+              {
+                "id": "AE-1",
+                "texto": "asd",
+                "indicadores_a_revisar": [
+                  "asd",
+                  "asgd"
+                ]
+              }
+            ]
+          },
+          "webhookUrl": "http://localhost:5678/webhook/revisar-indicadores",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Validar y Extraer Indicadores": {
+      "main": [
+        [
+          {
+            "node": "Procesar Uno por Uno",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Desglosar Objetivos en Items": {
+      "main": [
+        [
+          {
+            "node": "Procesar Uno por Uno",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Procesar Uno por Uno": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Clasificar Nivel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Formatear Salida Final",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear Salida Final": {
+      "main": [
+        [
+          {
+            "node": "Respuesta Exitosa (200)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Clasificar Nivel",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clasificar Nivel": {
+      "main": [
+        [
+          {
+            "node": "Verbos Reconocer",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Verbos Entender",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Verbos Aplicar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Verbos Analizar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Verbos Evaluar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Verbos Crear",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Verbo Inválido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verbos Reconocer": {
+      "main": [
+        [
+          {
+            "node": "Verbos y Nivel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verbos Entender": {
+      "main": [
+        [
+          {
+            "node": "Verbos y Nivel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verbos Aplicar": {
+      "main": [
+        [
+          {
+            "node": "Verbos y Nivel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verbos Analizar": {
+      "main": [
+        [
+          {
+            "node": "Verbos y Nivel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verbos Evaluar": {
+      "main": [
+        [
+          {
+            "node": "Verbos y Nivel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verbos Crear": {
+      "main": [
+        [
+          {
+            "node": "Verbos y Nivel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Constructor de Prompt (Agente 2)": {
+      "main": [
+        [
+          {
+            "node": "Agente 2 - Arquitecto de Secuencia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente 2 - Arquitecto de Secuencia": {
+      "main": [
+        [
+          {
+            "node": "Validar Salida Agente 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Constructor de Prompt (Agente 3)": {
+      "main": [
+        [
+          {
+            "node": "Agente 3 - Ingeniero de Indicadores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente 3 - Ingeniero de Indicadores": {
+      "main": [
+        [
+          {
+            "node": "Validar y Extraer Indicadores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar Salida Agente 1": {
+      "main": [
+        [
+          {
+            "node": "Constructor de Prompt (Agente 2)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar Salida Agente 2": {
+      "main": [
+        [
+          {
+            "node": "Constructor de Prompt (Agente 3)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verbos y Nivel": {
+      "main": [
+        [
+          {
+            "node": "Constructor de Prompt (Agente 1)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Constructor de Prompt (Agente 1)": {
+      "main": [
+        [
+          {
+            "node": "Agente 1 - Deconstructor de Piezas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Flash Lite": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente 1 - Deconstructor de Piezas",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Agente 2 - Arquitecto de Secuencia",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Flash": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente 3 - Ingeniero de Indicadores",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente 1 - Deconstructor de Piezas": {
+      "main": [
+        [
+          {
+            "node": "Validar Salida Agente 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Desglosar Objetivos en Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verbo Inválido": {
+      "main": [
+        [
+          {
+            "node": "Verbos y Nivel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "2ace2c94-9d9f-4929-86a8-53d274d06ef1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8991d57cc3be404c4c8d6951306c68fa6ee93d0a9fcfe54908cc27cc5546f205"
+  },
+  "id": "YxwJgoci2nPfA08Z",
+  "tags": []
+}
