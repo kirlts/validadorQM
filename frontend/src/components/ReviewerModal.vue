@@ -284,12 +284,12 @@ import { revisarIndicadores } from '@/services/apiService';
 const props = defineProps({
   modelValue: Boolean
 });
+// "Devoramos" el nombre del emit de GeneratorModal
 const emit = defineEmits(['update:modelValue', 'review-complete']);
 
 const isLoading = ref(false);
 const errorMessage = ref('');
 
-// --- INICIO CAMBIO ESTRUCTURAL ---
 const defaultForm = () => ({
   nombre_curso: '',
   estructuraMEI: 'MEI-Actualizado',
@@ -297,15 +297,14 @@ const defaultForm = () => ({
   resultadosAprendizaje: [{ 
     id: 'RA-1', 
     texto: '', 
-    indicadores: [{ id: `IND-${Date.now()}`, texto: '' }] // Inicia con un campo de indicador
+    indicadores: [{ id: `IND-${Date.now()}`, texto: '' }] 
   }],
   aprendizajesEsperados: [{ 
     id: 'AE-1', 
     texto: '', 
-    indicadores: [{ id: `IND-${Date.now()}`, texto: '' }] // Inicia con un campo de indicador
+    indicadores: [{ id: `IND-${Date.now()}`, texto: '' }] 
   }]
 });
-// --- FIN CAMBIO ESTRUCTURAL ---
 
 const form = reactive(defaultForm());
 
@@ -314,7 +313,6 @@ const estructuraMEIOptions = [
   { title: 'Actualizado (RF-RA-ID)', value: 'MEI-Actualizado' },
 ];
 
-// --- INICIO CAMBIO DE LÓGICA DE VALIDACIÓN ---
 const isFormValid = computed(() => {
   if (isLoading.value) return false;
   if (!form.estructuraMEI) return false;
@@ -325,8 +323,8 @@ const isFormValid = computed(() => {
            form.resultadosAprendizaje.length > 0 &&
            form.resultadosAprendizaje.every(ra => 
              ra.texto.trim() !== '' &&
-             ra.indicadores.length > 0 && // Debe tener al menos un indicador
-             ra.indicadores.every(ind => ind.texto.trim() !== '') // Ningún indicador debe estar vacío
+             ra.indicadores.length > 0 && 
+             ra.indicadores.every(ind => ind.texto.trim() !== '') 
            );
   }
   if (form.estructuraMEI === 'MEI-Antiguo') {
@@ -335,27 +333,25 @@ const isFormValid = computed(() => {
            form.aprendizajesEsperados.length > 0 &&
            form.aprendizajesEsperados.every(ae => 
              ae.texto.trim() !== '' &&
-             ae.indicadores.length > 0 && // Debe tener al menos un indicador
-             ae.indicadores.every(ind => ind.texto.trim() !== '') // Ningún indicador debe estar vacío
+             ae.indicadores.length > 0 && 
+             ae.indicadores.every(ind => ind.texto.trim() !== '') 
            );
   }
   return false;
 });
-// --- FIN CAMBIO DE LÓGICA DE VALIDACIÓN ---
 
 function closeModal() {
   if (isLoading.value) return;
   emit('update:modelValue', false);
 }
 
-// Lógica de watch corregida (sin cambios respecto a la anterior)
 watch(() => form.estructuraMEI, (newValue) => {
   const tempMEI = newValue; 
   Object.assign(form, defaultForm()); 
   form.estructuraMEI = tempMEI; 
 });
 
-// --- Lógica de formulario (RA/AE) ---
+// --- Lógica de formulario (Sin cambios) ---
 function addRF() { form.resultadosFormativos.push({ id: `RF-${Date.now()}`, texto: '' }); }
 function removeRF(index) { form.resultadosFormativos.splice(index, 1); }
 
@@ -380,29 +376,17 @@ function addAE() {
 }
 function removeAE(index) { form.aprendizajesEsperados.splice(index, 1); }
 
-// --- INICIO NUEVAS FUNCIONES (INDICADORES) ---
-/**
- * Añade un nuevo campo de indicador vacío al RA o AE especificado.
- * @param {object} ra_or_ae - El objeto RA o AE (que contiene el array 'indicadores')
- */
 function addIndicator(ra_or_ae) {
   ra_or_ae.indicadores.push({ id: `IND-${Date.now()}`, texto: '' });
 }
 
-/**
- * Elimina un campo de indicador de un RA o AE.
- * @param {object} ra_or_ae - El objeto RA o AE
- * @param {number} indicatorIndex - El índice del indicador a eliminar
- */
 function removeIndicator(ra_or_ae, indicatorIndex) {
-  // Asegura que siempre quede al menos un campo
   if (ra_or_ae.indicadores.length > 1) {
     ra_or_ae.indicadores.splice(indicatorIndex, 1);
   }
 }
-// --- FIN NUEVAS FUNCIONES (INDICADORES) ---
 
-// --- Lógica de Envío ---
+// --- Lógica de Envío (CORREGIDA FINAL) ---
 async function handleSubmit() {
   if (!isFormValid.value || isLoading.value) return;
 
@@ -417,7 +401,6 @@ async function handleSubmit() {
     aprendizajesEsperados: []
   };
 
-  // --- INICIO CAMBIO LÓGICA DE PAYLOAD ---
   if (form.estructuraMEI === 'MEI-Actualizado') {
     payload.resultadosFormativos = form.resultadosFormativos
       .filter(rf => rf.texto.trim() !== '')
@@ -428,7 +411,6 @@ async function handleSubmit() {
       .map(ra => ({
         id: ra.id,
         texto: ra.texto.trim(),
-        // Construye el array de strings que espera el workflow
         indicadores_a_revisar: ra.indicadores
           .map(ind => ind.texto.trim())
           .filter(t => t !== '')
@@ -444,33 +426,32 @@ async function handleSubmit() {
       .map(ae => ({
         id: ae.id,
         texto: ae.texto.trim(),
-        // Construye el array de strings que espera el workflow
         indicadores_a_revisar: ae.indicadores
           .map(ind => ind.texto.trim())
           .filter(t => t !== '')
       }));
   }
-  // --- FIN CAMBIO LÓGICA DE PAYLOAD ---
 
   try {
-    const reviewResult = await revisarIndicadores(payload); 
+    // 1. Llamar a la API de revisión
+    await revisarIndicadores(payload); 
 
-    const resultForDisplay = {
-      input_data: payload,
-      output_data: reviewResult, 
-      created_at: new Date().toISOString(),
-      nombre_generacion: `Revisión del ${new Date().toLocaleString()}`
-    };
-
-    emit('review-complete', resultForDisplay);
-    closeModal();
-    Object.assign(form, defaultForm());
+    // 2. Emitir el evento de éxito
+    emit('review-complete');
+    
+    // 3. Cerrar el modal PRIMERO. Esto envía la señal al padre (Dashboard)
+    closeModal(); 
+    
+    // 4. Resetear el formulario DESPUÉS de emitir (limpia la UI para la próxima vez)
+    Object.assign(form, defaultForm()); 
 
   } catch (error) {
+    // Si hay error, el modal permanece abierto, mostrando el mensaje de error
     console.error('Error al revisar indicadores:', error);
     errorMessage.value = `Error al contactar al servicio de revisión: ${error.message || 'Error desconocido'}`;
   } finally {
     isLoading.value = false;
   }
 }
+// --- FIN CÓDIGO CORREGIDO FINAL ---
 </script>
