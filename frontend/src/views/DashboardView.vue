@@ -4,14 +4,18 @@
       <v-col cols="12" md="8">
 
         <v-card class="mb-6">
-          <v-card-title>Herramientas de Generación</v-card-title>
+          <v-card-title>Herramientas IA</v-card-title>
           <v-card-text>
-            Utiliza el asistente de IA para generar componentes pedagógicos de alta calidad basados en las directrices de UNAB.
+            Utiliza los asistentes de IA para generar o revisar componentes pedagógicos de alta calidad basados en las directrices de UNAB.
           </v-card-text>
-          <v-card-actions>
-            <v-btn color="primary" @click="openGeneratorModal">
+          <v-card-actions class="d-flex flex-wrap ga-2">
+            <v-btn color="primary" @click="openGeneratorModal" variant="flat">
               <v-icon left>mdi-auto-fix</v-icon>
-              Generar Indicadores Pedagógicos
+              Generar Indicadores
+            </v-btn>
+            <v-btn color="blue-darken-2" @click="openReviewerModal" variant="flat">
+              <v-icon left>mdi-check-decagram-outline</v-icon>
+              Revisar Indicadores
             </v-btn>
           </v-card-actions>
         </v-card>
@@ -124,7 +128,7 @@
       </v-col>
     </v-row>
     
-    <v-dialog v-model="deleteDialog.show" max-width="500px" persistent>
+    <v-dialog v-model="deleteDialog.show" max-width="500px">
       <v-card>
         <v-card-title class="headline">Confirmar Eliminación</v-card-title>
         <v-card-text>¿Estás seguro de que quieres eliminar <strong>{{ deleteDialog.itemName }}</strong>?</v-card-text>
@@ -157,10 +161,18 @@
       @generation-complete="handleGenerationComplete"
     />
 
+    <ReviewerModal
+      v-model="isReviewerModalOpen"
+      @review-complete="handleReviewComplete"
+    />
+
+
     <v-dialog v-model="isResultModalOpen" max-width="1200px">
       <v-card>
         <v-toolbar color="white" density="compact">
-          <v-toolbar-title class="text-h6">Resultado de la Generación</v-toolbar-title>
+          <v-toolbar-title class="text-h6">
+            {{ activeGeneration?.output_data.analisisResultadosAprendizaje?.[0]?.indicadoresGenerados?.[0]?.verbo_observable || activeGeneration?.output_data.analisisAprendizajesEsperados?.[0]?.indicadoresGenerados?.[0]?.verbo_observable ? 'Resultado de la Revisión' : 'Resultado de la Generación' }}
+          </v-toolbar-title>
           <v-spacer></v-spacer>
           <v-btn icon @click="isResultModalOpen = false"><v-icon>mdi-close</v-icon></v-btn>
         </v-toolbar>
@@ -170,7 +182,6 @@
             
             <div class="mb-6">
               <div class="text-overline">Datos de Entrada</div>
-              
               <div class="mb-2">
                 <strong>Curso:</strong>
                 <p class="text-body-2">{{ activeGeneration.input_data.nombre_curso }}</p>
@@ -179,7 +190,6 @@
                 <strong>Trimestre:</strong>
                 <p class="text-body-2">{{ activeGeneration.input_data.trimestre }}</p>
               </div>
-
               <div v-if="activeGeneration.input_data.estructuraMEI === 'MEI-Actualizado'">
                 <div v-for="(rf, i) in activeGeneration.input_data.resultadosFormativos" :key="`rf-${i}`" class="mb-2">
                   <strong>Resultado Formativo {{ i + 1 }}:</strong>
@@ -203,7 +213,9 @@
             </div>
             <v-divider class="mb-4"></v-divider>
 
-            <div class="text-overline mb-2">Indicadores Generados</div>
+            <div class="text-overline mb-2">
+              {{ activeGeneration?.output_data.analisisResultadosAprendizaje?.[0]?.indicadoresGenerados?.[0]?.verbo_observable || activeGeneration?.output_data.analisisAprendizajesEsperados?.[0]?.indicadoresGenerados?.[0]?.verbo_observable ? 'Análisis de Indicadores' : 'Indicadores Generados' }}
+            </div>
             
             <div v-for="(item, index) in (activeGeneration.output_data.analisisResultadosAprendizaje || activeGeneration.output_data.analisisAprendizajesEsperados)" :key="index" class="mb-6">
               
@@ -211,16 +223,84 @@
                 {{ activeGeneration.output_data.estructuraMEI === 'MEI-Actualizado' ? `Para el Resultado de Aprendizaje ${index + 1}:` : `Para el Aprendizaje Esperado ${index + 1}:`}}
               </h3>
 
-              <v-expansion-panels v-if="activeGeneration.output_data.estructuraMEI === 'MEI-Actualizado'">
-                <v-expansion-panel v-for="(indicador, i) in item.indicadoresGenerados" :key="i">
+              <v-expansion-panels>
+                <v-expansion-panel 
+                  v-for="(indicador, i) in item.indicadoresGenerados" 
+                  :key="i"
+                >
                   
-                  <v-expansion-panel-title>
-                    <v-icon left class="mr-2" color="primary">mdi-lightbulb-on-outline</v-icon>
-                    <span class="font-weight-bold mr-2">ID {{ index + 1 }}.{{ i + 1 }}:</span>
-                    <span>{{ indicador.id_texto }}</span>
-                  </v-expansion-panel-title>
-                  
-                  <v-expansion-panel-text class="bg-grey-lighten-5">
+                  <template v-if="indicador.id_texto || indicador.habilidad">
+                    <v-expansion-panel-title>
+                      <v-icon left class="mr-2" color="primary">mdi-lightbulb-on-outline</v-icon>
+                      <span class="font-weight-bold mr-2">{{ activeGeneration.output_data.estructuraMEI === 'MEI-Actualizado' ? 'ID' : 'IL' }} {{ index + 1 }}.{{ i + 1 }}:</span>
+                      <span>{{ indicador.id_texto || `${indicador.habilidad} ${indicador.contenido}` }}</span>
+                    </v-expansion-panel-title>
+                    
+                    <v-expansion-panel-text class="bg-grey-lighten-5">
+                      <div v-if="indicador.id_texto">
+                        <v-list-item class="pa-2">
+                          <template v-slot:append>
+                            <v-btn icon="mdi-content-copy" variant="text" size="small" @click="copyToClipboard(indicador.id_texto)" title="Copiar texto"></v-btn>
+                          </template>
+                          <v-list-item-title class="font-weight-bold">Texto del Indicador (ID):</v-list-item-title>
+                          <v-list-item-subtitle class="text-wrap">{{ indicador.id_texto }}</v-list-item-subtitle>
+                        </v-list-item>
+                        <v-divider></v-divider>
+                        <v-list-item class="pa-2">
+                          <v-list-item-title class="font-weight-bold">Verbo Utilizado:</v-list-item-title>
+                          <v-list-item-subtitle class="text-wrap">{{ indicador.verbo_utilizado }}</v-list-item-subtitle>
+                        </v-list-item>
+                        <v-list-item class="pa-2">
+                          <v-list-item-title class="font-weight-bold">Nivel Taxonómico (Bloom):</v-list-item-title>
+                          <v-list-item-subtitle class="text-wrap">Nivel {{ indicador.nivel_verbo }}</v-list-item-subtitle>
+                        </v-list-item>
+                        <v-divider></v-divider>
+                        <v-list-item class="pa-2">
+                          <v-list-item-title class="font-weight-bold">Justificación Pedagógica:</v-list-item-title>
+                          <v-list-item-subtitle class="text-wrap">{{ indicador.justificacion_pedagogica || 'No disponible' }}</v-list-item-subtitle>
+                        </v-list-item>
+                      </div>
+                      
+                      <div v-else>
+                         <v-list-item class="pa-2">
+                          <template v-slot:append>
+                            <v-btn icon="mdi-content-copy" variant="text" size="small" @click="copyToClipboard([indicador.habilidad, indicador.contenido, indicador.condicion_contexto].filter(Boolean).join(' '))" title="Copiar texto"></v-btn>
+                          </template>
+                          <v-list-item-title class="font-weight-bold">Texto del Indicador (IL):</v-list-item-title>
+                          <v-list-item-subtitle class="text-wrap">{{ [indicador.habilidad, indicador.contenido, indicador.condicion_contexto].filter(Boolean).join(' ') }}</v-list-item-subtitle>
+                        </v-list-item>
+                        <v-divider></v-divider>
+                        <v-list-item class="pa-2">
+                          <v-list-item-title class="font-weight-bold">Habilidad:</v-list-item-title>
+                          <v-list-item-subtitle class="text-wrap">{{ indicador.habilidad }}</v-list-item-subtitle>
+                        </v-list-item>
+                        <v-list-item class="pa-2">
+                          <v-list-item-title class="font-weight-bold">Contenido:</v-list-item-title>
+                          <v-list-item-subtitle class="text-wrap">{{ indicador.contenido }}</v-list-item-subtitle>
+                        </v-list-item>
+                        <v-list-item class="pa-2">
+                          <v-list-item-title class="font-weight-bold">Condición/Contexto:</v-list-item-title>
+                          <v-list-item-subtitle class="text-wrap">{{ indicador.condicion_contexto || 'N/A' }}</v-list-item-subtitle>
+                        </v-list-item>
+                        <v-divider></v-divider>
+                        <v-list-item class="pa-2">
+                          <v-list-item-title class="font-weight-bold">Justificación Pedagógica:</v-list-item-title>
+                          <v-list-item-subtitle class="text-wrap">{{ indicador.justificacion_pedagogica || 'No disponible' }}</v-list-item-subtitle>
+                        </v-list-item>
+                      </div>
+                    </v-expansion-panel-text>
+                  </template>
+
+                  <template v-else-if="indicador.verbo_observable">
+                    <v-expansion-panel-title>
+                      <v-icon left class="mr-2" :color="indicador.alineamiento.startsWith('ALTO') ? 'success' : (indicador.alineamiento.startsWith('BAJO') ? 'error' : 'warning')">
+                        {{ indicador.alineamiento.startsWith('ALTO') ? 'mdi-check-circle' : (indicador.alineamiento.startsWith('BAJO') ? 'mdi-alert-circle' : 'mdi-alert') }}
+                      </v-icon>
+                      <span class="font-weight-bold mr-2">Indicador {{ i + 1 }}:</span>
+                      <span class="text-truncate">{{ item.indicadores_a_revisar[i] }}</span>
+                    </v-expansion-panel-title>
+                    
+                    <v-expansion-panel-text class="bg-grey-lighten-5">
                       
                       <v-list-item class="pa-2">
                         <template v-slot:append>
@@ -228,95 +308,73 @@
                             icon="mdi-content-copy" 
                             variant="text" 
                             size="small" 
-                            @click="copyToClipboard(indicador.id_texto)"
+                            @click="copyToClipboard(item.indicadores_a_revisar[i])"
                             title="Copiar texto del indicador"
                           ></v-btn>
                         </template>
-                        <v-list-item-title class="font-weight-bold">Texto del Indicador (ID):</v-list-item-title>
+                        <v-list-item-title class="font-weight-bold">Indicador Original:</v-list-item-title>
                         <v-list-item-subtitle class="text-wrap">
-                          {{ indicador.id_texto }}
+                          {{ item.indicadores_a_revisar[i] }}
                         </v-list-item-subtitle>
                       </v-list-item>
                       <v-divider></v-divider>
                       <v-list-item class="pa-2">
-                        <v-list-item-title class="font-weight-bold">Verbo Utilizado:</v-list-item-title>
-                        <v-list-item-subtitle class="text-wrap">{{ indicador.verbo_utilizado }}</v-list-item-subtitle>
-                      </v-list-item>
-                      <v-list-item class="pa-2">
-                        <v-list-item-title class="font-weight-bold">Nivel Taxonómico (Bloom):</v-list-item-title>
-                        <v-list-item-subtitle class="text-wrap">Nivel {{ indicador.nivel_verbo }}</v-list-item-subtitle>
-                      </v-list-item>
-                      
-                      <v-divider></v-divider>
-                      <v-list-item class="pa-2">
-                        <v-list-item-title class="font-weight-bold">Justificación Pedagógica:</v-list-item-title>
-                        <v-list-item-subtitle class="text-wrap">
-                          {{ indicador.justificacion_pedagogica || 'No disponible' }}
+                        <v-list-item-title class="font-weight-bold">Verbo Observable:</v-list-item-title>
+                        <v-list-item-subtitle class="text-wrap" :class="{ 'text-error': indicador.verbo_observable.startsWith('FALLA') }">
+                          {{ indicador.verbo_observable }}
                         </v-list-item-subtitle>
                       </v-list-item>
-                  </v-expansion-panel-text>
-
-                </v-expansion-panel>
-              </v-expansion-panels>
-              
-              <v-expansion-panels v-else>
-                <v-expansion-panel v-for="(indicador, i) in item.indicadoresGenerados" :key="i">
-                  
-                  <v-expansion-panel-title>
-                    <v-icon left class="mr-2" color="primary">mdi-lightbulb-on-outline</v-icon>
-                    <span class="font-weight-bold mr-2">IL {{ index + 1 }}.{{ i + 1 }}:</span>
-                    <span>{{ indicador.habilidad }} {{ indicador.contenido }}</span>
-                  </v-expansion-panel-title>
-                  
-                  <v-expansion-panel-text class="bg-grey-lighten-5">
-
+                      <v-divider></v-divider>
                       <v-list-item class="pa-2">
-                        <template v-slot:append>
-                          <v-btn 
-                            icon="mdi-content-copy" 
-                            variant="text" 
+                        <v-list-item-title class="font-weight-bold">Producto o Proceso:</v-list-item-title>
+                        <v-list-item-subtitle class="text-wrap" :class="{ 'text-error': indicador.producto_o_proceso.startsWith('Incompleto') }">
+                          {{ indicador.producto_o_proceso }}
+                        </v-list-item-subtitle>
+                      </v-list-item>
+                      <v-divider></v-divider>
+                      <v-list-item class="pa-2">
+                        <v-list-item-title class="font-weight-bold">Condición de Calidad o Contexto:</v-list-item-title>
+                        <v-list-item-subtitle class="text-wrap" :class="{ 'text-error': indicador.condicion_de_calidad_o_contexto.startsWith('FALLA') || indicador.condicion_de_calidad_o_contexto.startsWith('Ausente') }">
+                          {{ indicador.condicion_de_calidad_o_contexto }}
+                        </v-list-item-subtitle>
+                      </v-list-item>
+                      <v-divider></v-divider>
+                      <v-list-item class="pa-2">
+                        <v-list-item-title class="font-weight-bold">Alineamiento:</v-list-item-title>
+                        <v-list-item-subtitle class="text-wrap">
+                          <v-chip 
+                            :color="indicador.alineamiento.startsWith('ALTO') ? 'success' : (indicador.alineamiento.startsWith('BAJO') ? 'error' : 'warning')" 
                             size="small" 
-                            @click="copyToClipboard([indicador.habilidad, indicador.contenido, indicador.condicion_contexto].filter(Boolean).join(' '))"
-                            title="Copiar texto completo del indicador"
-                          ></v-btn>
-                        </template>
-                        <v-list-item-title class="font-weight-bold">Texto del Indicador (IL):</v-list-item-title>
-                        <v-list-item-subtitle class="text-wrap">
-                          {{ [indicador.habilidad, indicador.contenido, indicador.condicion_contexto].filter(Boolean).join(' ') }}
+                            variant="tonal"
+                            class="mr-2 mb-1"
+                          >
+                            {{ indicador.alineamiento.split('.')[0] }}
+                          </v-chip>
+                          {{ indicador.alineamiento.substring(indicador.alineamiento.indexOf('.') + 2) }}
                         </v-list-item-subtitle>
                       </v-list-item>
-                      <v-divider></v-divider>
-                      <v-list-item class="pa-2">
-                        <v-list-item-title class="font-weight-bold">Habilidad:</v-list-item-title>
-                        <v-list-item-subtitle class="text-wrap">{{ indicador.habilidad }}</v-list-item-subtitle>
-                      </v-list-item>
-                      <v-list-item class="pa-2">
-                        <v-list-item-title class="font-weight-bold">Contenido:</v-list-item-title>
-                        <v-list-item-subtitle class="text-wrap">{{ indicador.contenido }}</v-list-item-subtitle>
-                      </v-list-item>
-                      <v-list-item class="pa-2">
-                        <v-list-item-title class="font-weight-bold">Condición/Contexto:</v-list-item-title>
-                        <v-list-item-subtitle class="text-wrap">{{ indicador.condicion_contexto || 'N/A' }}</v-list-item-subtitle>
-                      </v-list-item>
-                      
-                      <v-divider></v-divider>
-                      <v-list-item class="pa-2">
-                        <v-list-item-title class="font-weight-bold">Justificación Pedagógica:</v-list-item-title>
-                        <v-list-item-subtitle class="text-wrap">
-                          {{ indicador.justificacion_pedagogica || 'No disponible' }}
-                        </v-list-item-subtitle>
-                      </v-list-item>
+                    </v-expansion-panel-text>
+                  </template>
 
-                  </v-expansion-panel-text>
+                  <template v-else>
+                    <v-expansion-panel-title class="bg-grey-lighten-3">
+                      <v-icon left color="grey-darken-1" class="mr-2">mdi-help-circle-outline</v-icon>
+                      <span class="font-weight-bold">Error de Datos</span>
+                    </v-expansion-panel-title>
+                    <v-expansion-panel-text class="bg-grey-lighten-5">
+                      No se pudieron renderizar los datos para este indicador.
+                      <pre>{{ indicador }}</pre>
+                    </v-expansion-panel-text>
+                  </template>
+
                 </v-expansion-panel>
               </v-expansion-panels>
-            </div>
+              </div>
             </div>
         </v-card-text>
       </v-card>
     </v-dialog>
-
-    <v-dialog v-model="renameDialog.show" max-width="500px" persistent>
+    <v-dialog v-model="renameDialog.show" max-width="500px">
       <v-card>
         <v-card-title class="headline">Renombrar Generación</v-card-title>
         <v-card-text>
@@ -351,239 +409,270 @@
         <v-btn icon="mdi-close" variant="text" @click="snackbar.show = false"></v-btn>
       </template>
     </v-snackbar>
-    </v-container>
+
+  </v-container>
 </template>
 
 <script setup>
-  import { ref, reactive, computed, onMounted } from 'vue';
-  import { useRouter } from 'vue-router';
-  import { useAppStore } from '@/stores/appStore';
-  import { storeToRefs } from 'pinia';
-  import { uploadDi, getDownloadUrl, deleteDi, getGenerations, deleteGeneration, renameGeneration } from '@/services/apiService';
-  import GeneratorModal from '@/components/GeneratorModal.vue';
+import { ref, reactive, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { useAppStore } from '@/stores/appStore';
+import { storeToRefs } from 'pinia';
+import { uploadDi, getDownloadUrl, deleteDi, getGenerations, deleteGeneration, renameGeneration } from '@/services/apiService';
+import GeneratorModal from '@/components/GeneratorModal.vue';
+// --- INICIO CAMBIO 1: Importar nuevo modal ---
+import ReviewerModal from '@/components/ReviewerModal.vue';
+// --- FIN CAMBIO 1 ---
 
-  const router = useRouter();
-  const appStore = useAppStore();
-  const { designs, isLoading } = storeToRefs(appStore);
+const router = useRouter();
+const appStore = useAppStore();
+const { designs, isLoading } = storeToRefs(appStore);
 
-  // --- Estado para DIs ---
-  const isUploading = ref(false);
-  const isDeleting = ref(null);
-  const selectedEstructuraMEI = ref('MEI-Antiguo'); 
-  const deleteDialog = reactive({ show: false, itemId: null, itemName: '', type: null });
-  const viewerDialog = reactive({ show: false, url: '', itemName: '' });
-  const estructuraMEIOptions = [
-    { title: 'Antiguo (RA-AE-IL)', value: 'MEI-Antiguo' },
-    { title: 'Actualizado (RF-RA-ID)', value: 'MEI-Actualizado' },
-  ];
+// --- Estado para DIs ---
+const isUploading = ref(false);
+const isDeleting = ref(null);
+const selectedEstructuraMEI = ref('MEI-Antiguo'); 
+const deleteDialog = reactive({ show: false, itemId: null, itemName: '', type: null });
+const viewerDialog = reactive({ show: false, url: '', itemName: '' });
+const estructuraMEIOptions = [
+  { title: 'Antiguo (RA-AE-IL)', value: 'MEI-Antiguo' },
+  { title: 'Actualizado (RF-RA-ID)', value: 'MEI-Actualizado' },
+];
 
-  // --- Estado para Generaciones ---
-  const isGeneratorModalOpen = ref(false);
-  const isResultModalOpen = ref(false);
-  const generations = ref([]);
-  const isGenerationsLoading = ref(false);
-  const isRenaming = ref(false);
-  const renameDialog = reactive({ show: false, itemId: null, currentName: '', newName: '' });
-  
-  // --- Estado para Snackbar y Copiar ---
-  const snackbar = reactive({ show: false, text: '' });
-  const activeGeneration = ref(null);
-  
-  const isActionInProgress = computed(() => isUploading.value || !!isDeleting.value || isGenerationsLoading.value || isRenaming.value);
+// --- Estado para Generaciones y Revisiones ---
+const isGeneratorModalOpen = ref(false);
+// --- INICIO CAMBIO 2: Añadir estado para nuevo modal ---
+const isReviewerModalOpen = ref(false);
+// --- FIN CAMBIO 2 ---
+const isResultModalOpen = ref(false);
+const generations = ref([]);
+const isGenerationsLoading = ref(false);
+const isRenaming = ref(false);
+const renameDialog = reactive({ show: false, itemId: null, currentName: '', newName: '' });
 
-  onMounted(async () => {
-    if (appStore.isLoggedIn) {
-        await fetchGenerations();
-    }
-  });
+// Este 'activeGeneration' ahora guardará tanto Generaciones como Revisiones
+const activeGeneration = ref(null); 
+const snackbar = reactive({ show: false, text: '' });
 
-  // --- Lógica de DIs (Completa y sin cambios) ---
-  const isProcessing = (design) => design.proceso_actual?.estado === 'processing';
+const isActionInProgress = computed(() => isUploading.value || !!isDeleting.value || isGenerationsLoading.value || isRenaming.value);
 
-  const getStatusIcon = (design) => {
-      const proceso = design.proceso_actual;
-      if (proceso?.nombre === 'consulta') {
-          return design.analisis_alineamiento ? 'mdi-check-circle' : 'mdi-file-question';
-      }
-      const estado = proceso?.estado;
-      if (estado === 'success') return 'mdi-check-circle';
-      if (estado === 'error') return 'mdi-alert-circle';
-      return 'mdi-file-question';
-  };
-
-  const getStatusColor = (design) => {
-      const proceso = design.proceso_actual;
-      if (proceso?.nombre === 'consulta') {
-          return design.analisis_alineamiento ? 'success' : 'grey';
-      }
-      const estado = proceso?.estado;
-      if (estado === 'success') return 'success';
-      if (estado === 'error') return 'error';
-      if (estado === 'processing') return 'blue-grey';
-      return 'grey';
-  };
-
-  const getStatusText = (design) => {
-      const proceso = design.proceso_actual;
-      const createdAt = design.created_at;
-      const createdText = `Subido: ${new Date(createdAt).toLocaleDateString()}`;
-      const estructuraMEIMap = {
-          'MEI-Antiguo': 'MEI Antiguo (RA-AE-IL)',
-          'MEI-Actualizado': 'MEI Actualizado (RF-RA-ID)'
-      };
-      const estructuraMEILabel = design.estructura_mei ? estructuraMEIMap[design.estructura_mei] : 'No definida';
-      if (proceso?.nombre === 'consulta') {
-          if (design.analisis_alineamiento) {
-              return `Análisis de 'analisis_alineamiento' completado. ${createdText}`;
-          }
-          return `Estructura: ${estructuraMEILabel}. ${createdText}`;
-      }
-      if (!proceso || !proceso.estado || proceso.estado === 'pendiente') {
-          return `Estructura: ${estructuraMEILabel}. ${createdText}`;
-      }
-      switch (proceso.estado) {
-          case 'processing': return `Procesando: ${proceso.nombre}...`;
-          case 'success':
-              if (proceso.nombre === 'analisis_alineamiento') return `Análisis de '${proceso.nombre}' completado. ${createdText}`;
-              return `Estructura: ${estructuraMEILabel}. ${createdText}`;
-          case 'error':
-              const errorMsg = proceso.error_detalle || 'Error desconocido.';
-              return `Error en '${proceso.nombre}': ${errorMsg}`;
-          default: return `Estado desconocido. ${createdText}`;
-      }
-  };
-
-  function handleRefresh() { appStore.fetchDesigns(); }
-  function viewDetails(design) { if (isProcessing(design)) return; router.push({ name: 'detail', params: { id: design.id_di } }); }
-  function triggerFileInput() { document.getElementById('fileInput').click(); }
-
-  async function handleFileUpload(event) {
-    const file = event.target.files[0];
-    if (!file || !selectedEstructuraMEI.value) return;
-    isUploading.value = true;
-    try {
-      await uploadDi(file, selectedEstructuraMEI.value);
-    } catch (error) { console.error("Error al subir:", error); } 
-    finally { isUploading.value = false; event.target.value = ''; selectedEstructuraMEI.value = 'MEI-Antiguo'; }
-  }
-
-  async function handleView(design) {
-    viewerDialog.itemName = design.nombre_archivo;
-    viewerDialog.url = '';
-    viewerDialog.show = true;
-    try {
-      const response = await getDownloadUrl(design.id_di);
-      viewerDialog.url = `https://docs.google.com/gview?url=${encodeURIComponent(response.signedURL)}&embedded=true`;
-    } catch (error) { console.error("Error al obtener la URL de visualización:", error); viewerDialog.show = false; }
-  }
-
-  async function handleDownload(design) {
-      try {
-          const { signedURL } = await getDownloadUrl(design.id_di);
-          window.open(signedURL, '_blank');
-      } catch (error) { console.error("Error al obtener enlace de descarga:", error); }
-  }
-
-  async function copyToClipboard(textToCopy) {
-    try {
-      await navigator.clipboard.writeText(textToCopy);
-      snackbar.text = '¡Texto copiado al portapapeles!';
-      snackbar.show = true;
-    } catch (err) {
-      console.error('Error al copiar texto: ', err);
-      snackbar.text = 'Error al copiar texto.';
-      snackbar.show = true;
-    }
-  }
-
-  // --- Lógica para Generaciones ---
-  async function fetchGenerations() {
-    isGenerationsLoading.value = true;
-    try {
-      generations.value = await getGenerations();
-    } catch (error) { console.error("Error al obtener generaciones:", error); } 
-    finally { isGenerationsLoading.value = false; }
-  }
-
-  function viewGeneration(generationObject) { 
-    activeGeneration.value = generationObject; 
-    isResultModalOpen.value = true; 
-  }
-
-  function openGeneratorModal() { isGeneratorModalOpen.value = true; }
-
-  // --- INICIO DE LA CORRECCIÓN ---
-  async function handleGenerationComplete(result) {
-    // 1. Actualiza la lista de generaciones desde la BD.
-    // Esto asegura que 'generations.value' contiene el ítem que 
-    // GeneratorModal acaba de guardar.
-    await fetchGenerations();
-
-    // 2. Ordena la lista para encontrar la generación MÁS RECIENTE.
-    // Asumimos que la API no garantiza el orden, así que lo forzamos.
-    const sortedGens = [...generations.value].sort((a, b) => 
-      new Date(b.created_at) - new Date(a.created_at)
-    );
-    
-    const newGen = sortedGens[0]; // Esta es la generación que acabamos de crear
-
-    // 3. Asigna el objeto COMPLETO y abre el modal.
-    if (newGen) {
-      // 'newGen' tiene la forma { id, input_data, output_data, ... }
-      // que es la que el template del modal espera.
-      activeGeneration.value = newGen;
-      isResultModalOpen.value = true;
-    } else {
-      console.error("No se pudo encontrar la nueva generación después de completarse.");
-    }
-  }
-  // --- FIN DE LA CORRECCIÓN ---
-
-  function promptRename(gen) {
-    renameDialog.itemId = gen.id;
-    renameDialog.currentName = gen.nombre_generacion || `Generación del ${new Date(gen.created_at).toLocaleString()}`;
-    renameDialog.newName = gen.nombre_generacion || '';
-    renameDialog.show = true;
-  }
-
-  async function confirmRename() {
-    if (!renameDialog.newName || renameDialog.newName.trim() === '') return;
-    isRenaming.value = true;
-    try {
-      await renameGeneration(renameDialog.itemId, renameDialog.newName.trim());
+onMounted(async () => {
+  if (appStore.isLoggedIn) {
       await fetchGenerations();
-    } catch (error) { console.error("Error al renombrar:", error); } 
-    finally { isRenaming.value = false; renameDialog.show = false; }
   }
+});
 
-  // --- Lógica de Eliminación (Generalizada y Completa) ---
-  function promptDelete(design) {
-    deleteDialog.itemId = design.id_di;
-    deleteDialog.itemName = design.nombre_archivo;
-    deleteDialog.type = 'di';
-    deleteDialog.show = true;
-  }
+// --- Lógica de DIs (Sin cambios) ---
+const isProcessing = (design) => design.proceso_actual?.estado === 'processing';
 
-  function promptDeleteGeneration(gen) {
-    deleteDialog.itemId = gen.id;
-    deleteDialog.itemName = gen.nombre_generacion || `Generación del ${new Date(gen.created_at).toLocaleString()}`;
-    deleteDialog.type = 'generation';
-    deleteDialog.show = true;
-  }
+const getStatusIcon = (design) => {
+    const proceso = design.proceso_actual;
+    if (proceso?.nombre === 'consulta') {
+        return design.analisis_alineamiento ? 'mdi-check-circle' : 'mdi-file-question';
+    }
+    const estado = proceso?.estado;
+    if (estado === 'success') return 'mdi-check-circle';
+    if (estado === 'error') return 'mdi-alert-circle';
+    return 'mdi-file-question';
+};
 
-  async function confirmDelete() {
-    const id = deleteDialog.itemId;
-    const type = deleteDialog.type;
-    if (!id) return;
-    isDeleting.value = id;
+const getStatusColor = (design) => {
+    const proceso = design.proceso_actual;
+    if (proceso?.nombre === 'consulta') {
+        return design.analisis_alineamiento ? 'success' : 'grey';
+    }
+    const estado = proceso?.estado;
+    if (estado === 'success') return 'success';
+    if (estado === 'error') return 'error';
+    if (estado === 'processing') return 'blue-grey';
+    return 'grey';
+};
+
+const getStatusText = (design) => {
+    const proceso = design.proceso_actual;
+    const createdAt = design.created_at;
+    const createdText = `Subido: ${new Date(createdAt).toLocaleDateString()}`;
+    const estructuraMEIMap = {
+        'MEI-Antiguo': 'MEI Antiguo (RA-AE-IL)',
+        'MEI-Actualizado': 'MEI Actualizado (RF-RA-ID)'
+    };
+    const estructuraMEILabel = design.estructura_mei ? estructuraMEIMap[design.estructura_mei] : 'No definida';
+    if (proceso?.nombre === 'consulta') {
+        if (design.analisis_alineamiento) {
+            return `Análisis de 'analisis_alineamiento' completado. ${createdText}`;
+        }
+        return `Estructura: ${estructuraMEILabel}. ${createdText}`;
+    }
+    if (!proceso || !proceso.estado || proceso.estado === 'pendiente') {
+        return `Estructura: ${estructuraMEILabel}. ${createdText}`;
+    }
+    switch (proceso.estado) {
+        case 'processing': return `Procesando: ${proceso.nombre}...`;
+        case 'success':
+            if (proceso.nombre === 'analisis_alineamiento') return `Análisis de '${proceso.nombre}' completado. ${createdText}`;
+            return `Estructura: ${estructuraMEILabel}. ${createdText}`;
+        case 'error':
+            const errorMsg = proceso.error_detalle || 'Error desconocido.';
+            return `Error en '${proceso.nombre}': ${errorMsg}`;
+        default: return `Estado desconocido. ${createdText}`;
+    }
+};
+
+function handleRefresh() { appStore.fetchDesigns(); }
+function viewDetails(design) { if (isProcessing(design)) return; router.push({ name: 'detail', params: { id: design.id_di } }); }
+function triggerFileInput() { document.getElementById('fileInput').click(); }
+
+async function handleFileUpload(event) {
+  const file = event.target.files[0];
+  if (!file || !selectedEstructuraMEI.value) return;
+  isUploading.value = true;
+  try {
+    await uploadDi(file, selectedEstructuraMEI.value);
+  } catch (error) { console.error("Error al subir:", error); } 
+  finally { isUploading.value = false; event.target.value = ''; selectedEstructuraMEI.value = 'MEI-Antiguo'; }
+}
+
+async function handleView(design) {
+  viewerDialog.itemName = design.nombre_archivo;
+  viewerDialog.url = '';
+  viewerDialog.show = true;
+  try {
+    const response = await getDownloadUrl(design.id_di);
+    viewerDialog.url = `https://docs.google.com/gview?url=${encodeURIComponent(response.signedURL)}&embedded=true`;
+  } catch (error) { console.error("Error al obtener la URL de visualización:", error); viewerDialog.show = false; }
+}
+
+async function handleDownload(design) {
     try {
-      if (type === 'di') {
-        await deleteDi(id);
-      } else if (type === 'generation') {
-        await deleteGeneration(id);
-        await fetchGenerations();
-      }
-    } catch (error) { console.error("Error al eliminar:", error); } 
-    finally { isDeleting.value = null; deleteDialog.show = false; }
+        const { signedURL } = await getDownloadUrl(design.id_di);
+        window.open(signedURL, '_blank');
+    } catch (error) { console.error("Error al obtener enlace de descarga:", error); }
+}
+
+async function copyToClipboard(textToCopy) {
+  try {
+    await navigator.clipboard.writeText(textToCopy);
+    snackbar.text = '¡Texto copiado al portapapeles!';
+    snackbar.show = true;
+  } catch (err) {
+    console.error('Error al copiar texto: ', err);
+    snackbar.text = 'Error al copiar texto.';
+    snackbar.show = true;
   }
+}
+
+// --- Lógica para Generaciones y Revisiones ---
+async function fetchGenerations() {
+  isGenerationsLoading.value = true;
+  try {
+    generations.value = await getGenerations();
+  } catch (error) { console.error("Error al obtener generaciones:", error); } 
+  finally { isGenerationsLoading.value = false; }
+}
+
+// Esta función ahora abre tanto generaciones guardadas como revisiones completadas
+function viewGeneration(generationObject) { 
+  activeGeneration.value = generationObject; 
+  isResultModalOpen.value = true; 
+}
+
+function openGeneratorModal() { isGeneratorModalOpen.value = true; }
+
+// --- INICIO CAMBIO 3: Añadir funciones para nuevo modal ---
+function openReviewerModal() { isReviewerModalOpen.value = true; }
+
+/**
+ * Se llama cuando ReviewerModal emite 'review-complete'.
+ * @param {object} result - El objeto de resultado (input_data, output_data)
+ */
+function handleReviewComplete(result) {
+  // 'result' es el objeto que construimos dentro de ReviewerModal
+  // que simula una 'generación' para que el modal de resultados lo muestre.
+  activeGeneration.value = result;
+  isResultModalOpen.value = true; 
+  
+  // No llamamos a fetchGenerations() aquí porque la revisión es efímera
+  // y no se guarda en la base de datos (según el MVP).
+}
+// --- FIN CAMBIO 3 ---
+
+/**
+ * Se llama cuando GeneratorModal emite 'generation-complete'.
+ * @param {object} result - El objeto de generación guardado
+ */
+async function handleGenerationComplete(result) {
+  // 1. Actualiza la lista para obtener el ID y created_at
+  await fetchGenerations();
+
+  // 2. Busca la generación más reciente
+  const sortedGens = [...generations.value].sort((a, b) => 
+    new Date(b.created_at) - new Date(a.created_at)
+  );
+  
+  const newGen = sortedGens[0]; // Esta es la generación que acabamos de crear
+
+  // 3. Asigna el objeto COMPLETO y abre el modal.
+  if (newGen) {
+    activeGeneration.value = newGen;
+    isResultModalOpen.value = true;
+  } else {
+    console.error("No se pudo encontrar la nueva generación después de completarse.");
+    // Fallback: mostrar el resultado crudo aunque no esté guardado (raro)
+    activeGeneration.value = {
+      input_data: result.input_data,
+      output_data: result.output_data,
+      created_at: new Date().toISOString(),
+      nombre_generacion: "Generación (no guardada)"
+    };
+    isResultModalOpen.value = true;
+  }
+}
+
+function promptRename(gen) {
+  renameDialog.itemId = gen.id;
+  renameDialog.currentName = gen.nombre_generacion || `Generación del ${new Date(gen.created_at).toLocaleString()}`;
+  renameDialog.newName = gen.nombre_generacion || '';
+  renameDialog.show = true;
+}
+
+async function confirmRename() {
+  if (!renameDialog.newName || renameDialog.newName.trim() === '') return;
+  isRenaming.value = true;
+  try {
+    await renameGeneration(renameDialog.itemId, renameDialog.newName.trim());
+    await fetchGenerations();
+  } catch (error) { console.error("Error al renombrar:", error); } 
+  finally { isRenaming.value = false; renameDialog.show = false; }
+}
+
+// --- Lógica de Eliminación (Generalizada y Completa) ---
+function promptDelete(design) {
+  deleteDialog.itemId = design.id_di;
+  deleteDialog.itemName = design.nombre_archivo;
+  deleteDialog.type = 'di';
+  deleteDialog.show = true;
+}
+
+function promptDeleteGeneration(gen) {
+  deleteDialog.itemId = gen.id;
+  deleteDialog.itemName = gen.nombre_generacion || `Generación del ${new Date(gen.created_at).toLocaleString()}`;
+  deleteDialog.type = 'generation';
+  deleteDialog.show = true;
+}
+
+async function confirmDelete() {
+  const id = deleteDialog.itemId;
+  const type = deleteDialog.type;
+  if (!id) return;
+  isDeleting.value = id;
+  try {
+    if (type === 'di') {
+      await deleteDi(id);
+    } else if (type === 'generation') {
+      await deleteGeneration(id);
+      await fetchGenerations();
+    }
+  } catch (error) { console.error("Error al eliminar:", error); } 
+  finally { isDeleting.value = null; deleteDialog.show = false; }
+}
 </script>

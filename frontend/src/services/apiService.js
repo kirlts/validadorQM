@@ -29,12 +29,6 @@ const API_URL = getApiBaseUrl();
 
 console.log(`[apiService] Configurado para usar la API en: ${API_URL}`);
 
-// --- FIN DE LA NUEVA LÓGICA ---
-
-
-// El resto de tu código no necesita cambios, ya que depende de la constante API_URL
-// que ahora se establece dinámicamente.
-
 async function fetchWithAuth(endpoint, options = {}) {
   const { data: { session } } = await supabase.auth.getSession();
   
@@ -129,6 +123,14 @@ export function analyzeAlignment(diId) {
 
 export function generateIndicators(payload) {
   return fetchWithAuth('generate/indicators', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function revisarIndicadores(payload) {
+  // El endpoint 'revisar-indicadores' debe coincidir con la ruta definida en app.py
+  return fetchWithAuth('revisar-indicadores', {
     method: 'POST',
     body: JSON.stringify(payload),
   });

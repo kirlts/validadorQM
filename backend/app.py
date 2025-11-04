@@ -290,31 +290,46 @@ def generate_indicators():
     webhook_url = f"{N8N_BASE_URL.rstrip('/')}/webhook/generar-indicadores"
     # ----------------------------------------
     
-    try:
-        response = requests.post(webhook_url, json=data, timeout=120) 
-        response.raise_for_status()
+    response = requests.post(webhook_url, json=data, timeout=120) 
+    response.raise_for_status()
         
-        output_data = response.json()
+    output_data = response.json()
 
-        try:
-            g.supabase.table('generaciones_ia').insert({'user_id': g.user_id, 'input_data': data, 'output_data': output_data}).execute()
-        except Exception as e:
-            app.logger.warning(f"ADVERTENCIA: No se pudo guardar la generación en la DB: {e}")
+    try:
+        g.supabase.table('generaciones_ia').insert({'user_id': g.user_id, 'input_data': data, 'output_data': output_data}).execute()
+    except Exception as e:
+        app.logger.warning(f"ADVERTENCIA: No se pudo guardar la generación en la DB: {e}")
 
-        return jsonify(output_data), 200
+    return jsonify(output_data), 200
 
-    except requests.exceptions.Timeout:
-        return jsonify({"error": "La solicitud al motor de generación tardó demasiado en responder"}), 504
-    except requests.exceptions.RequestException as e:
-        error_message = f"Error al comunicarse con el motor de generación: {e}"
-        if e.response is not None:
-            try:
-                n8n_error = e.response.json()
-                return jsonify(n8n_error), e.response.status_code
-            except:
-                 return jsonify({"error": error_message, "details": e.response.text}), 500
-        return jsonify({"error": error_message}), 500
+@app.route('/api/revisar-indicadores', methods=['POST'])
+@token_required # <-- AÑADIDO: Asumo que esta ruta también debe estar protegida
+def revisar_indicadores():
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No se proporcionaron datos'}), 400
 
+    # "Devoramos" el patrón de los otros webhooks y la ruta que me diste
+    webhook_path = "/webhook/revisar-indicadores" 
+    webhook_url = f"{N8N_BASE_URL.rstrip('/')}{webhook_path}"
+
+    headers = { 'Content-Type': 'application/json' }
+
+    try:
+        # Llamar al webhook de n8n con los datos del frontend
+        response = requests.post(webhook_url, json=data, headers=headers)
+        response.raise_for_status() # Lanza un error para códigos 4xx/5xx
+        
+        # Devolver la respuesta de n8n (el JSON de reportes de revisión) al frontend
+        return jsonify(response.json()), response.status_code
+
+    except requests.exceptions.HTTPError as http_err:
+        app.logger.error(f"Error de n8n (Revisar): {http_err} - {response.text}")
+        return jsonify({'error': f"Error de n8n: {http_err}", 'n8n_response': response.text}), response.status_code
+    except requests.exceptions.RequestException as req_err:
+        app.logger.error(f"Error de conexión (Revisar): {req_err}")
+        return jsonify({'error': f"Error de conexión: {req_err}"}), 500
+    
 @app.route('/api/generations', methods=['GET'])
 @token_required
 def get_user_generations():
@@ -354,6 +369,20 @@ def rename_user_generation(generation_id):
     except Exception as e:
         app.logger.error(f"!!! ERROR en rename_user_generation: {e}")
         return jsonify({"error": "Ocurrió un error interno en el servidor al intentar renombrar."}), 500
+
+@app.route('/api/dis/<uuid:di_id>/validation', methods=['GET'])
+@token_required
+def get_di_validation_results(di_id):
+    # Esta ruta no estaba implementada en tu app.py, la añado
+    # para que coincida con apiService.js
+    if not check_di_ownership(di_id): return jsonify({'message': 'Acción no autorizada.'}), 403
+    try:
+        result = g.supabase.table('disenos_instruccionales').select('analisis_sintactico').eq('id_di', str(di_id)).single().execute()
+        if result.data and result.data.get('analisis_sintactico'):
+            return jsonify(result.data['analisis_sintactico']), 200
+        return jsonify({'message': 'Validación no encontrada o aún en proceso.'}), 404
+    except Exception as e:
+        return jsonify({'message': f'Error al obtener validación: {str(e)}'}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
