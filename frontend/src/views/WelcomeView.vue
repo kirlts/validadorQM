@@ -5,7 +5,7 @@
         <div class="text-center mb-6">
           <h1 class="text-h4 font-weight-bold">Validador QM con IA</h1>
           <p class="text-subtitle-1 grey--text text--darken-1">
-            Una herramienta para asegurar la calidad de tus Diseños Instruccionales.
+            Una herramienta para asistir en el diseño curricular.
           </p>
         </div>
         <LoginCard />
