@@ -133,7 +133,7 @@
               </v-list-item>
             </template>
             <v-card-text v-else class="text-center py-4">
-              No has subido ningún Diseño Instruccional todavía.
+              No has subido ningún archivo todavía.
             </v-card-text>
           </v-list>
 
