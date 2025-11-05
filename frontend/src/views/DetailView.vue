@@ -24,7 +24,7 @@
               <v-card-title>Herramientas de Análisis</v-card-title>
               <v-card-text>
                 <p class="mb-4">
-                  Selecciona una herramienta para obtener un análisis automático sobre tu DI.
+                  Selecciona una herramienta para obtener un análisis de alineamiento del archivo.
                 </p>
                 <v-btn
                   v-if="design.estructura_mei === 'MEI-Antiguo'"

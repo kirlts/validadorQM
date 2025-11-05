@@ -24,7 +24,7 @@
           <v-expansion-panel>
             <v-expansion-panel-title class="text-h6 d-flex align-center">
               <v-icon left class="mr-3">mdi-text-box-check-outline</v-icon>
-              Mis Generaciones Guardadas
+              Indicadores Generados
               <v-chip size="small" color="primary" class="ml-3">{{ generacionesGuardadas.length }}</v-chip>
               <v-spacer></v-spacer>
               <v-btn icon variant="text" @click.stop="fetchGenerations" :loading="isGenerationsLoading" :disabled="isActionInProgress" title="Refrescar lista">
@@ -63,7 +63,7 @@
           <v-expansion-panel>
             <v-expansion-panel-title class="text-h6 d-flex align-center">
               <v-icon left class="mr-3">mdi-check-decagram-outline</v-icon>
-              Mis Revisiones Guardadas
+              Revisiones de Indicadores
               <v-chip size="small" color="blue-darken-2" class="ml-3">{{ revisionesGuardadas.length }}</v-chip>
               <v-spacer></v-spacer>
               <v-btn icon variant="text" @click.stop="fetchGenerations" :loading="isGenerationsLoading" :disabled="isActionInProgress" title="Refrescar lista">
@@ -100,14 +100,14 @@
 
         <v-card>
           <v-card-title class="d-flex align-center">
-            <span class="headline">Mis Diseños Instruccionales</span>
+            <span class="headline">Archivos Subidos</span>
             <v-spacer></v-spacer>
             <v-btn icon variant="text" @click="handleRefresh" :loading="isLoading" :disabled="isActionInProgress">
               <v-icon>mdi-refresh</v-icon>
             </v-btn>
           </v-card-title>
           <v-card-subtitle>
-            Gestiona tus DIs y su estado de procesamiento.
+            Gestiona archivos de planificación curricular y su estado de procesamiento.
           </v-card-subtitle>
           
           <v-progress-linear v-if="isLoading && designs.length === 0" indeterminate color="primary"></v-progress-linear>
