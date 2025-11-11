@@ -3,7 +3,7 @@
     <v-row align="center" justify="center">
       <v-col cols="12" sm="8" md="6" lg="4">
         <div class="text-center mb-6">
-          <h1 class="text-h4 font-weight-bold">Validador QM con IA</h1>
+          <h1 class="text-h4 font-weight-bold">Validador QM</h1>
           <p class="text-subtitle-1 grey--text text--darken-1">
             Una herramienta para asistir en el diseño curricular.
           </p>

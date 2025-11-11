@@ -5,7 +5,7 @@
         <!-- Estado de Carga Inicial -->
         <div v-if="isLoading" class="text-center pa-10">
           <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
-          <p class="mt-4">Cargando datos del Diseño Instruccional...</p>
+          <p class="mt-4">Cargando datos del archivo...</p>
         </div>
 
         <!-- Contenido Principal de la Vista -->
@@ -124,9 +124,9 @@
           
           <!-- Asistente de IA -->
           <v-divider class="my-6"></v-divider>
-          <v-card-title>Asistencia Interactiva con IA</v-card-title>
+          <v-card-title>Asistencia Interactiva</v-card-title>
            <v-card-text>
-             <p class="mb-4">Realiza una consulta sobre el Diseño Instruccional y/o su análisis.</p>
+             <p class="mb-4">Realiza una consulta sobre el archivo de planificación curricular y/o su análisis.</p>
              <v-textarea
                 v-model="userPrompt"
                 label="Tu Pregunta"
