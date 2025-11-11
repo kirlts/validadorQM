@@ -1,4 +1,4 @@
-# Validador QM con IA
+# Validador QM
 
 Este repositorio contiene el código fuente del "Validador QM", una aplicación web diseñada para asistir a diseñadores instruccionales y equipos de calidad en el análisis y mejora de Diseños Instruccionales (DIs).
 
