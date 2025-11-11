@@ -5,7 +5,6 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "interaccion-ia",
-        "responseMode": "responseNode",
         "options": {}
       },
       "type": "n8n-nodes-base.webhook",
@@ -41,24 +40,10 @@
       "name": "Get DI Context",
       "credentials": {
         "supabaseApi": {
-          "id": "m0DUcQthM94wIR7O",
-          "name": "Supabase account"
+          "id": "1",
+          "name": "Supabase API"
         }
       }
-    },
-    {
-      "parameters": {
-        "respondWith": "allIncomingItems",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.4,
-      "position": [
-        1568,
-        16
-      ],
-      "id": "dd81ba16-d7f8-4bb5-bf84-613e6ae9c5c9",
-      "name": "Respond to Webhook"
     },
     {
       "parameters": {
@@ -74,7 +59,7 @@
       "name": "Response Model",
       "credentials": {
         "googlePalmApi": {
-          "id": "1fRbxclakan4SB2c",
+          "id": "2",
           "name": "Api 1"
         }
       }
@@ -130,8 +115,8 @@
       "name": "Update Success",
       "credentials": {
         "supabaseApi": {
-          "id": "m0DUcQthM94wIR7O",
-          "name": "Supabase account"
+          "id": "1",
+          "name": "Supabase API"
         }
       }
     },
@@ -201,8 +186,8 @@
       "name": "Update Error",
       "credentials": {
         "supabaseApi": {
-          "id": "m0DUcQthM94wIR7O",
-          "name": "Supabase account"
+          "id": "1",
+          "name": "Supabase API"
         }
       }
     },
@@ -264,8 +249,8 @@
       "name": "Update Non Related",
       "credentials": {
         "supabaseApi": {
-          "id": "m0DUcQthM94wIR7O",
-          "name": "Supabase account"
+          "id": "1",
+          "name": "Supabase API"
         }
       }
     },
@@ -284,7 +269,7 @@
       "name": "Lite",
       "credentials": {
         "googlePalmApi": {
-          "id": "1fRbxclakan4SB2c",
+          "id": "2",
           "name": "Api 1"
         }
       }
@@ -294,38 +279,14 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -32,
-        272
+        96,
+        320
       ],
-      "id": "bc74bd3f-2e66-420f-a9a4-702b3ff11940",
+      "id": "9109969f-61d6-4b6f-a53a-688bbb82940d",
       "name": "Sticky Note"
     }
   ],
-  "pinData": {
-    "Webhook": [
-      {
-        "json": {
-          "headers": {
-            "host": "n8n:5678",
-            "user-agent": "python-requests/2.32.5",
-            "accept-encoding": "gzip, deflate",
-            "accept": "*/*",
-            "connection": "keep-alive",
-            "content-length": "113",
-            "content-type": "application/json"
-          },
-          "params": {},
-          "query": {},
-          "body": {
-            "di_id": "71d4cfb0-6759-46e4-a086-f854ebf7c247",
-            "prompt": "Necesito que me resumas el informe de alineamiento"
-          },
-          "webhookUrl": "http://localhost:5678/webhook/8cdc026a-7fac-4bdf-b014-fbd5680e3d6d",
-          "executionMode": "production"
-        }
-      }
-    ]
-  },
+  "pinData": {},
   "connections": {
     "Webhook": {
       "main": [
@@ -347,11 +308,6 @@
             "index": 0
           }
         ]
-      ]
-    },
-    "Respond to Webhook": {
-      "main": [
-        []
       ]
     },
     "Response Model": {
@@ -396,24 +352,12 @@
     },
     "Update Success": {
       "main": [
-        [
-          {
-            "node": "Respond to Webhook",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        []
       ]
     },
     "Update Error": {
       "main": [
-        [
-          {
-            "node": "Respond to Webhook",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        []
       ]
     },
     "Text Classifier": {
@@ -436,13 +380,7 @@
     },
     "Update Non Related": {
       "main": [
-        [
-          {
-            "node": "Respond to Webhook",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        []
       ]
     },
     "Lite": {
@@ -461,10 +399,10 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "725214f0-65e5-4f81-b2cb-5280a67b0296",
+  "versionId": "40bd8ba2-68e9-4b5a-96a2-d6fe2b91c789",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "8991d57cc3be404c4c8d6951306c68fa6ee93d0a9fcfe54908cc27cc5546f205"
+    "instanceId": "4e1225f5d32bb09f8259c37f6605f39f123857e20a352a5f418289b5b42cd64d"
   },
   "id": "SwcZQBq59C3kBS6a",
   "tags": []
