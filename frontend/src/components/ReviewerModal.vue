@@ -55,6 +55,18 @@
           <v-divider class="my-4"></v-divider>
 
           <div v-if="form.estructuraMEI === 'MEI-Actualizado'">
+            <div class="d-flex justify-end mb-4">
+              <v-btn 
+                color="secondary" 
+                variant="outlined" 
+                size="small"
+                @click="fillWithExample"
+                :disabled="isLoading"
+              >
+                <v-icon left>mdi-file-document-edit-outline</v-icon>
+                Rellenar con ejemplo
+              </v-btn>
+            </div>
             <div class="d-flex justify-space-between align-center mb-2">
               <h3 class="text-h6">Resultados Formativos (RF)</h3>
               <v-btn color="primary" @click="addRF" :disabled="isLoading" size="small">Agregar RF</v-btn>
@@ -384,6 +396,31 @@ function removeIndicator(ra_or_ae, indicatorIndex) {
   if (ra_or_ae.indicadores.length > 1) {
     ra_or_ae.indicadores.splice(indicatorIndex, 1);
   }
+}
+
+// --- Función para rellenar con ejemplo (solo MEI-Actualizado) ---
+function fillWithExample() {
+  if (form.estructuraMEI !== 'MEI-Actualizado') return;
+  
+  // Datos de ejemplo de la sección REVISION
+  form.nombre_curso = 'Diseño Pedagógico';
+  form.resultadosFormativos = [
+    { 
+      id: `RF-${Date.now()}`, 
+      texto: 'Diseñar estrategias pedagógicas y unidades didácticas que integren conocimientos pedagógicos, teorías del aprendizaje, enfoques inclusivos y principios de diversidad educativa, aplicando el análisis de procesos de aprendizaje, necesidades, intereses y características de los estudiantes de educación básica, con el fin de promover su aprendizaje significativo, desarrollo integral, socioemocional, autonomía, pensamiento crítico y habilidades para la convivencia, fortaleciendo la formación ética, reflexiva y profesional del futuro docente en diversos contextos educativos.' 
+    }
+  ];
+  form.resultadosAprendizaje = [
+    { 
+      id: `RA-${Date.now()}`, 
+      texto: 'Diseñar unidades didácticas que integren estrategias pedagógicas inclusivas y pertinentes, aplicando el análisis de los procesos de aprendizaje de estudiantes de educación básica, con el fin de promover su desarrollo integral y socioemocional.',
+      indicadores: [
+        { id: `IND-${Date.now()}`, texto: 'Comparar el desempeño, habilidades y necesidades de aprendizaje de los estudiantes de educación básica utilizando registros de aula y resultados de evaluaciones.' },
+        { id: `IND-${Date.now() + 1}`, texto: 'Elaborar unidades didácticas que incluyan estrategias pedagógicas inclusivas y pertinentes, ajustadas a la diversidad del grupo de estudiantes.' },
+        { id: `IND-${Date.now() + 2}`, texto: 'Argumentar la selección de estrategias y recursos en las unidades didácticas, demostrando cómo estas favorecen el desarrollo integral y socioemocional de los estudiantes.' }
+      ]
+    }
+  ];
 }
 
 // --- Lógica de Envío (CORREGIDA FINAL) ---
