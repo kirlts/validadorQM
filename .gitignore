@@ -6,6 +6,7 @@ admin.txt
 __pycache__/
 *.pyc
 .gitignore
+Tesis/
 
 # Datos de ejecución y volúmenes de Docker
 n8n_data/

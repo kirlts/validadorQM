@@ -41,6 +41,18 @@
               variant="outlined"
             ></v-text-field>
             <div v-if="formData.estructuraMEI === 'MEI-Actualizado'">
+              <div class="d-flex justify-end mb-4">
+                <v-btn 
+                  color="secondary" 
+                  variant="outlined" 
+                  size="small"
+                  @click="fillWithExample"
+                  :disabled="loading"
+                >
+                  <v-icon left>mdi-file-document-edit-outline</v-icon>
+                  Rellenar con ejemplo
+                </v-btn>
+              </div>
               <div v-for="(rf, index) in formData.resultadosFormativos" :key="rf.id" class="d-flex align-start mb-2">
                 <v-textarea
                   v-model="rf.texto"
@@ -188,6 +200,32 @@ const addRF = () => formData.value.resultadosFormativos.push({ id: Date.now(), t
 const addRA_Updated = () => formData.value.resultadosAprendizaje.push({ id: Date.now(), texto: '', contenido: '', metodologia: '' });
 const addRA_Old = () => formData.value.resultadosAprendizaje.push({ id: Date.now(), texto: '' });
 const addAE = () => formData.value.aprendizajesEsperados.push({ id: Date.now(), texto: '' });
+
+// --- Función para rellenar con ejemplo (solo MEI-Actualizado) ---
+const fillWithExample = () => {
+  if (formData.value.estructuraMEI !== 'MEI-Actualizado') return;
+  
+  // Datos de ejemplo de la sección GENERACION
+  formData.value.nombre_curso = 'COMERCIO INTERNACIONAL';
+  formData.value.resultadosFormativos = [
+    { 
+      id: Date.now(), 
+      texto: 'Evaluar el entorno y las tendencias del mercado global, identificando riesgos, oportunidades y amenazas, para la toma de decisiones estratégicas, considerando el comportamiento e influencia de los actores clave que participan en él y el marco del sistema internacional que los regula.' 
+    },
+    { 
+      id: Date.now() + 1, 
+      texto: 'Formular estrategias de negocios internacionales, integrando herramientas analíticas, fundamentos y normativas del comercio exterior, para enfrentar desafíos propios de la profesión en entornos globales dinámicos.' 
+    }
+  ];
+  formData.value.resultadosAprendizaje = [
+    { 
+      id: Date.now() + 2, 
+      texto: 'Analizar las bases teóricas y normativas que sustentan el comercio internacional y la inserción de Chile en los mercados globales, considerando las principales teorías del intercambio comercial y el funcionamiento del sistema multilateral de comercio.',
+      contenido: '',
+      metodologia: ''
+    }
+  ];
+};
 
 // --- Funciones para remover elementos ---
 const removeRF = (index) => formData.value.resultadosFormativos.splice(index, 1);
