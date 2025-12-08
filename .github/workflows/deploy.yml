@@ -37,6 +37,11 @@ jobs:
           docker build -t ${{ steps.login-ecr.outputs.registry }}/validador-qm-frontend:latest --build-arg VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }} --build-arg VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }} -f frontend/Dockerfile .
           docker push ${{ steps.login-ecr.outputs.registry }}/validador-qm-frontend:latest
 
+      - name: Create ECR repository for Streamlit if it doesn't exist
+        run: |
+          aws ecr describe-repositories --repository-names validador-qm-streamlit --region ${{ secrets.AWS_REGION }} || \
+          aws ecr create-repository --repository-name validador-qm-streamlit --region ${{ secrets.AWS_REGION }}
+
       - name: Build and push Streamlit image
         run: |
           docker build -t ${{ steps.login-ecr.outputs.registry }}/validador-qm-streamlit:latest -f streamlit/Dockerfile .
