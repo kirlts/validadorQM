@@ -36,6 +36,11 @@ jobs:
         run: |
           docker build -t ${{ steps.login-ecr.outputs.registry }}/validador-qm-frontend:latest --build-arg VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }} --build-arg VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }} -f frontend/Dockerfile .
           docker push ${{ steps.login-ecr.outputs.registry }}/validador-qm-frontend:latest
+
+      - name: Build and push Streamlit image
+        run: |
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/validador-qm-streamlit:latest -f streamlit/Dockerfile .
+          docker push ${{ steps.login-ecr.outputs.registry }}/validador-qm-streamlit:latest
           
       # --- ETAPA DE DEPLOY (EN EC2) ---
       
@@ -58,9 +63,9 @@ jobs:
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin $ECR_REGISTRY
             
             # Descargamos solo las imágenes que nos importan
-            docker compose -p validadorqm_prod -f docker-compose.prod.yml pull frontend backend
+            docker compose -p validadorqm_prod -f docker-compose.prod.yml pull frontend backend streamlit
             
-            # 'up -d' reiniciará solo frontend y backend. N8N NO SE TOCA.
+            # 'up -d' reiniciará solo frontend, backend y streamlit. N8N NO SE TOCA.
             docker compose -p validadorqm_prod -f docker-compose.prod.yml --env-file .env.prod up -d
             
             docker image prune -f

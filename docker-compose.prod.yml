@@ -49,6 +49,17 @@ services:
     volumes: ["postgres_data_prod:/var/lib/postgresql/data"]
     networks: ["validador-net-prod"]
 
+  streamlit:
+    image: ${ECR_REGISTRY}/validador-qm-streamlit:${IMAGE_TAG}
+    container_name: validador_qm_streamlit_prod
+    restart: always
+    env_file: [".env.prod"]
+    environment:
+      N8N_INTERNAL_URL: ${N8N_INTERNAL_URL:-http://n8n:5678}
+      N8N_API_KEY: ${N8N_API_KEY:-}
+    networks: ["validador-net-prod"]
+    depends_on: [n8n]
+
 networks:
   validador-net-prod:
     driver: bridge
