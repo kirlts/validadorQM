@@ -50,6 +50,23 @@ services:
     networks:
       - validador-net-dev # <-- SUFIJO
 
+  streamlit:
+    build:
+      context: .
+      dockerfile: ./streamlit/Dockerfile
+    container_name: validador_qm_streamlit_dev # <-- SUFIJO
+    restart: always
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./streamlit:/app
+    environment:
+      - N8N_INTERNAL_URL=http://n8n:5678
+      - N8N_API_KEY=${N8N_API_KEY:-}
+    networks:
+      - validador-net-dev # <-- SUFIJO
+    # No depende de otros servicios, se inicia en paralelo
+
 networks:
   validador-net-dev: # <-- SUFIJO
     driver: bridge
